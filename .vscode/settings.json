@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "xdma-mod.h": "c",
+        "errno.h": "c"
+    },
+    "C_Cpp.autoAddFileAssociations": false
+}
