@@ -1,1 +1,0 @@
-cmd_/home/crypto/ws/thesis/sw/thesis/numato/my-xdma/xdma-mod.mod := { echo  /home/crypto/ws/thesis/sw/thesis/numato/my-xdma/xdma-mod.o; echo; } > /home/crypto/ws/thesis/sw/thesis/numato/my-xdma/xdma-mod.mod
