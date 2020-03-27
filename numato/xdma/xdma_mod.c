@@ -16,6 +16,7 @@
  * The full GNU General Public License is included in this distribution in
  * the file called "COPYING".
  */
+#define KBUILD_MODNAME "xdma"
 
 #define pr_fmt(fmt)     KBUILD_MODNAME ":%s: " fmt, __func__
 
@@ -37,7 +38,7 @@
 static char version[] =
 	DRV_MODULE_DESC " " DRV_MODULE_NAME " v" DRV_MODULE_VERSION "\n";
 
-MODULE_AUTHOR("Xilinx, Inc.");
+MODULE_AUTHOR("Xilinx");
 MODULE_DESCRIPTION(DRV_MODULE_DESC);
 MODULE_VERSION(DRV_MODULE_VERSION);
 MODULE_LICENSE("Dual BSD/GPL");
