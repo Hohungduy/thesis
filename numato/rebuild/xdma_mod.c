@@ -9,21 +9,50 @@ const struct pci_device_id id_table[] = {
     {PCI_DEVICE( NUMATO_VENDOR_ID , NUMATO_DEVICE_ID ), }
 };
 
-int xdma_probe(struct pci_dev *dev, const struct pci_device_id *id)
+int xdma_probe(struct pci_dev *pci_dev, const struct pci_device_id *id)
 {
+    struct xpcie *xpcie_dev;
+    int err;
     /**
      * Alloc xpcie_dev
      */
-
+    xpcie_dev = alloc_xpcie_dev(pci_dev);
+    if (!xpcie_dev){
+        x_info_failed("Alloc device failed\n");
+        return -ENOMEM;
+    } 
+    else
+        x_info("Alloc device done!\n");
     /**
      * Init xpcie
      */
-
+    if (xpcie_dev->finit)
+    {
+        err = xpcie_dev->finit(xpcie_dev);
+        if (err)
+            return err;
+        x_info("finit done\n");
+    }
+    else
+    {
+        x_info("finit unknown!\n");
+    }
+    
     /**
      * Setup xpcie routines
      */
+    if (xpcie_dev->fsetup_routine)
+    {
+        err = xpcie_dev->fsetup_routine(xpcie_dev);
+        if (err)
+            return err;
+        x_info("fsetup_routine done\n");
+    }
+    else
+    {
+        x_info("fsetup_routine unknown!\n");
+    }
     return 0;
-
 }
 
 void xdma_remove(struct pci_dev *dev)
@@ -101,10 +130,6 @@ struct pci_driver xdma_pci_driver = {
     .err_handler = &xdma_err_handler
 };
 
-void xdma_cdev_cleanup(void)
-{
-
-}
 static int xdma_init(void)
 {
     pr_info("%s", "xdma_init\n");
@@ -117,8 +142,6 @@ static void xdma_exit(void)
 
     pr_info("%s", "xdma_exit\n");
     pci_unregister_driver(&xdma_pci_driver);
-    xdma_cdev_cleanup();
-
 }
 
 module_init(xdma_init);

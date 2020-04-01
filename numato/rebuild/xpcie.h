@@ -28,6 +28,7 @@ struct xpcie_data {
 };
 
 struct xpcie_ops {
+    struct engine_struct *(*falloc_engine)(enum engine_type type);
 
 };
 struct xpcie {
@@ -48,6 +49,6 @@ struct xpcie {
     struct xpcie_ops *ops;
 };
 
-struct xpcie * alloc_xpcie_dev(struct pci_dev *dev);
+struct xpcie *alloc_xpcie_dev(struct pci_dev *dev);
 
 #endif

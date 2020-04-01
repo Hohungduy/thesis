@@ -1,0 +1,63 @@
+{
+    "headFileGuard.type" : "guid",
+    "files.associations": {
+        "types.h": "c",
+        "version.h": "c",
+        "xdma_cdev.h": "c",
+        "ioctl.h": "c",
+        "errno.h": "c",
+        "aer.h": "c",
+        "libxdma.h": "c",
+        "xdma_mod.h": "c",
+        "uaccess.h": "c",
+        "fb.h": "c",
+        "i2c.h": "c",
+        "thread_info.h": "c",
+        "sched.h": "c",
+        "pid.h": "c",
+        "rculist.h": "c",
+        "rcupdate.h": "c",
+        "preempt.h": "c",
+        "irqflags.h": "c",
+        "paravirt.h": "c",
+        "cpumask.h": "c",
+        "bitmap.h": "c",
+        "kernel.h": "c",
+        "string.h": "c",
+        "stdarg.h": "c",
+        "libxdma_api.h": "c",
+        "xdma-mod.h": "c",
+        "init.h": "c",
+        "module.h": "c",
+        "spinlock.h": "c",
+        "kthread.h": "c",
+        "xdma_thread.h": "c",
+        "workqueue.h": "c",
+        "xpcie.h": "c"
+    },
+    "C_Cpp.default.systemIncludePath": [
+        "/usr/src/linux-headers-5.3.0-45/include/**",
+        "/usr/src/linux-headers-5.3.0-45-generic/include/**",
+        "/usr/src/linux-headers-5.3.0-45/arch/x86/include/**",
+        "/usr/src/linux-headers-5.3.0-45-generic/arch/x86/include/**",
+        "/usr/lib/gcc/x86_64-linux-gnu/7/include/**"
+    ],
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}"
+    ],
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true
+    },
+    "C_Cpp.default.defines": [
+        "__KERNEL__"
+    ]
+    // "C_Cpp.default.forcedInclude": [
+    //     "/usr/src/linux-headers-5.3.0-40/include/linux/compiler_types.h",
+    //     "/usr/src/linux-headers-5.3.0-40/include/linux/kconfig.h",
+    //     "/usr/src/linux-headers-5.3.0-42-generic/include/generated/autoconf.h"
+    // ]
+}

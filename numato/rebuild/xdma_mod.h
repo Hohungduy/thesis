@@ -2,7 +2,7 @@
 #define __HEADER_XDMA_MOD__
 
 
-// #define KBUILD_MODNAME "my-xdma"
+#define KBUILD_MODNAME "my-xdma"
 
 #include <linux/errno.h>
 #include <linux/types.h>

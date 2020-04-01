@@ -42,5 +42,9 @@ struct engine_struct {
     struct engine_ops *ops;
 };
 
+/**
+ * alloc engines function
+ */
+struct engine_struct *alloc_engine(enum engine_type type);
 
 #endif
