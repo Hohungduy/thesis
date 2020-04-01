@@ -1,4 +1,4 @@
-#include "xdma-mod.h"
+#include "xdma_mod.h"
 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR(DRIVER_MODULE_AUTHOR);
@@ -11,6 +11,17 @@ const struct pci_device_id id_table[] = {
 
 int xdma_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
+    /**
+     * Alloc xpcie_dev
+     */
+
+    /**
+     * Init xpcie
+     */
+
+    /**
+     * Setup xpcie routines
+     */
     return 0;
 
 }
@@ -90,22 +101,13 @@ struct pci_driver xdma_pci_driver = {
     .err_handler = &xdma_err_handler
 };
 
-int xdma_cdev_init(void)
-{
-    return 0;
-}
 void xdma_cdev_cleanup(void)
 {
 
 }
 static int xdma_init(void)
 {
-    int rv;
     pr_info("%s", "xdma_init\n");
-
-    rv = xdma_cdev_init();
-    if (rv < 0)
-        return rv;
 
     return pci_register_driver(&xdma_pci_driver);
 }

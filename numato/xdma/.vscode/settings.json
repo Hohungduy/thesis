@@ -24,13 +24,14 @@
         "kernel.h": "c",
         "string.h": "c",
         "stdarg.h": "c",
-        "libxdma_api.h": "c"
+        "libxdma_api.h": "c",
+        "xdma_thread.h": "c"
     },
     "C_Cpp.default.systemIncludePath": [
-        "/usr/src/linux-headers-5.3.0-40/include/**",
-        "/usr/src/linux-headers-5.3.0-40-generic/include/**",
-        "/usr/src/linux-headers-5.3.0-40/arch/x86/include/**",
-        "/usr/src/linux-headers-5.3.0-40-generic/arch/x86/include/**",
+        "/usr/src/linux-headers-5.3.0-42/include/**",
+        "/usr/src/linux-headers-5.3.0-42-generic/include/**",
+        "/usr/src/linux-headers-5.3.0-42/arch/x86/include/**",
+        "/usr/src/linux-headers-5.3.0-42-generic/arch/x86/include/**",
         "/usr/lib/gcc/x86_64-linux-gnu/7/include/**"
     ],
     "C_Cpp.default.includePath": [
@@ -45,10 +46,5 @@
     },
     "C_Cpp.default.defines": [
         "__KERNEL__"
-    ],
-    "C_Cpp.default.forcedInclude": [
-        "/usr/src/linux-headers-5.3.0-40/include/linux/compiler_types.h",
-        "/usr/src/linux-headers-5.3.0-40/include/linux/kconfig.h",
-        "/usr/src/linux-headers-5.3.0-42-generic/include/generated/autoconf.h"
     ]
 }
