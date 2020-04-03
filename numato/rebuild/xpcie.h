@@ -18,15 +18,16 @@
 
 
 #define MAX_NAME_LENGTH 64
+#define MAX_ENGINES 4
 
 struct xpcie_data {
     char name[MAX_NAME_LENGTH];
     struct pci_dev *pci_dev;
     int total_engines;
     int total_interrupt_lines;
-    struct list_head *engine_list;
-    struct list_head *xcdev_list;
-    struct list_head *xcryptodev_list;
+    struct engine_struct engine[MAX_ENGINES];
+    struct xcdev_struct xcdev[MAX_ENGINES];
+    struct xcryptodev_struct xcryptodev[MAX_ENGINES];
 };
 
 struct xpcie_resouce {
@@ -34,22 +35,8 @@ struct xpcie_resouce {
 };
 
 struct xpcie {
-    /**
-     * Common operation
-     */
-    int   (*finit)(struct xpcie *xpcie_dev);
-    void  (*fexit)(struct xpcie *xpcie_dev);
-    int   (*fsetup_routine)(struct xpcie *xpcie_dev);
-    void  (*fremove_routine)(struct xpcie *xpcie_dev);
-    /**
-     * Object Data
-     */
     spinlock_t lock;
     struct xpcie_data *data;
-    /**
-     * Specific Operations
-     */
-    struct xpcie_ops *ops;
 };
 
 struct xpcie_ops {
@@ -67,10 +54,11 @@ struct xpcie_ops {
     // void (*ffree_xpcie_dev)(struct xpcie *xpcie);
 };
 
-
 struct xpcie * alloc_xpcie_dev(struct pci_dev *pci_dev);
-void free_xpcie_dev(struct xpcie *xpcie);
-
 struct xpcie_resource *xpcie_setup_resource(struct pci_dev *pci_dev);
+int xpcie_init(struct xpcie *xpcie_dev);
+void xpcie_exit(struct xpcie *dev);
+
+
 
 #endif

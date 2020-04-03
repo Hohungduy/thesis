@@ -22,37 +22,20 @@ int xdma_probe(struct pci_dev *pci_dev, const struct pci_device_id *id)
         return -ENOMEM;
     } 
     else
-        x_info("Alloc device done!\n");
+        x_info("Alloc xpcie done!\n");
     /**
      * Init xpcie
      */
-    if (xpcie_dev->finit)
-    {
-        err = xpcie_dev->finit(xpcie_dev);
-        if (err)
-            return err;
-        x_info("finit done\n");
-    }
+    err = xpcie_init(xpcie_dev);
+    if (err){
+        x_info_failed("init xpcie failed\n");
+        return -ENOMEM;
+    } 
     else
-    {
-        x_info("finit unknown!\n");
-    }
+        x_info("init device done!\n");
     
-    /**
-     * Setup xpcie routines
-     */
-    if (xpcie_dev->fsetup_routine)
-    {
-        err = xpcie_dev->fsetup_routine(xpcie_dev);
-        if (err)
-            return err;
-        x_info("fsetup_routine done\n");
-    }
-    else
-    {
-        x_info("fsetup_routine unknown!\n");
-    }
     flag = MODULE_FLAG_PROBE_DONE;
+    x_info("xdma_probe done\n");
     return 0;
 }
 
@@ -140,9 +123,9 @@ static int xdma_init(void)
 
 static void xdma_exit(void)
 {
-    xpcie_dev->fremove_routine(xpcie_dev);
-    xpcie_dev->fexit(xpcie_dev);
     pr_info("%s", "xdma_exit\n");
+    xpcie_exit(xpcie_dev);
+
     pci_unregister_driver(&xdma_pci_driver);
 }
 

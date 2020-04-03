@@ -23,29 +23,13 @@ struct xcryptodev_ops {
 };
 
 struct xcryptodev_struct {
-    /**
-     * Common operations
-     */
-    int  (*finit)(struct xcryptodev_struct *xcryptodev);
-    void (*fexit)(struct xcryptodev_struct *xcryptodev);
-    int  (*fsetup_routine)(struct xcryptodev_struct *xcryptodev);
-    /**
-     * Object data
-     */
+
     spinlock_t lock;
-    struct list_head next;
-    struct {
-        struct engine_struct *engine;
-    } data;
-    /**
-     * Specific Operations
-     */
-    struct xcryptodev_ops *ops;
+    struct list_head list;
+    struct engine_struct *engine;
+
 };
 
-struct xcryptodev_struct *alloc_xcryptodev(struct engine_struct *engine);
-int xcryptodev_init(struct xcryptodev_struct *xcryptodev);
-void xcryptodev_exit(struct xcryptodev_struct *xcryptodev);
 int xcryptodev_setup_routine(struct xcryptodev_struct *xcryptodev);
 
 

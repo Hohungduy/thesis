@@ -21,29 +21,13 @@ struct xcdev_ops {
 };
 
 struct xcdev_struct {
-    /**
-     * Common operations
-     */
-    int  (*finit)(struct xcdev_struct *xcdev);
-    void (*fexit)(struct xcdev_struct *xcdev);
-    int  (*fsetup_routine)(struct xcdev_struct *xcdev);
-    /**
-     * Object data
-     */
+
     spinlock_t lock;
-    struct list_head next;
-    struct {
-        struct engine_struct *engine;
-    } data;
-    /**
-     * Specific Operations
-     */
-    struct xcdev_ops *ops;
+    struct list_head list;
+    struct engine_struct *engine;
+
 };
 
-struct xcdev_struct *alloc_xcdev(struct engine_struct *engine);
-int xcdev_init(struct xcdev_struct *xcdev);
-void xcdev_exit(struct xcdev_struct *xcdev);
 int xcdev_setup_routine(struct xcdev_struct *xcdev);
 
 

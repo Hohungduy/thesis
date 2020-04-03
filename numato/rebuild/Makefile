@@ -22,8 +22,8 @@ TARGET_MODULE:=xdma
 # 	obj-m := $(TARGET_MODULE).o
 # else
 
-obj-m := xdma_mod.o
-xdma_mod-objs := xpcie.o engine.o xcdev.o xcryptodev.o
+obj-m := xdma.o
+xdma-objs := xpcie.o engine.o xcdev.o xcryptodev.o xdma_mod.o
 
 	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build
 	PWD:=$(shell pwd)

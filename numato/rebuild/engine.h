@@ -25,30 +25,11 @@ struct engine_ops {
 };
 
 struct engine_struct {
-    /**
-     * Common operations
-     */
-    int  (*finit)(struct engine_struct *engine);
-    void (*fexit)(struct engine_struct *engine);
-    int  (*fsetup_routine)(struct engine_struct *engine);
-    /**
-     * Object data
-     */
     spinlock_t lock;
-    struct list_head next;
-    struct {
-        enum engine_type type;
-    } data;
-    /**
-     * Specific Operations
-     */
-    struct engine_ops *ops;
+    enum engine_type type;
 };
 
 
-struct engine_struct *alloc_engine(enum engine_type type);
-int engine_init(struct engine_struct *engine);
-void engine_exit(struct engine_struct *engine);
 int engine_setup_routine(struct engine_struct *engine);
 
 #endif
