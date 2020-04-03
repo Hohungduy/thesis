@@ -2,7 +2,7 @@
 #define __HEADER_XDMA_MOD__
 
 
-#define KBUILD_MODNAME "my-xdma"
+// #define KBUILD_MODNAME "my-xdma"
 
 #include <linux/errno.h>
 #include <linux/types.h>
@@ -18,6 +18,7 @@
 #include "xpcie.h"
 #include "xcdev.h"
 #include "xcryptodev.h"
+#include "xdebug.h"
 
 
 #define DRV_MOD_MAJOR 2020
@@ -39,5 +40,12 @@
 #define DRV_MOD_VERSION_NUMBER  \
 	((DRV_MOD_MAJOR)*1000 + (DRV_MOD_MINOR)*100 + DRV_MOD_PATCHLEVEL)
 
+enum module_flag {
+    MODULE_FLAG_UNKNOWN,
+    MODULE_FLAG_INIT,
+    MODULE_FLAG_PROBE,
+    MODULE_FLAG_PROBE_DONE,
+    MODULE_FLAG_REMOVED,
+};
 
 #endif

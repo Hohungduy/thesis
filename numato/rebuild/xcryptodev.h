@@ -33,13 +33,20 @@ struct xcryptodev_struct {
      * Object data
      */
     spinlock_t lock;
+    struct list_head next;
     struct {
-        struct engine_struct engine;
+        struct engine_struct *engine;
     } data;
     /**
      * Specific Operations
      */
     struct xcryptodev_ops *ops;
 };
+
+struct xcryptodev_struct *alloc_xcryptodev(struct engine_struct *engine);
+int xcryptodev_init(struct xcryptodev_struct *xcryptodev);
+void xcryptodev_exit(struct xcryptodev_struct *xcryptodev);
+int xcryptodev_setup_routine(struct xcryptodev_struct *xcryptodev);
+
 
 #endif

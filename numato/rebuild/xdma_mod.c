@@ -1,18 +1,18 @@
 #include "xdma_mod.h"
 
-MODULE_LICENSE("Dual BSD/GPL");
-MODULE_AUTHOR(DRIVER_MODULE_AUTHOR);
-MODULE_DESCRIPTION(DRIVER_MODULE_DESCRIPTION);
-MODULE_VERSION(DRIVER_MODULE_VERSION);
+
+static enum module_flag flag = MODULE_FLAG_UNKNOWN;
+struct xpcie *xpcie_dev;
 
 const struct pci_device_id id_table[] = {
     {PCI_DEVICE( NUMATO_VENDOR_ID , NUMATO_DEVICE_ID ), }
 };
-
 int xdma_probe(struct pci_dev *pci_dev, const struct pci_device_id *id)
 {
-    struct xpcie *xpcie_dev;
     int err;
+
+    flag = MODULE_FLAG_PROBE;
+
     /**
      * Alloc xpcie_dev
      */
@@ -52,6 +52,7 @@ int xdma_probe(struct pci_dev *pci_dev, const struct pci_device_id *id)
     {
         x_info("fsetup_routine unknown!\n");
     }
+    flag = MODULE_FLAG_PROBE_DONE;
     return 0;
 }
 
@@ -133,16 +134,22 @@ struct pci_driver xdma_pci_driver = {
 static int xdma_init(void)
 {
     pr_info("%s", "xdma_init\n");
-
+    flag = MODULE_FLAG_INIT;
     return pci_register_driver(&xdma_pci_driver);
 }
 
 static void xdma_exit(void)
 {
-
+    xpcie_dev->fremove_routine(xpcie_dev);
+    xpcie_dev->fexit(xpcie_dev);
     pr_info("%s", "xdma_exit\n");
     pci_unregister_driver(&xdma_pci_driver);
 }
 
 module_init(xdma_init);
 module_exit(xdma_exit);
+
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_AUTHOR(DRIVER_MODULE_AUTHOR);
+MODULE_DESCRIPTION(DRIVER_MODULE_DESCRIPTION);
+MODULE_VERSION(DRIVER_MODULE_VERSION);

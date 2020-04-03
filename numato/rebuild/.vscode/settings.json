@@ -33,7 +33,9 @@
         "kthread.h": "c",
         "xdma_thread.h": "c",
         "workqueue.h": "c",
-        "xpcie.h": "c"
+        "xpcie.h": "c",
+        "xcryptodev.h": "c",
+        "engine.h": "c"
     },
     "C_Cpp.default.systemIncludePath": [
         "/usr/src/linux-headers-5.3.0-45/include/**",

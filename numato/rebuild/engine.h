@@ -11,11 +11,13 @@
 #include <linux/spinlock.h>
 #include <linux/kthread.h>
 
+#include "xdebug.h"
+
 enum engine_type {
-    UNKNOWN,
-    AXILINE,
-    BYPASS,
-    DMA
+    ENGINE_TYPE_UNKNOWN,
+    ENGINE_TYPE_AXILITE,
+    ENGINE_TYPE_BYPASS,
+    ENGINE_TYPE_DMA
 };
 
 struct engine_ops {
@@ -33,6 +35,7 @@ struct engine_struct {
      * Object data
      */
     spinlock_t lock;
+    struct list_head next;
     struct {
         enum engine_type type;
     } data;
@@ -42,9 +45,10 @@ struct engine_struct {
     struct engine_ops *ops;
 };
 
-/**
- * alloc engines function
- */
+
 struct engine_struct *alloc_engine(enum engine_type type);
+int engine_init(struct engine_struct *engine);
+void engine_exit(struct engine_struct *engine);
+int engine_setup_routine(struct engine_struct *engine);
 
 #endif
