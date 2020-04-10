@@ -14,7 +14,7 @@
 #include <linux/spinlock.h>
 #include <linux/kthread.h>
 
-
+#include "libxdma.h"
 #include "xpcie.h"
 #include "xcdev.h"
 #include "xcryptodev.h"
@@ -30,7 +30,6 @@
 #define DRIVER_MODULE_DESCRIPTION "Long - XDMA rebuild"
 #define DRIVER_MODULE_DATE "22 Mar 2020"
 #define DRIVER_MODULE_AUTHOR "thanhlongvt98@gmail.com"
-#define MAX_NAME_LENGTH 64
 #define MAX_MODULE_LENGTH_NAME 64
 #define DRIVER_MODULE_VERSION      \
 	__stringify(DRV_MOD_MAJOR) "." \

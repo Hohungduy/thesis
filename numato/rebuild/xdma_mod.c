@@ -7,6 +7,7 @@ struct xpcie *xpcie_dev;
 const struct pci_device_id id_table[] = {
     {PCI_DEVICE( NUMATO_VENDOR_ID , NUMATO_DEVICE_ID ), }
 };
+// MODULE_DEVICE_TABLE(pci, id_table);
 int xdma_probe(struct pci_dev *pci_dev, const struct pci_device_id *id)
 {
     int err;
@@ -26,7 +27,7 @@ int xdma_probe(struct pci_dev *pci_dev, const struct pci_device_id *id)
     /**
      * Init xpcie
      */
-    err = xpcie_init(xpcie_dev);
+    err = xpcie_device_open( xpcie_dev, pci_dev);
     if (err){
         x_info_failed("init xpcie failed\n");
         return -ENOMEM;
