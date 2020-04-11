@@ -213,6 +213,10 @@ static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (rv)
 		goto err_out;
 
+	rv = xpdev_create_crypto_service(xpdev);
+	if (rv)
+		goto err_out;
+
 	dev_set_drvdata(&pdev->dev, xpdev);
 
 	return 0;

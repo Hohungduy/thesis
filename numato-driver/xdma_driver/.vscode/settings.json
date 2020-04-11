@@ -1,0 +1,27 @@
+{
+    "files.associations": {
+        "string.h": "c",
+        "kernel.h": "c",
+        "libxdma.h": "c",
+        "module.h": "c",
+        "stat.h": "c",
+        "time.h": "c",
+        "seqlock.h": "c",
+        "spinlock.h": "c",
+        "mmiowb.h": "c",
+        "mm.h": "c",
+        "pgtable.h": "c",
+        "xstate.h": "c",
+        "uaccess.h": "c",
+        "sched.h": "c",
+        "thread_info.h": "c",
+        "seccomp.h": "c",
+        "unistd.h": "c",
+        "unistd_64_x32.h": "c",
+        "ia32_unistd.h": "c",
+        "unistd_32_ia32.h": "c",
+        "crypto_service.h": "c",
+        "xdma_mod.h": "c",
+        "libxdma_api.h": "c"
+    }
+}
