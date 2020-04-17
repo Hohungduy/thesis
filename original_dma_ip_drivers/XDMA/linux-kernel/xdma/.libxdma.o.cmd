@@ -1,8 +1,8 @@
-cmd_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o := gcc -Wp,-MD,/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/.libxdma.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/7/include  -I./arch/x86/include -I./arch/x86/include/generated  -I./include -I./arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I./include/uapi -I./include/generated/uapi -include ./include/linux/kconfig.h -Iubuntu/include  -include ./include/linux/compiler_types.h -D__KERNEL__ -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE -Werror=implicit-function-declaration -Werror=implicit-int -Wno-format-security -std=gnu89 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -m64 -falign-jumps=1 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -DCONFIG_X86_X32_ABI -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_SSSE3=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -DCONFIG_AS_AVX512=1 -DCONFIG_AS_SHA1_NI=1 -DCONFIG_AS_SHA256_NI=1 -Wno-sign-compare -fno-asynchronous-unwind-tables -mindirect-branch=thunk-extern -mindirect-branch-register -fno-jump-tables -fno-delete-null-pointer-checks -Wno-frame-address -Wno-format-truncation -Wno-format-overflow -O2 --param=allow-store-data-races=0 -Wframe-larger-than=1024 -fstack-protector-strong -Wno-unused-but-set-variable -Wimplicit-fallthrough -Wno-unused-const-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -mrecord-mcount -mfentry -DCC_USING_FENTRY -Wdeclaration-after-statement -Wvla -Wno-pointer-sign -fno-strict-overflow -fno-merge-all-constants -fmerge-constants -fno-stack-check -fconserve-stack -Werror=date-time -Werror=incompatible-pointer-types -Werror=designated-init -I/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/include  -DMODULE  -DKBUILD_BASENAME='"libxdma"' -DKBUILD_MODNAME='"xdma"' -c -o /home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o /home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.c
+cmd_/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o := gcc -Wp,-MD,/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/.libxdma.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/7/include  -I./arch/x86/include -I./arch/x86/include/generated  -I./include -I./arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I./include/uapi -I./include/generated/uapi -include ./include/linux/kconfig.h -Iubuntu/include  -include ./include/linux/compiler_types.h -D__KERNEL__ -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE -Werror=implicit-function-declaration -Werror=implicit-int -Wno-format-security -std=gnu89 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -m64 -falign-jumps=1 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -DCONFIG_X86_X32_ABI -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_SSSE3=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -DCONFIG_AS_AVX512=1 -DCONFIG_AS_SHA1_NI=1 -DCONFIG_AS_SHA256_NI=1 -Wno-sign-compare -fno-asynchronous-unwind-tables -mindirect-branch=thunk-extern -mindirect-branch-register -fno-jump-tables -fno-delete-null-pointer-checks -Wno-frame-address -Wno-format-truncation -Wno-format-overflow -O2 --param=allow-store-data-races=0 -Wframe-larger-than=1024 -fstack-protector-strong -Wno-unused-but-set-variable -Wimplicit-fallthrough -Wno-unused-const-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -mrecord-mcount -mfentry -DCC_USING_FENTRY -Wdeclaration-after-statement -Wvla -Wno-pointer-sign -fno-strict-overflow -fno-merge-all-constants -fmerge-constants -fno-stack-check -fconserve-stack -Werror=date-time -Werror=incompatible-pointer-types -Werror=designated-init -I/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/include  -DMODULE  -DKBUILD_BASENAME='"libxdma"' -DKBUILD_MODNAME='"xdma"' -c -o /home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o /home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.c
 
-source_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o := /home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.c
+source_/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o := /home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.c
 
-deps_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o := \
+deps_/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o := \
     $(wildcard include/config/block/id.h) \
   include/linux/kconfig.h \
     $(wildcard include/config/cpu/big/endian.h) \
@@ -904,7 +904,7 @@ deps_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o :
   include/linux/vm_event_item.h \
     $(wildcard include/config/memory/balloon.h) \
     $(wildcard include/config/balloon/compaction.h) \
-  /home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.h \
+  /home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.h \
   include/generated/uapi/linux/version.h \
   include/linux/dma-mapping.h \
     $(wildcard include/config/dma/declare/coherent.h) \
@@ -1013,9 +1013,9 @@ deps_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o :
   include/asm-generic/pci.h \
   include/linux/pci-dma-compat.h \
   include/linux/swait.h \
-  /home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/include/libxdma_api.h \
-  /home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/cdev_sgdma.h \
-  /home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/xdma_thread.h \
+  /home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/include/libxdma_api.h \
+  /home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/cdev_sgdma.h \
+  /home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/xdma_thread.h \
   include/linux/kthread.h \
   include/linux/cpuset.h \
   include/linux/sched/topology.h \
@@ -1029,6 +1029,6 @@ deps_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o :
     $(wildcard include/config/have/arch/thread/struct/whitelist.h) \
   include/linux/signal.h \
 
-/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o: $(deps_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o)
+/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o: $(deps_/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o)
 
-$(deps_/home/crypto/ws/thesis/sw/dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o):
+$(deps_/home/crypto/ws/thesis-related/sw/thesis/original_dma_ip_drivers/XDMA/linux-kernel/xdma/libxdma.o):

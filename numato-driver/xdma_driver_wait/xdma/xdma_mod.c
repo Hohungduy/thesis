@@ -181,7 +181,7 @@ static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 		pr_warn("NO engine found!\n");
 
 	if (xpdev->user_max) {
-		u32 mask = (1 << (xpdev->user_max + 1)) - 1;
+		u32 mask = (1 << (0 + 1)) - 1;
 
 		rv = xdma_user_isr_enable(hndl, mask);
 		if (rv)

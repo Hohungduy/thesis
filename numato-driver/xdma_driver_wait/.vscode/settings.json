@@ -22,6 +22,9 @@
         "unistd_32_ia32.h": "c",
         "crypto_service.h": "c",
         "xdma_mod.h": "c",
-        "libxdma_api.h": "c"
+        "libxdma_api.h": "c",
+        "xdma_crypto_service.h": "c",
+        "set_memory.h": "c",
+        "cacheflush.h": "c"
     }
 }

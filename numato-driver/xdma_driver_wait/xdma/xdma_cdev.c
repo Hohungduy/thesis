@@ -621,7 +621,7 @@ int xdma_cdev_init(void)
     	return -ENOMEM;
     }
 
-   	xdma_threads_create(8);
+   	xdma_threads_create(4);
 
 	return 0;
 }

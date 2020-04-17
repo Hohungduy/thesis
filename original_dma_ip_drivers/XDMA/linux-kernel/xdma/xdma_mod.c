@@ -141,6 +141,12 @@ static struct xdma_pci_dev *xpdev_alloc(struct pci_dev *pdev)
 	return xpdev;
 }
 
+irqreturn_t my_user_handler_0(int irq_no, void *dev)
+{
+	pr_info("user handler 0\n");
+	return IRQ_HANDLED;
+}
+
 static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	int rv = 0;
@@ -181,9 +187,14 @@ static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 		pr_warn("NO engine found!\n");
 
 	if (xpdev->user_max) {
+		pr_info("user_max = %d\n", xpdev->user_max);
 		u32 mask = (1 << (xpdev->user_max + 1)) - 1;
 
 		rv = xdma_user_isr_enable(hndl, mask);
+		if (rv)
+			goto err_out;
+		
+		rv = xdma_user_isr_register(hndl, (u32)( 1 << 0 ), my_user_handler_0, (void *)xpdev);
 		if (rv)
 			goto err_out;
 	}

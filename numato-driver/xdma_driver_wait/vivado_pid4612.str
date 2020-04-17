@@ -1,0 +1,254 @@
+/*
+
+Xilinx Vivado v2018.2 (64-bit) [Major: 2018, Minor: 2]
+SW Build: 2258646 on Thu Jun 14 20:02:38 MDT 2018
+IP Build: 2256618 on Thu Jun 14 22:10:49 MDT 2018
+
+Process ID: 4612
+License: Customer
+
+Current time: 	Sat Apr 18 00:18:38 ICT 2020
+Time zone: 	Indochina Time (Asia/Ho_Chi_Minh)
+
+OS: Ubuntu
+OS Version: 5.3.0-28-generic
+OS Architecture: amd64
+Available processors (cores): 4
+
+Display: :0
+Screen size: 1920x1080
+Screen resolution (DPI): 96
+Available screens: 1
+Available disk space: 71 GB
+Default font: family=Dialog,name=Dialog,style=plain,size=12
+
+Java version: 	1.8.0_112 64-bit
+Java home: 	/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/tps/lnx64/jre
+Java executable location: 	/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/tps/lnx64/jre/bin/java
+Java initial memory (-Xms): 	128 MB
+Java maximum memory (-Xmx):	 2 GB
+
+
+User name: 	root
+User home directory: /root
+User working directory: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver
+User country: 	US
+User language: 	en
+User locale: 	en_US
+
+RDI_BASEROOT: /home/crypto/ssd/tools/Xilinx20182/Vivado
+HDI_APPROOT: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+RDI_DATADIR: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/data
+RDI_BINDIR: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/bin
+
+Vivado preferences file location: /home/crypto/.Xilinx/Vivado/2018.2/vivado.xml
+Vivado preferences directory: /home/crypto/.Xilinx/Vivado/2018.2/
+Vivado layouts directory: /home/crypto/.Xilinx/Vivado/2018.2/layouts
+PlanAhead jar file location: 	/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/lib/classes/planAhead.jar
+Vivado log file location: 	/home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver/vivado.log
+Vivado journal file location: 	/home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver/vivado.jou
+Engine tmp dir: 	./.Xil/Vivado-4612-crypto
+
+Xilinx Environment Variables
+----------------------------
+XILINX: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/ids_lite/ISE
+XILINX_DSP: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/ids_lite/ISE
+XILINX_PLANAHEAD: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+XILINX_SDK: /home/crypto/ssd/tools/Xilinx20182/SDK/2018.2
+XILINX_VIVADO: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+XILINX_VIVADO_HLS: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+
+
+GUI allocated memory:	190 MB
+GUI max memory:		3,052 MB
+Engine allocated memory: 829 MB
+
+Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+*/
+
+// TclEventType: START_GUI
+// Tcl Message: start_gui 
+// [GUI Memory]: 69 MB (+69814kb) [00:00:09]
+// [Engine Memory]: 829 MB (+717421kb) [00:00:09]
+// HMemoryUtils.trashcanNow. Engine heap size: 829 MB. GUI used memory: 34 MB. Current time: 4/18/20 12:18:40 AM ICT
+selectList(PAResourceQtoS.SyntheticaGettingStartedView_RECENT_PROJECTS, "/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr", 0); // q (O, ck)
+// bx (ck):  Open Project : addNotify
+// Opening Vivado Project: /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr. Version: Vivado v2018.2 
+// TclEventType: DEBUG_PROBE_SET_CHANGE
+// Tcl Message: open_project /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr 
+// TclEventType: MSGMGR_MOVEMSG
+// TclEventType: FILE_SET_NEW
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_CURRENT
+// [Engine Memory]: 905 MB (+36876kb) [00:02:35]
+// HMemoryUtils.trashcanNow. Engine heap size: 945 MB. GUI used memory: 32 MB. Current time: 4/18/20 12:21:05 AM ICT
+// TclEventType: FILE_SET_CHANGE
+// TclEventType: IP_LOCK_CHANGE
+// TclEventType: FILE_SET_CHANGE
+// TclEventType: PROJECT_NEW
+// [Engine Memory]: 1,040 MB (+93925kb) [00:02:40]
+// [GUI Memory]: 75 MB (+2579kb) [00:02:41]
+// [Engine Memory]: 1,102 MB (+10198kb) [00:02:42]
+// [GUI Memory]: 84 MB (+5545kb) [00:02:43]
+// Tcl Message: open_project /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr 
+// Tcl Message: INFO: [Project 1-313] Project file moved from '/home/crypto/ws/thesis-related/hw/Test/memory_mapped/DMA_JTAG_DONE/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA' since last save. 
+// Tcl Message: Scanning sources... Finished scanning sources 
+// Tcl Message: INFO: [IP_Flow 19-234] Refreshing IP repositories INFO: [IP_Flow 19-1704] No user IP repositories specified INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/data/ip'. 
+// Tcl Message: open_project: Time (s): cpu = 00:00:17 ; elapsed = 00:00:11 . Memory (MB): peak = 6248.473 ; gain = 258.477 ; free physical = 1004 ; free virtual = 19011 
+// Project name: Aller_200T_PCIe_DMA; location: /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA; part: xc7a200tfbg484-2
+// Elapsed time: 12 seconds
+dismissDialog("Open Project"); // bx (ck)
+// [GUI Memory]: 97 MB (+8974kb) [00:02:44]
+// TclEventType: DG_ANALYSIS_MSG_RESET
+// [Engine Memory]: 1,249 MB (+96294kb) [00:02:46]
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// TclEventType: DG_GRAPH_GENERATED
+// Tcl Message: update_compile_order -fileset sources_1 
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+dismissFileChooser();
+selectTree(PAResourceEtoH.FlowNavigatorTreePanel_FLOW_NAVIGATOR_TREE, "[, Program and Debug, Open Hardware Manager]", 21, true); // u (O, ck) - Node
+// Run Command: PAResourceCommand.PACommandNames_OPEN_HARDWARE_MANAGER
+// Tcl Command: 'rdi::info_commands get_hw_probes'
+// Tcl Command: 'load_features labtools'
+// TclEventType: LOAD_FEATURE
+// bx (ck):  Open Hardware Manager : addNotify
+// TclEventType: HW_SESSION_OPEN
+// Tcl Message: open_hw 
+dismissDialog("Open Hardware Manager"); // bx (ck)
+selectButton(PAResourceOtoP.ProgramDebugTab_OPEN_TARGET, "Open target"); // h (cM, ck)
+selectMenuItem(PAResourceCommand.PACommandNames_AUTO_CONNECT_TARGET, "Auto Connect"); // ad (aj, ck)
+// Run Command: PAResourceCommand.PACommandNames_AUTO_CONNECT_TARGET
+// TclEventType: HW_SERVER_UPDATE
+// Tcl Message: connect_hw_server 
+// Tcl Message: INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121 INFO: [Labtools 27-2222] Launching hw_server... INFO: [Labtools 27-2221] Launch Output:  ****** Xilinx hw_server v2018.2   **** Build date : Jun 14 2018-20:18:37     ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.   
+// bx (ck):  Auto Connect : addNotify
+// TclEventType: HW_TARGET_CHANGE
+// TclEventType: HW_TARGET_CLOSE
+// TclEventType: HW_DEVICE_CHANGE
+// TclEventType: HW_SYSMON_ADD
+// TclEventType: HW_TARGET_UPDATE
+// Tcl Message: open_hw_target 
+// Tcl Message: INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210241145210 
+// TclEventType: HW_DEVICE_CHANGE
+// Tcl Message: set_property PROGRAM.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.bit} [get_hw_devices xc7a200t_0] 
+// TclEventType: HW_DEVICE_CHANGE
+// Tcl Message: set_property PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0] 
+// Tcl Message: set_property FULL_PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v1/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0] 
+// Tcl Message: current_hw_device [get_hw_devices xc7a200t_0] 
+// TclEventType: HW_DEVICE_CHANGE
+// TclEventType: HW_SYSMON_CHANGE
+// TclEventType: HW_AXI_CHANGE
+// TclEventType: HW_DEVICE_UPDATE
+// TclEventType: HW_DEVICE_CHANGE
+// TclEventType: HW_DEVICE_PROBES_CHANGE
+// TclEventType: DEBUG_PROBE_SET_CHANGE
+// TclEventType: HW_DEVICE_PROBES_CHANGE
+// Tcl Message: refresh_hw_device [lindex [get_hw_devices xc7a200t_0] 0] 
+// Tcl Message: INFO: [Labtools 27-2302] Device xc7a200t (JTAG device index = 0) is programmed with a design that has 1 JTAG AXI core(s). 
+// [Engine Memory]: 1,730 MB (+439137kb) [00:02:55]
+dismissDialog("Auto Connect"); // bx (ck)
+// [GUI Memory]: 108 MB (+6533kb) [00:02:56]
+selectTreeTable(PAResourceEtoH.HardwareTreePanel_HARDWARE_TREE_TABLE, "xc7a200t_0 (2) ; Programmed", 2, "xc7a200t_0 (2)", 0, true, false, false, false, true, false); // t (O, ck) - Popup Trigger - Node
+// HMemoryUtils.trashcanNow. Engine heap size: 1,743 MB. GUI used memory: 61 MB. Current time: 4/18/20 12:21:25 AM ICT
+selectMenuItem(PAResourceCommand.PACommandNames_PROGRAM_FPGA, "Program Device..."); // ad (aj, ck)
+// Run Command: PAResourceCommand.PACommandNames_PROGRAM_FPGA
+// bB (ck): Program Device: addNotify
+dismissDialog("Program Device"); // bB (ck)
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+// Tcl Command: 'rdi::info_commands {device::*}'
+// Tcl Command: 'rdi::info_commands {debug::*}'
+// Tcl Command: 'rdi::info_commands {*}'
+setFileChooser("/home/crypto/ws/thesis-related/read.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/read.tcl'
+// Tcl Command: 'source /home/crypto/ws/thesis-related/read.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/read.tcl 
+// Tcl Message: # set numread 1 # reset_hw_axi [get_hw_axis hw_axi_1] # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "read_$number" -f [get_hw_axis hw_axi_1] -address 0x00000000000000CC -len 1 -type read # run_hw_axi "read_$number" # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000 
+// 'cI' command handler elapsed time: 5 seconds
+dismissDialog("Source Tcl Script"); // bx (ck)
+// Elapsed time: 25 seconds
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+setFileChooser("/home/crypto/ws/thesis-related/read.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/read.tcl'
+// Tcl Command: 'source /home/crypto/ws/thesis-related/read.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/read.tcl 
+// Tcl Message: # set numread 1 # reset_hw_axi [get_hw_axis hw_axi_1] # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "read_$number" -f [get_hw_axis hw_axi_1] -address 0x00000000000000CC -len 1 -type read # run_hw_axi "read_$number" # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 24232221 
+dismissDialog("Source Tcl Script"); // bx (ck)
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenu(PAResourceItoN.MainMenuMgr_REPORTS, "Reports"); // V (q, ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_REPORTS, "Reports"); // V (q, ck)
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+setFileChooser("/home/crypto/ws/thesis-related/en_interrupt.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/en_interrupt.tcl'
+// Tcl Command: 'source /home/crypto/ws/thesis-related/en_interrupt.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/en_interrupt.tcl 
+// Tcl Message: # set numread 1 # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x0000000F -len 1 -type write  # run_hw_axi write_$number # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x0000000F 
+dismissDialog("Source Tcl Script"); // bx (ck)
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+setFileChooser("/home/crypto/ws/thesis-related/dis_interrupt.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/dis_interrupt.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// Tcl Command: 'source /home/crypto/ws/thesis-related/dis_interrupt.tcl'
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/dis_interrupt.tcl 
+// Tcl Message: # set numread 1 # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x00000000 -len 1 -type write  # run_hw_axi write_$number # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x00000000 
+// 'cI' command handler elapsed time: 3 seconds
+dismissDialog("Source Tcl Script"); // bx (ck)
+// Elapsed time: 137 seconds
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenu(PAResourceItoN.MainMenuMgr_FLOW, "Flow"); // V (q, ck)
+selectMenu(PAResourceItoN.MainMenuMgr_SETTINGS, "Settings"); // aa (ck)
+selectMenu(PAResourceItoN.MainMenuMgr_OPEN_BLOCK_DESIGN, "Open Block Design"); // aa (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_FLOW, "Flow"); // V (q, ck)
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+setFileChooser("/home/crypto/ws/thesis-related/en_interrupt.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/en_interrupt.tcl'
+// Tcl Command: 'source /home/crypto/ws/thesis-related/en_interrupt.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/en_interrupt.tcl 
+// Tcl Message: # set numread 1 # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x0000000F -len 1 -type write  # run_hw_axi write_$number # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x0000000F 
+dismissDialog("Source Tcl Script"); // bx (ck)
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+setFileChooser("/home/crypto/ws/thesis-related/dis_interrupt.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/dis_interrupt.tcl'
+// Tcl Command: 'source /home/crypto/ws/thesis-related/dis_interrupt.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/dis_interrupt.tcl 
+// Tcl Message: # set numread 1 # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x00000000 -len 1 -type write  # run_hw_axi write_$number # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x00000000 
+dismissDialog("Source Tcl Script"); // bx (ck)
