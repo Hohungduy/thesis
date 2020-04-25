@@ -14,11 +14,69 @@
 #define TEST_ADDRESS_READ (0x00000000000000CC)
 #define TEST_ADDRESS_READ_OFFSET (TEST_ADDRESS_READ - TEST_ADDRESS_START)
 
+enum LED_STATE {
+    // RED_BLUE
+    RED_OFF_BLUE_OFF,
+    RED_OFF_BLUE_ON,
+    RED_ON_BLUE_OFF,
+    RED_ON_BLUE_ON
+};
 
 struct my_data {
     struct work_struct work;
+    struct timer_list blinky_timer;
+    enum LED_STATE led;
+    u32 interval;
     void *dev_handler;
 } recv_data;
+
+#define CONFIG_BAR_NUM (0)
+#define LED_BASE (0x40000000UL)
+#define RED_LED_MASK (1 << 0)
+#define BLUE_LED_MASK (1 << 1)
+
+void blinky(struct timer_list *blinky_timer)
+{
+    struct my_data *data;
+    enum LED_STATE state;
+    struct xdma_dev *hndl;
+    void *config_space;
+    u32 led_read;
+    u32 red, blue;
+
+    data = container_of(blinky_timer, struct my_data, blinky_timer);
+    state = data->led;
+    hndl  = (struct xdma_dev *)data->dev_handler;
+    config_space = hndl->bar[CONFIG_BAR_NUM];
+
+    led_read = ioread32(config_space + LED_BASE);
+    red = (led_read & RED_LED_MASK) == 0;
+    blue= (led_read & BLUE_LED_MASK) == 0;
+    pr_info("led_read %d \n", led_read);
+
+    if (red || blue){
+        iowrite32(0x0F, config_space + LED_BASE);
+        mod_timer(blinky_timer, jiffies + data->interval * HZ);
+        return;
+    }
+
+    switch (state)
+    {
+    case RED_ON_BLUE_OFF:
+        iowrite32(!RED_LED_MASK, config_space + LED_BASE);
+        break;
+    case RED_ON_BLUE_ON:
+        iowrite32(!(BLUE_LED_MASK || RED_LED_MASK),
+                 config_space + LED_BASE);
+        break;
+    case RED_OFF_BLUE_ON:
+        iowrite32(!BLUE_LED_MASK, config_space + LED_BASE);
+        break;
+    default:
+        break;
+    }
+    mod_timer(blinky_timer, jiffies + data->interval * HZ);
+}
 
 int get_sg_from_buf(void **buff, struct scatterlist *sg)
 {
@@ -181,6 +239,8 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 
     schedule_work(&recv_data.work);
 
+    recv_data.interval = 0.2;
+
     xdma_user_isr_disable(hndl, 1 << 0);
 
     return IRQ_HANDLED;
@@ -198,7 +258,15 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
         pr_info("register user_irq_no %d done\n", 0);
 
     pr_info("Send request to crypto dma\n");
-    send_request_test_blocking(xpdev);
+    recv_data.interval = 1;
+
+    timer_setup(&recv_data.blinky_timer, blinky, 0);
+    mod_timer(&recv_data.blinky_timer, jiffies + recv_data.interval*HZ);
+
+    schedule_work(&recv_data.work);
+    recv_data.led = RED_ON_BLUE_OFF;
+
+    // send_request_test_blocking(xpdev);
     pr_info("Sent\n");    
 
     return 0;

@@ -26,3 +26,5 @@ source /home/crypto/ws/thesis-related/en_interrupt.tcl
 source /home/crypto/ws/thesis-related/dis_interrupt.tcl
 source /home/crypto/ws/thesis-related/en_interrupt.tcl
 source /home/crypto/ws/thesis-related/dis_interrupt.tcl
+source /home/crypto/ws/thesis-related/en_interrupt.tcl
+source /home/crypto/ws/thesis-related/dis_interrupt.tcl

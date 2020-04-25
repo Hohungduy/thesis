@@ -15,7 +15,7 @@
                 "/usr/src/linux-headers-5.3.0-28-generic/arch/x86/include/generated"
             ],
             "defines": [
-                "__LIBXDMA_MOD__",
+                "__LIBXDMA_DEBUG__",
                 "__KERNEL__",
                 "KBUILD_MODNAME=\"xdma\""
             ],

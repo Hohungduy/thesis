@@ -82,3 +82,19 @@ source /home/crypto/ws/thesis-related/dis_interrupt.tcl
 # run_hw_axi write_$number
 # }
 INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x00000000
+source /home/crypto/ws/thesis-related/en_interrupt.tcl
+# set numread 1
+# for {set number 0} {$number < $numread} {incr number} {
+# create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x0000000F -len 1 -type write 
+# run_hw_axi write_$number
+# }
+INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x0000000F
+source /home/crypto/ws/thesis-related/dis_interrupt.tcl
+# set numread 1
+# for {set number 0} {$number < $numread} {incr number} {
+# create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x00000000 -len 1 -type write 
+# run_hw_axi write_$number
+# }
+INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x00000000
+exit
+INFO: [Common 17-206] Exiting Vivado at Sat Apr 18 00:57:51 2020...

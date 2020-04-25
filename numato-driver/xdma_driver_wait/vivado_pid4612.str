@@ -252,3 +252,34 @@ setFileChooser("/home/crypto/ws/thesis-related/dis_interrupt.tcl");
 // Tcl Message: # set numread 1 # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x00000000 -len 1 -type write  # run_hw_axi write_$number # } 
 // Tcl Message: INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x00000000 
 dismissDialog("Source Tcl Script"); // bx (ck)
+// [GUI Memory]: 113 MB (+83kb) [00:12:36]
+// [GUI Memory]: 120 MB (+976kb) [00:31:36]
+// HMemoryUtils.trashcanNow. Engine heap size: 1,757 MB. GUI used memory: 61 MB. Current time: 4/18/20 12:51:25 AM ICT
+// Elapsed time: 1890 seconds
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+setFileChooser("/home/crypto/ws/thesis-related/en_interrupt.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/en_interrupt.tcl'
+// Tcl Command: 'source /home/crypto/ws/thesis-related/en_interrupt.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/en_interrupt.tcl 
+// Tcl Message: # set numread 1 # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x0000000F -len 1 -type write  # run_hw_axi write_$number # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x0000000F 
+// 'cI' command handler elapsed time: 3 seconds
+dismissDialog("Source Tcl Script"); // bx (ck)
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+setFileChooser("/home/crypto/ws/thesis-related/dis_interrupt.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/dis_interrupt.tcl'
+// Tcl Command: 'source /home/crypto/ws/thesis-related/dis_interrupt.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/dis_interrupt.tcl 
+// Tcl Message: # set numread 1 # for {set number 0} {$number < $numread} {incr number} { # create_hw_axi_txn "write_$number" -f [get_hw_axis hw_axi_1] -address 0x40010000 -data 0x00000000 -len 1 -type write  # run_hw_axi write_$number # } 
+// Tcl Message: INFO: [Labtoolstcl 44-481] WRITE DATA is: 0x00000000 
+dismissDialog("Source Tcl Script"); // bx (ck)
