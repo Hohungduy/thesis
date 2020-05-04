@@ -13,27 +13,12 @@
 #define TEST_ADDRESS_START (0x00000000000000AB)
 #define TEST_ADDRESS_READ (0x00000000000000CC)
 #define TEST_ADDRESS_READ_OFFSET (TEST_ADDRESS_READ - TEST_ADDRESS_START)
-
-enum LED_STATE {
-    // RED_BLUE
-    RED_OFF_BLUE_OFF,
-    RED_OFF_BLUE_ON,
-    RED_ON_BLUE_OFF,
-    RED_ON_BLUE_ON
-};
-
-struct my_data {
-    struct work_struct work;
-    struct timer_list blinky_timer;
-    enum LED_STATE led;
-    u32 interval;
-    void *dev_handler;
-} recv_data;
-
 #define CONFIG_BAR_NUM (0)
-#define LED_BASE (0x40000000UL)
+#define LED_BASE (0x00010000)
 #define RED_LED_MASK (1 << 0)
 #define BLUE_LED_MASK (1 << 1)
+
+struct my_data long_abc;
 
 void blinky(struct timer_list *blinky_timer)
 {
@@ -44,7 +29,7 @@ void blinky(struct timer_list *blinky_timer)
     u32 led_read;
     u32 red, blue;
 
-    data = container_of(blinky_timer, struct my_data, blinky_timer);
+    data = &long_abc;
     state = data->led;
     hndl  = (struct xdma_dev *)data->dev_handler;
     config_space = hndl->bar[CONFIG_BAR_NUM];
@@ -52,30 +37,31 @@ void blinky(struct timer_list *blinky_timer)
     led_read = ioread32(config_space + LED_BASE);
     red = (led_read & RED_LED_MASK) == 0;
     blue= (led_read & BLUE_LED_MASK) == 0;
-    pr_info("led_read %d \n", led_read);
+    pr_info("led_read %x \n", led_read);
 
-    if (red || blue){
-        iowrite32(0x0F, config_space + LED_BASE);
-        mod_timer(blinky_timer, jiffies + data->interval * HZ);
-        return;
-    }
+    // if (red || blue){
+    //     iowrite32(0x0F, config_space + LED_BASE);
+    //     // mod_timer(blinky_timer, jiffies + data->interval * HZ);
+    //     return;
+    // }
 
-    switch (state)
-    {
-    case RED_ON_BLUE_OFF:
-        iowrite32(!RED_LED_MASK, config_space + LED_BASE);
-        break;
-    case RED_ON_BLUE_ON:
-        iowrite32(!(BLUE_LED_MASK || RED_LED_MASK),
-                 config_space + LED_BASE);
-        break;
-    case RED_OFF_BLUE_ON:
-        iowrite32(!BLUE_LED_MASK, config_space + LED_BASE);
-        break;
-    default:
-        break;
-    }
-    mod_timer(blinky_timer, jiffies + data->interval * HZ);
+    // switch (state)
+    // {
+    // case RED_ON_BLUE_OFF:
+    //     iowrite32(!RED_LED_MASK, config_space + LED_BASE);
+    //     break;
+    // case RED_ON_BLUE_ON:
+    //     iowrite32(!(BLUE_LED_MASK || RED_LED_MASK),
+    //              config_space + LED_BASE);
+    //     break;
+    // case RED_OFF_BLUE_ON:
+    //     iowrite32(!BLUE_LED_MASK, config_space + LED_BASE);
+    //     break;
+    // default:
+    //     break;
+    // }
+    // pr_info("alo alo alo");
+    // mod_timer(&long_abc.blinky_timer, jiffies + long_abc.interval*HZ);
 }
 
 int get_sg_from_buf(void **buff, struct scatterlist *sg)
@@ -103,7 +89,7 @@ int get_sg_from_buf(void **buff, struct scatterlist *sg)
 
 void my_work_handler(struct work_struct *work)
 {
-    void *hndl = recv_data.dev_handler;
+    void *hndl = long_abc.dev_handler;
     int channel = TEST_CHANNEL;
     bool write = READ_DIRECTION;
     bool dma_mapped = FALSE;
@@ -220,8 +206,8 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
     res = xdma_xfer_submit(xpdev->xdev, channel, write, ep_addr, 
                 sgt, dma_mapped, timeout_ms);
 
-    recv_data.dev_handler = hndl;
-    INIT_WORK(&recv_data.work, my_work_handler);
+    long_abc.dev_handler = hndl;
+    INIT_WORK(&long_abc.work, my_work_handler);
 
     kfree(buff[0]);
     kfree(buff[1]);
@@ -237,9 +223,9 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 
     pr_info("irq_no %d handler\n", irq_no);
 
-    schedule_work(&recv_data.work);
+    schedule_work(&long_abc.work);
 
-    recv_data.interval = 0.2;
+    long_abc.interval = 0.2;
 
     xdma_user_isr_disable(hndl, 1 << 0);
 
@@ -258,16 +244,15 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
         pr_info("register user_irq_no %d done\n", 0);
 
     pr_info("Send request to crypto dma\n");
-    recv_data.interval = 1;
+    long_abc.interval = 1;
+    long_abc.led = RED_ON_BLUE_OFF;
+    timer_setup(&long_abc.blinky_timer, blinky, 0);
+    mod_timer(&long_abc.blinky_timer, jiffies + long_abc.interval*HZ);
 
-    timer_setup(&recv_data.blinky_timer, blinky, 0);
-    mod_timer(&recv_data.blinky_timer, jiffies + recv_data.interval*HZ);
-
-    schedule_work(&recv_data.work);
-    recv_data.led = RED_ON_BLUE_OFF;
+    // schedule_work(&recv_data.work);
 
     // send_request_test_blocking(xpdev);
-    pr_info("Sent\n");    
+    // pr_info("Sent\n");    
 
     return 0;
 }

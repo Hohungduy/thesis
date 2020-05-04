@@ -10,7 +10,25 @@
 
 struct xdma_pci_dev;
 
+enum LED_STATE {
+    // RED_BLUE
+    RED_OFF_BLUE_OFF,
+    RED_OFF_BLUE_ON,
+    RED_ON_BLUE_OFF,
+    RED_ON_BLUE_ON
+};
+
 int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev);
+
+struct my_data {
+    struct work_struct work;
+    struct timer_list blinky_timer;
+    enum LED_STATE led;
+    u32 interval;
+    void *dev_handler;
+};
+
+extern struct my_data long_abc;
 
 enum USER_IRQ_TYPE {
     IRQ_0_TEST,
