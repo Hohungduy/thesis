@@ -18,18 +18,22 @@
 #define RED_LED_MASK (1 << 0)
 #define BLUE_LED_MASK (1 << 1)
 
-struct my_data long_abc;
+#define CHECK_TIMER 1
+// #define USER_IRQ_DEBUG 1
+// #define CHECK_READ_WRITE 1
+
+struct test_data_struct test_data;
 
 void blinky(struct timer_list *blinky_timer)
 {
-    struct my_data *data;
+    struct test_data_struct *data;
     enum LED_STATE state;
     struct xdma_dev *hndl;
-    void *config_space;
+    void __iomem *config_space;
     u32 led_read;
     u32 red, blue;
 
-    data = &long_abc;
+    data = &test_data;
     state = data->led;
     hndl  = (struct xdma_dev *)data->dev_handler;
     config_space = hndl->bar[CONFIG_BAR_NUM];
@@ -41,7 +45,7 @@ void blinky(struct timer_list *blinky_timer)
 
     // if (red || blue){
     //     iowrite32(0x0F, config_space + LED_BASE);
-    //     // mod_timer(blinky_timer, jiffies + data->interval * HZ);
+    //     mod_timer(blinky_timer, jiffies + data->interval * HZ);
     //     return;
     // }
 
@@ -61,8 +65,10 @@ void blinky(struct timer_list *blinky_timer)
     //     break;
     // }
     // pr_info("alo alo alo");
-    // mod_timer(&long_abc.blinky_timer, jiffies + long_abc.interval*HZ);
+    // mod_timer(&test_data.blinky_timer, jiffies + test_data.interval*HZ);
 }
+
+#ifdef CHECK_READ_WRITE
 
 int get_sg_from_buf(void **buff, struct scatterlist *sg)
 {
@@ -89,7 +95,7 @@ int get_sg_from_buf(void **buff, struct scatterlist *sg)
 
 void my_work_handler(struct work_struct *work)
 {
-    void *hndl = long_abc.dev_handler;
+    void *hndl = test_data.dev_handler;
     int channel = TEST_CHANNEL;
     bool write = READ_DIRECTION;
     bool dma_mapped = FALSE;
@@ -150,6 +156,10 @@ void my_work_handler(struct work_struct *work)
     kfree(sgt);
 }
 
+#endif
+
+#ifdef CHECK_READ_WRITE
+
 static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
 {
     void *hndl = xpdev->xdev;
@@ -206,8 +216,8 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
     res = xdma_xfer_submit(xpdev->xdev, channel, write, ep_addr, 
                 sgt, dma_mapped, timeout_ms);
 
-    long_abc.dev_handler = hndl;
-    INIT_WORK(&long_abc.work, my_work_handler);
+    test_data.dev_handler = hndl;
+    INIT_WORK(&test_data.work, my_work_handler);
 
     kfree(buff[0]);
     kfree(buff[1]);
@@ -216,6 +226,10 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
     kfree(sgt);
 }
 
+#endif
+
+#ifdef USER_IRQ_DEBUG
+
 irqreturn_t user_handler(int irq_no, void *dev_id)
 {
     struct xdma_pci_dev *xpdev = (struct xdma_pci_dev *)dev_id;
@@ -223,36 +237,43 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 
     pr_info("irq_no %d handler\n", irq_no);
 
-    schedule_work(&long_abc.work);
+    schedule_work(&test_data.work);
 
-    long_abc.interval = 0.2;
+    test_data.interval = 0.2;
 
     xdma_user_isr_disable(hndl, 1 << 0);
 
     return IRQ_HANDLED;
 }
 
+#endif
+
 int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
-    u32 mask = MASK_IRQ_0;
+
+#ifdef USER_IRQ_DEBUG
     int rv;
-    
+    u32 mask = MASK_IRQ_0;
     rv = xdma_user_isr_register(xpdev->xdev, mask, user_handler, (void *)xpdev);
     if (rv){
         pr_err("register user_irq_no %d failed\n", 0);
         return rv;
     }
         pr_info("register user_irq_no %d done\n", 0);
+#endif
+
+#ifdef CHECK_READ_WRITE
 
     pr_info("Send request to crypto dma\n");
-    long_abc.interval = 1;
-    long_abc.led = RED_ON_BLUE_OFF;
-    timer_setup(&long_abc.blinky_timer, blinky, 0);
-    mod_timer(&long_abc.blinky_timer, jiffies + long_abc.interval*HZ);
+    send_request_test_blocking(xpdev);
+    pr_info("Sent\n");    
+#endif
 
-    // schedule_work(&recv_data.work);
-
-    // send_request_test_blocking(xpdev);
-    // pr_info("Sent\n");    
+#ifdef CHECK_TIMER
+    test_data.interval = 1;
+    test_data.led = RED_ON_BLUE_OFF;
+    timer_setup(&test_data.blinky_timer, blinky, 0);
+    mod_timer(&test_data.blinky_timer, jiffies + test_data.interval*HZ);
+#endif
 
     return 0;
 }

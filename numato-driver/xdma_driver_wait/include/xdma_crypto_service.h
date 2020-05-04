@@ -20,7 +20,7 @@ enum LED_STATE {
 
 int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev);
 
-struct my_data {
+struct test_data_struct {
     struct work_struct work;
     struct timer_list blinky_timer;
     enum LED_STATE led;
@@ -28,7 +28,7 @@ struct my_data {
     void *dev_handler;
 };
 
-extern struct my_data long_abc;
+extern struct test_data_struct test_data;
 
 enum USER_IRQ_TYPE {
     IRQ_0_TEST,

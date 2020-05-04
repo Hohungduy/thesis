@@ -367,7 +367,7 @@ static void __exit xdma_mod_exit(void)
 	/* unregister this driver from the PCI bus driver */
 	dbg_init("pci_unregister_driver.\n");
 	pci_unregister_driver(&pci_driver);
-	del_timer_sync(&long_abc.blinky_timer);
+	del_timer_sync(&test_data.blinky_timer);
 	xdma_cdev_cleanup();
 }
 
