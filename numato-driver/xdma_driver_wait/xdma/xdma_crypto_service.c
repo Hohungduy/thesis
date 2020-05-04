@@ -18,6 +18,8 @@
 #define RED_LED_MASK (1 << 0)
 #define BLUE_LED_MASK (1 << 1)
 
+#define __LIBXDMA_DEBUG__ 1
+
 #define CHECK_TIMER 1
 // #define USER_IRQ_DEBUG 1
 // #define CHECK_READ_WRITE 1
@@ -43,29 +45,29 @@ void blinky(struct timer_list *blinky_timer)
     blue= (led_read & BLUE_LED_MASK) == 0;
     pr_info("led_read %x \n", led_read);
 
-    // if (red || blue){
-    //     iowrite32(0x0F, config_space + LED_BASE);
-    //     mod_timer(blinky_timer, jiffies + data->interval * HZ);
-    //     return;
-    // }
+    if (red || blue){
+        iowrite32(0x0F, config_space + LED_BASE);
+        mod_timer(blinky_timer, jiffies + data->interval * HZ);
+        return;
+    }
 
-    // switch (state)
-    // {
-    // case RED_ON_BLUE_OFF:
-    //     iowrite32(!RED_LED_MASK, config_space + LED_BASE);
-    //     break;
-    // case RED_ON_BLUE_ON:
-    //     iowrite32(!(BLUE_LED_MASK || RED_LED_MASK),
-    //              config_space + LED_BASE);
-    //     break;
-    // case RED_OFF_BLUE_ON:
-    //     iowrite32(!BLUE_LED_MASK, config_space + LED_BASE);
-    //     break;
-    // default:
-    //     break;
-    // }
-    // pr_info("alo alo alo");
-    // mod_timer(&test_data.blinky_timer, jiffies + test_data.interval*HZ);
+    switch (state)
+    {
+    case RED_ON_BLUE_OFF:
+        iowrite32(!RED_LED_MASK, config_space + LED_BASE);
+        break;
+    case RED_ON_BLUE_ON:
+        iowrite32(!(BLUE_LED_MASK || RED_LED_MASK),
+                 config_space + LED_BASE);
+        break;
+    case RED_OFF_BLUE_ON:
+        iowrite32(!BLUE_LED_MASK, config_space + LED_BASE);
+        break;
+    default:
+        break;
+    }
+    dbg_desc("Timer blinky function\n");
+    mod_timer(&test_data.blinky_timer, jiffies + test_data.interval*HZ);
 }
 
 #ifdef CHECK_READ_WRITE
@@ -129,9 +131,9 @@ void my_work_handler(struct work_struct *work)
     sgt->nents = 3;
     sgt->orig_nents = 3;
 
-    pr_info("Read from card\n");
+    dbg_desc("Read from card\n");
 
-    pr_info("Before reading\n");
+    dbg_desc("Before reading\n");
     for (j = 0; j < 3; j++){
         for (i = 0; i < 500; i += sizeof(long long int)){
             pr_info(" Address %x = %llx \n", TEST_ADDRESS_START + i + j*500,  
@@ -142,7 +144,7 @@ void my_work_handler(struct work_struct *work)
     res = xdma_xfer_submit(hndl, channel, write, ep_addr, 
                 sgt, dma_mapped, timeout_ms);
 
-    pr_info("After reading\n");
+    dbg_desc("After reading\n");
     for (j = 0; j < 3; j++){
         for (i = 0; i < 500; i += sizeof(long long int)){
             pr_info(" Address %x = %llx \n", TEST_ADDRESS_START + i + j*500,  
@@ -201,7 +203,7 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
         buff[2][i] = (u8)(i % 200);
     }
 
-    pr_info("Writing Buffer\n");
+    dbg_desc("Writing Buffer\n");
     for (j = 0; j < 3; j++){
         for (i = 0; i < 500; i += sizeof(long long int)){
             pr_info(" Address %x = %llx \n", TEST_ADDRESS_START + i + j*500,  
@@ -263,9 +265,9 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
 
 #ifdef CHECK_READ_WRITE
 
-    pr_info("Send request to crypto dma\n");
+    dbg_desc("Send request to crypto dma\n");
     send_request_test_blocking(xpdev);
-    pr_info("Sent\n");    
+    dbg_desc("Sent\n");    
 #endif
 
 #ifdef CHECK_TIMER

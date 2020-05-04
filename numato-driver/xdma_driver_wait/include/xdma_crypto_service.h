@@ -7,6 +7,7 @@
 #include <linux/mm.h>
 #include <asm/cacheflush.h>
 #include <linux/sched.h>
+#include "xdma_region.h"
 
 struct xdma_pci_dev;
 
