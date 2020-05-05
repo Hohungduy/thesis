@@ -1,5 +1,9 @@
 **/vivado**
 ./.Xil/
 ./.dist/
-./**.o
-./**.o.**
+**.o
+**.o.**
+**.ko**
+**.mod**
+**Module.symvers
+**modules.order
