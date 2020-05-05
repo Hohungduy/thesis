@@ -8,6 +8,7 @@
 #include <asm/cacheflush.h>
 #include <linux/sched.h>
 #include "xdma_region.h"
+#include "blinky.h"
 
 struct xdma_pci_dev;
 

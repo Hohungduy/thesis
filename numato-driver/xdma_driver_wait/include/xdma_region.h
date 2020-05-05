@@ -12,6 +12,8 @@
 #include <linux/kernel.h>
 #include <linux/pci.h>
 #include <linux/workqueue.h>
+#include "libxdma.h"
+
 #define H2C_CH0_BUFFER_SIZE_OFFSET (0x00)
 #define H2C_CH1_BUFFER_SIZE_OFFSET (0x04)
 #define C2H_CH0_BUFFER_SIZE_OFFSET (0x08)
@@ -24,6 +26,9 @@
 #define DATA_REQ_SIZ                      (0x5F0)
 #define DATA_REQ_OFF_SET                  (0xD0)
 #define MAGIC_BTYE                        (0x3D)
+#define MAX_REGION_ADDR                   (0x3100)
+
+#define DEBUG_REGION 1
 
 struct dsc;
 
@@ -56,6 +61,5 @@ extern inline bool is_dsc_valid(struct dsc *dsc);
 inline enum region_state get_region_state(struct dsc *dsc);
 
 extern inline bool is_c2h_xfer(struct dsc *dsc);
-
 
 #endif

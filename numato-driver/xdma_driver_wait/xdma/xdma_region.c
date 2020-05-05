@@ -102,3 +102,37 @@ inline bool is_c2h_xfer(struct dsc *dsc)
 {
     return (dsc->xfer_dsc == (1 << 0));
 }
+
+#ifdef DEBUG_REGION
+#define debug_mem debug_mem
+
+static void _debug_mem(u32 start, u32 end)
+{
+    u32 idx = 0;
+    u8 *buff;
+
+    start &= 0xFFFFFFFC;
+    end   &= 0xFFFFFFFC;
+
+    if (end < start){
+        pr_err(" end < start ?\n");
+        return;
+    }
+    buff = (u8 *)kmalloc(end - start, GFP_KERNEL);
+    memcpy_fromio(buff, config_base, end -start);
+    for (idx = start; idx < end; idx += 4){
+        pr_info("addr %p = %02hhX %02hhX %02hhX %02hhX\n",
+            config_base + idx, buff[idx], buff[idx + 1], 
+            buff[idx + 2], buff[idx + 3]);
+    }
+    kfree(buff);
+}
+
+void debug_mem(void)
+{
+    _debug_mem(0, MAX_REGION_ADDR);
+}
+
+#else
+#define debug_mem(...)
+#endif
