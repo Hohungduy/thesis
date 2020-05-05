@@ -199,12 +199,39 @@ void create_global_region_for_testing(void)
 int process_next_req(void)
 {
     u32 next_req_addr;
+    u32 xfer_id = 0;
+    u8 crypto_res = 0;
+    
     int idx;
     unsigned long flags;
+    struct dsc next_dsc;
+
     spin_lock_irqsave(&lock, flags);
+    if (unlikely(is_free_req()))
+        goto process_done;
+    get_next_dsc_req(&next_dsc);
+    if (unlikely(next_dsc.magic != MAGIC_BTYE))
+        goto invalid_dsc;
+
+    if (likely(next_dsc.xfer_dsc == XFER_C2H))
+        goto move_data;
+    
+    xfer_id = next_dsc.xfer_id;
+    crypto_res = next_dsc.crypto_res;
+    if (unlikely(crypto_res != CRYPTO_RES_DONE))
+        goto submit_crypto_req;
     
 
+move_data:
+
+submit_crypto_req:
     
+
+process_done:
     spin_unlock_irqrestore(&lock, flags);
     return 0;
+
+invalid_dsc:
+    pr_err("Invalid dsc\n");
+    return -1;
 }
