@@ -156,12 +156,12 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
     }
 
     dbg_desc("Writing Buffer\n");
-    for (j = 0; j < 3; j++){
-        for (i = 0; i < 500; i += sizeof(long long int)){
-            pr_info(" Address %x = %llx \n", TEST_ADDRESS_START + i + j*500,  
-                    *((long long int *)(&buff[0][i])));
-        }
-    }
+    // for (j = 0; j < 3; j++){
+    //     for (i = 0; i < 500; i += sizeof(long long int)){
+    //         pr_info(" Address %x = %llx \n", TEST_ADDRESS_START + i + j*500,  
+    //                 *((long long int *)(&buff[0][i])));
+    //     }
+    // }
     
     get_sg_from_buf((void **)buff, scatter);
     sgt->sgl = scatter;
@@ -216,9 +216,9 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
 #endif
 
 #ifdef CHECK_READ_WRITE
-
     dbg_desc("Send request to crypto dma\n");
     send_request_test_blocking(xpdev);
+    debug_mem();
     dbg_desc("Sent\n");    
 #endif
 
