@@ -1,3 +1,5 @@
 **/vivado**
-.Xil/
-.dist/
+./.Xil/
+./.dist/
+./**.o
+./**.o.**
