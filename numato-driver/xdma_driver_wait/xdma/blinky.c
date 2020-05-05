@@ -17,8 +17,8 @@ void blinky(struct timer_list *blinky_timer)
     led_read = ioread32(config_space + LED_BASE);
     red = (led_read & RED_LED_MASK) == 0;
     blue= (led_read & BLUE_LED_MASK) == 0;
-    pr_info("led_read %x \n", led_read);
-    pr_info("config_space %p \n", config_space );
+    // pr_info("led_read %x \n", led_read);
+    // pr_info("config_space %p \n", config_space );
 
 
     if (red || blue){
@@ -42,7 +42,7 @@ void blinky(struct timer_list *blinky_timer)
     default:
         break;
     }
-    dbg_desc("Timer blinky function\n");
+    // dbg_desc("Timer blinky function\n");
     mod_timer(&test_data.blinky_timer, jiffies + (unsigned int)(test_data.interval*HZ));
 }
 

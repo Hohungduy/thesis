@@ -22,23 +22,22 @@
 #define NEXT_DSC_REQUEST_ADDRESS_OFFSET   (0x24)
 #define FINAL_DSC_REQUEST_ADDRESS_OFFSET  (0x28)
 #define DSC_REQ_SIZ                       (0x10)
-#define DSC_REQ_OFFSET                    (0x44)
+#define DSC_REQ_OFFSET                    (0x40)
 #define DATA_REQ_SIZ                      (0x5F0)
 #define DATA_REQ_OFF_SET                  (0xD0)
 #define MAGIC_BTYE                        (0x3D)
 #define MAX_REGION_ADDR                   (0x3100)
-#define MAX_REGION_ADDR_TEST              (0x00001000)
+#define MAX_REGION_ADDR_TEST              (0x00003100)
 #define DEBUG_REGION 1
-
+#define XFER_C2H                          (1 << 0)
+#define CRYPTO_RES_DONE                   (1 << 0)
+#define CRYPTO_RES_AUTH_FAILED            (1 << 1)
+#define REGION_STATE_EMPTY                (0xAAAAAAAA)
+#define REGION_STATE_NEED_PROCESS         (0xBBBBBBBB)
+#define REGION_STATE_PROCESSING           (0xCCCCCCCC)
+#define REGION_STATE_PROCESSED            (0xDDDDDDDD)
+#define REGION_STATE_UNKNOWN              (0xFFFFFFFF)
 struct dsc;
-
-enum region_state {
-    REGION_STATE_EMPTY,
-    REGION_STATE_NEED_PROCESS,
-    REGION_STATE_PROCESSING,
-    REGION_STATE_PROCESSED,
-    REGION_STATE_UNKNOWN
-};
 
 extern void set_base(void __iomem* base);
 
@@ -58,7 +57,7 @@ extern bool is_free_req(void);
 
 extern inline bool is_dsc_valid(struct dsc *dsc);
 
-inline enum region_state get_region_state(struct dsc *dsc);
+inline u32 get_region_state(struct dsc *dsc);
 
 extern inline bool is_c2h_xfer(struct dsc *dsc);
 
@@ -72,3 +71,9 @@ void debug_mem(void);
 #endif
 
 #endif
+
+int process_next_req(void);
+void create_global_region_for_testing(void);
+
+
+

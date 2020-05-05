@@ -220,9 +220,13 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
 
 #ifdef CHECK_READ_WRITE
     dbg_desc("Send request to crypto dma\n");
-    send_request_test_blocking(xpdev);
+    // send_request_test_blocking(xpdev);
     set_base(xpdev->xdev->bar[0]);
+    // test time only
+    create_global_region_for_testing();
     msleep(1000);
+    process_next_req();
+
     debug_mem();
     dbg_desc("Sent\n");    
 #endif
