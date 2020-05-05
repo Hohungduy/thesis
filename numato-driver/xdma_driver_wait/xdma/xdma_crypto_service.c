@@ -18,7 +18,7 @@
 
 #define CHECK_TIMER 1
 #define USER_IRQ_DEBUG 1
-// #define CHECK_READ_WRITE 1
+#define CHECK_READ_WRITE 1
 
 struct test_data_struct test_data;
 
@@ -116,7 +116,6 @@ void my_work_handler(struct work_struct *work)
 
 static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
 {
-    void *hndl = xpdev->xdev;
     int channel = TEST_CHANNEL;
     bool write = WRITE_DIRECTION;
     bool dma_mapped = FALSE;
@@ -125,7 +124,7 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
     struct scatterlist *scatter;
     u8 *buff[3];
     int timeout_ms = TEST_TIMEOUT;
-    int i, j, res;
+    int i, res;
     sgt = (struct sg_table *)kmalloc(sizeof(*sgt), GFP_KERNEL);
     if (!sgt){
         pr_info("No mem\n");
@@ -171,7 +170,7 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
                 sgt, dma_mapped, timeout_ms);
 
     // test_data.dev_handler = hndl;
-    INIT_WORK(&test_data.work, my_work_handler);
+    // INIT_WORK(&test_data.work, my_work_handler);
 
     kfree(buff[0]);
     kfree(buff[1]);
@@ -193,6 +192,9 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 
     INIT_WORK(&test_data.work_blinky, work_blinky_handler);
     schedule_work(&test_data.work_blinky);
+
+    // INIT_WORK(&test_data.work, my_work_handler);
+    // schedule_work(&test_data.work);
 
     xdma_user_isr_disable(hndl, 1 << 0);
 
@@ -219,6 +221,8 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
 #ifdef CHECK_READ_WRITE
     dbg_desc("Send request to crypto dma\n");
     send_request_test_blocking(xpdev);
+    set_base(xpdev->xdev->bar[0]);
+    msleep(1000);
     debug_mem();
     dbg_desc("Sent\n");    
 #endif

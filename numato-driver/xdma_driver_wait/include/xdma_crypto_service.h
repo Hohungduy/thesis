@@ -7,6 +7,8 @@
 #include <linux/mm.h>
 #include <asm/cacheflush.h>
 #include <linux/sched.h>
+#include <linux/delay.h>
+
 #include "xdma_region.h"
 #include "blinky.h"
 

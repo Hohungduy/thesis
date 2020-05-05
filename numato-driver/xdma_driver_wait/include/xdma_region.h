@@ -27,7 +27,7 @@
 #define DATA_REQ_OFF_SET                  (0xD0)
 #define MAGIC_BTYE                        (0x3D)
 #define MAX_REGION_ADDR                   (0x3100)
-
+#define MAX_REGION_ADDR_TEST              (0x00001000)
 #define DEBUG_REGION 1
 
 struct dsc;
@@ -61,5 +61,14 @@ extern inline bool is_dsc_valid(struct dsc *dsc);
 inline enum region_state get_region_state(struct dsc *dsc);
 
 extern inline bool is_c2h_xfer(struct dsc *dsc);
+
+#ifdef DEBUG_REGION
+#define debug_mem debug_mem
+
+void debug_mem(void);
+
+#else
+#define debug_mem(...)
+#endif
 
 #endif

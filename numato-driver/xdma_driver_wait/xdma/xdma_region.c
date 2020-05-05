@@ -9,9 +9,9 @@ struct dsc {
     u8 magic;
 };
 
-static void __iomem *config_base;
+static void *config_base;
 
-void set_base(void __iomem* base)
+void set_base(void *base)
 {
     config_base = base;
 }
@@ -111,26 +111,31 @@ static void _debug_mem(u32 start, u32 end)
     u32 idx = 0;
     u8 *buff;
 
-    start &= 0xFFFFFFFC;
-    end   &= 0xFFFFFFFC;
+    start = (start >> 2) << 2;
+    end   = (end >> 2) << 2;
 
     if (end < start){
         pr_err(" end < start ?\n");
         return;
     }
-    buff = (u8 *)kmalloc(end - start, GFP_KERNEL);
-    memcpy_fromio(buff, config_base, end -start);
-    for (idx = start; idx < end; idx += 4){
-        pr_info("addr %p = %02hhX %02hhX %02hhX %02hhX\n",
-            config_base + idx, buff[idx], buff[idx + 1], 
-            buff[idx + 2], buff[idx + 3]);
+    buff = (u8 *)kzalloc(end - start, GFP_KERNEL);
+    memcpy_fromio(buff, config_base + start, end - start);
+    // for (idx = start; idx < end; idx += 4*4){
+    //     pr_info("offset = %08x addr %08llx = %08x %08x %08x %08x\n",
+    //         idx, (u64)config_base + idx, *((u32 *)buff), 
+    //         *((u32 *)buff + 1), *((u32 *)buff + 2), *((u32 *)buff + 3));
+    // }
+    for (idx = start; idx < end; idx += 4*4){
+        pr_info("%08x = %08x %08x %08x %08x", idx,  
+            ioread32(config_base + idx), ioread32(config_base + idx + 4),
+            ioread32(config_base + idx + 8), ioread32(config_base + idx +12));
     }
     kfree(buff);
 }
 
 void debug_mem(void)
 {
-    _debug_mem(0, MAX_REGION_ADDR);
+    _debug_mem(0x000000A0, MAX_REGION_ADDR_TEST);
 }
 
 #else

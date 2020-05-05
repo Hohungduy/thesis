@@ -70,5 +70,7 @@ void work_blinky_handler(struct work_struct *work)
         data->interval = 2;
         pr_info("interval = 2");
     }
+
+    debug_mem();
     xdma_user_isr_enable(xdev, 1 << 0);
 }
