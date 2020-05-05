@@ -17,7 +17,7 @@
 #define __LIBXDMA_DEBUG__ 1
 
 #define CHECK_TIMER 1
-// #define USER_IRQ_DEBUG 1
+#define USER_IRQ_DEBUG 1
 // #define CHECK_READ_WRITE 1
 
 struct test_data_struct test_data;
@@ -170,7 +170,7 @@ static void send_request_test_blocking( struct xdma_pci_dev *xpdev)
     res = xdma_xfer_submit(xpdev->xdev, channel, write, ep_addr, 
                 sgt, dma_mapped, timeout_ms);
 
-    test_data.dev_handler = hndl;
+    // test_data.dev_handler = hndl;
     INIT_WORK(&test_data.work, my_work_handler);
 
     kfree(buff[0]);
@@ -191,9 +191,8 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 
     pr_info("irq_no %d handler\n", irq_no);
 
-    schedule_work(&test_data.work);
-
-    test_data.interval = 0.2;
+    INIT_WORK(&test_data.work_blinky, work_blinky_handler);
+    schedule_work(&test_data.work_blinky);
 
     xdma_user_isr_disable(hndl, 1 << 0);
 
@@ -203,6 +202,8 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 #endif
 
 int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
+
+    
 
 #ifdef USER_IRQ_DEBUG
     int rv;
@@ -223,6 +224,7 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
 #endif
 
 #ifdef CHECK_TIMER
+    test_data.dev_handler = (void *)xpdev->xdev;
     init_blinky(&test_data);    
 #endif
     return 0;
