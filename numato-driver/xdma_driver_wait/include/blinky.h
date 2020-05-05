@@ -11,5 +11,7 @@
 extern struct test_data_struct test_data;
 
 void init_blinky(struct test_data_struct *data);
+void work_blinky_handler(struct work_struct *work);
+
 
 #endif

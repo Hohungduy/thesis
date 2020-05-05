@@ -24,9 +24,10 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev);
 
 struct test_data_struct {
     struct work_struct work;
+    struct work_struct work_blinky;
     struct timer_list blinky_timer;
     enum LED_STATE led;
-    u32 interval;
+    u8 interval;
     void *dev_handler;
 };
 
