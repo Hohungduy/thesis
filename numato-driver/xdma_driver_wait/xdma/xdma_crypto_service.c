@@ -24,6 +24,8 @@ struct test_data_struct test_data;
 
 #ifdef CHECK_READ_WRITE
 
+struct xcrypto_dev xcrypto_dev;
+
 int get_sg_from_buf(void **buff, struct scatterlist *sg)
 {
     struct page *pg;
@@ -237,3 +239,28 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
 #endif
     return 0;
 }
+
+int update_load(int channel, int num_load)
+{
+    if ((channel < 0) || (channel > MAX_CHANNEL - 1))
+    {
+        return -1;
+    }
+    xcrypto_dev.load[channel] += num_load;
+    return 0;
+}
+
+int choose_channel()
+{
+    int i, min_load_channel = 0;
+    
+    for (i = 0; i < MAX_CHANNEL; i++)
+    {
+        if (xcrypto_dev.load[i] > xcrypto_dev.load[min_load_channel])
+        {
+            min_load_channel = i;
+        }
+    }
+    return min_load_channel;
+}
+

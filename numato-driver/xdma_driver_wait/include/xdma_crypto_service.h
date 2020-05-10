@@ -8,11 +8,18 @@
 #include <asm/cacheflush.h>
 #include <linux/sched.h>
 #include <linux/delay.h>
+#include <linux/spinlock.h>
 
 #include "xdma_region.h"
 #include "blinky.h"
 
 struct xdma_pci_dev;
+
+struct xcrypto_dev {
+    spinlock_t lock;
+    struct xdma_dev *xdev;
+    int load[2];
+};
 
 enum LED_STATE {
     // RED_BLUE
@@ -54,6 +61,10 @@ enum USER_IRQ_TYPE {
     IRQ_15_
 };
 
+int update_load(int channel, int num_load);
+int choose_channel();
 
+#define MAX_CHANNEL (2)
+#define MAX_LOAD (100)
 #endif
 
