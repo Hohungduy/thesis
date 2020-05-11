@@ -205,9 +205,24 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 
 #endif
 
+void init_xcrypto_dev(struct xdma_pci_dev *xpdev)
+{
+    int idx;
+    spin_lock_init(&xcrypto_dev.lock);
+    xcrypto_dev.xdev = xpdev->xdev;
+    for (idx = 0; idx < MAX_CHANNEL; idx++)
+    {
+        xcrypto_dev.load[idx] = 0;
+        xcrypto_dev.backlog[idx] = 0;
+    }
+    memset(xcrypto_dev.id_buff, 0,  MAX_ID*sizeof(void*));
+    xcrypto_dev.id_buf_idx = 0;
+
+}
+
 int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
 
-    
+    init_xcrypto_dev(xpdev);
 
 #ifdef USER_IRQ_DEBUG
     int rv;
@@ -264,3 +279,35 @@ int choose_channel()
     return min_load_channel;
 }
 
+int is_full_backlog(int channel)
+{
+    if (xcrypto_dev.backlog[channel] >= MAX_BACKLOG)
+        return TRUE;
+    return FALSE;
+}
+
+struct xfer_callback_struct *alloc_xfer_callback(void)
+{
+    struct xfer_callback_struct *xfer_callback;
+    xfer_callback = 
+        (struct xfer_callback_struct *)
+            kmalloc(sizeof(*xfer_callback), GFP_KERNEL);
+    if (xfer_callback == NULL)
+        return -ENOMEM;
+    else
+        return xfer_callback;
+}
+
+void free_xfer_callback(struct xfer_callback_struct * ptr)
+{
+    kfree(ptr);
+}
+
+int submit_xfer(struct xfer_req * xfer_req)
+{
+    struct xfer_callback_struct *cb = alloc_xfer_callback();
+    // ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
+	// 		struct sg_table *sgt, bool dma_mapped, int timeout_ms);
+
+
+}

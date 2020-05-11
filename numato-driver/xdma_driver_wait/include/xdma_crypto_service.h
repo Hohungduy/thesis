@@ -9,17 +9,34 @@
 #include <linux/sched.h>
 #include <linux/delay.h>
 #include <linux/spinlock.h>
+#include <linux/scatterlist.h>
 
 #include "xdma_region.h"
 #include "blinky.h"
 
-struct xdma_pci_dev;
+#define MAX_BACKLOG 100
+#define MAX_ID (MAX_BACKLOG + 10)
 
+struct xdma_pci_dev;
+struct xfer_callback_struct {
+    int xfer_id;
+};
 struct xcrypto_dev {
     spinlock_t lock;
     struct xdma_dev *xdev;
     int load[2];
+    int backlog[2];
+    void *id_buff[MAX_ID];
+    u32 id_buf_idx;
 };
+
+struct xfer_req
+{
+    int (*complete)(void *data, int res);
+    void *data;
+    struct scatterlist *sg;
+};
+
 
 enum LED_STATE {
     // RED_BLUE
@@ -62,7 +79,10 @@ enum USER_IRQ_TYPE {
 };
 
 int update_load(int channel, int num_load);
-int choose_channel();
+int choose_channel(void);
+int is_full_backlog(int channel);
+int submit_xfer(struct xfer_req * xfer_req);
+struct xfer_callback_struct *alloc_xfer_callback(void);
 
 #define MAX_CHANNEL (2)
 #define MAX_LOAD (100)
