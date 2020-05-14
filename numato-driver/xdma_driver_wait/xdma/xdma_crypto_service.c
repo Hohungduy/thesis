@@ -208,16 +208,21 @@ irqreturn_t user_handler(int irq_no, void *dev_id)
 void init_xcrypto_dev(struct xdma_pci_dev *xpdev)
 {
     int idx;
+    memset(&xcrypto_dev, 0,  sizeof(xcrypto_dev));
+
     spin_lock_init(&xcrypto_dev.lock);
+    xcrypto_dev.state = CRYPTO_FREE;
     xcrypto_dev.xdev = xpdev->xdev;
+    xcrypto_dev.max_xfer = MAX_XFER;
+
     for (idx = 0; idx < MAX_CHANNEL; idx++)
     {
         xcrypto_dev.load[idx] = 0;
         xcrypto_dev.backlog[idx] = 0;
     }
-    memset(xcrypto_dev.id_buff, 0,  MAX_ID*sizeof(void*));
-    xcrypto_dev.id_buf_idx = 0;
 
+    INIT_LIST_HEAD(&xcrypto_dev.ib_backlog_list);
+    INIT_LIST_HEAD(&xcrypto_dev.ob_backlog_list);
 }
 
 int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
@@ -240,9 +245,9 @@ int xpdev_create_crypto_service(struct xdma_pci_dev *xpdev){
     // send_request_test_blocking(xpdev);
     set_base(xpdev->xdev->bar[0]);
     // test time only
-    create_global_region_for_testing();
-    msleep(1000);
-    process_next_req();
+    // create_global_region_for_testing();
+    // msleep(1000);
+    // process_next_req();
 
     debug_mem();
     dbg_desc("Sent\n");    
@@ -293,9 +298,14 @@ struct xfer_callback_struct *alloc_xfer_callback(void)
         (struct xfer_callback_struct *)
             kmalloc(sizeof(*xfer_callback), GFP_KERNEL);
     if (xfer_callback == NULL)
+    {
         return -ENOMEM;
+    }
     else
+    {
         return xfer_callback;
+    }
+        
 }
 
 void free_xfer_callback(struct xfer_callback_struct * ptr)
@@ -303,11 +313,65 @@ void free_xfer_callback(struct xfer_callback_struct * ptr)
     kfree(ptr);
 }
 
+int is_crypto_device_free(void)
+{
+    if (xcrypto_dev.state == CRYPTO_FREE)
+        return TRUE;
+    return FALSE;
+}
+
 int submit_xfer(struct xfer_req * xfer_req)
 {
-    struct xfer_callback_struct *cb = alloc_xfer_callback();
+    bool full;
+    unsigned long flags;
+    void *dev_hndl = xcrypto_dev.xdev;
+    int channel;
+    int timeout_ms = 5;
+    struct sg_table sgt;
+    sgt.sgl = xfer_req->sg;
+    sgt.nents = sg_dma_len(xfer_req->sg);
+    sgt.orig_nents = sg_dma_len(xfer_req->sg);
+    bool dma_mapped = FALSE;
+    bool write = TRUE;
+    u64 ep_addr;
+    int nbytes;
+    // struct dsc dsc;
+    // struct xfer_callback_struct *cb = alloc_xfer_callback();
     // ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
-	// 		struct sg_table *sgt, bool dma_mapped, int timeout_ms);
+			// struct sg_table *sgt, bool dma_mapped, int timeout_ms);
+
+    // Check if it's available to submit ???
+    // if(is_crypto_device_free()){
+    //     goto submit;
+    // }
+    // if (is_real_mem_available()){
+    //     goto submit;
+    // }
+    // if (is_buff_available()){
+
+    // }
+    spin_lock_irqsave(&xcrypto_dev.lock, flags);
+    full = xcrypto_dev.active_xfer > xcrypto_dev.max_xfer;
 
 
+    if (likely(!full))
+    {
+        channel = choose_channel();
+        // Write descriptor 
+
+        // Write crypto data
+        spin_unlock_irqrestore(&xcrypto_dev.lock, flags);
+
+        nbytes = xdma_xfer_submit(dev_hndl, channel, write, ep_addr,
+            &sgt, dma_mapped, timeout_ms);
+        if (nbytes < 0){
+            return nbytes;
+        }
+
+    }
+    
+// submit:
+
+
+    return 0;
 }

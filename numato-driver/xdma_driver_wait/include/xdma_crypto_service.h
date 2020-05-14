@@ -10,24 +10,42 @@
 #include <linux/delay.h>
 #include <linux/spinlock.h>
 #include <linux/scatterlist.h>
+#include <linux/circ_buf.h>
+
 
 #include "xdma_region.h"
 #include "blinky.h"
 
+#define MAX_CHANNEL (2)
+#define MAX_LOAD (100)
+
 #define MAX_BACKLOG 100
 #define MAX_ID (MAX_BACKLOG + 10)
+#define MAX_XFER (5)
 
 struct xdma_pci_dev;
 struct xfer_callback_struct {
-    int xfer_id;
+    u32 xfer_id;
+    struct xfer_req * req;
+    struct list_head list;
+};
+enum crypto_state_t {
+    CRYPTO_FREE,
+    CRYPTO_DOING,
+    CRYPTO_BUSY
 };
 struct xcrypto_dev {
     spinlock_t lock;
+    enum crypto_state_t state;
     struct xdma_dev *xdev;
-    int load[2];
-    int backlog[2];
-    void *id_buff[MAX_ID];
-    u32 id_buf_idx;
+    int load[MAX_CHANNEL];
+    int backlog[MAX_CHANNEL];
+    int max_xfer;
+    int active_xfer;
+    struct xfer_callback_struct ib_buff[MAX_ID];
+    struct xfer_callback_struct ob_buff[MAX_ID];
+    struct list_head ib_backlog_list;
+    struct list_head ob_backlog_list;
 };
 
 struct xfer_req
@@ -35,6 +53,7 @@ struct xfer_req
     int (*complete)(void *data, int res);
     void *data;
     struct scatterlist *sg;
+
 };
 
 
@@ -83,8 +102,8 @@ int choose_channel(void);
 int is_full_backlog(int channel);
 int submit_xfer(struct xfer_req * xfer_req);
 struct xfer_callback_struct *alloc_xfer_callback(void);
+int is_crypto_device_free(void);
 
-#define MAX_CHANNEL (2)
-#define MAX_LOAD (100)
+
 #endif
 

@@ -37,29 +37,75 @@
 #define REGION_STATE_PROCESSING           (0xCCCCCCCC)
 #define REGION_STATE_PROCESSED            (0xDDDDDDDD)
 #define REGION_STATE_UNKNOWN              (0xFFFFFFFF)
+#define DATA_MAX_SIZE                     (1520/32)
+#define MAX_REGION_INB                    (8) 
+#define MAX_REGION_OUTB                   (8)
+struct common_base {
+    u32 H2C_BUFFER_SIZE;
+    u32 pad;
+    u32 C2H_BUFFER_SIZE;
+    u32 pad_;
+    u32 padding[2];
+    u32 NEXT_INB_REGION;
+    u32 FINAL_INB_REGION;
+    u32 padding_;
+    u32 NEXT_OUTB_REGION;
+    u32 FINAL_OUTB_REGION;
+};
+
+struct region {
+    union {
+        u32 region_descriptor;
+        u32 xfer_id;
+        u8 xfer_descriptor;
+        u8 crypto_result;
+        u8 data_length;
+        u8 padding;
+        u32 padding_;
+    } region_description;
+    union {
+        u32 padding[7];
+    } crypto_description;
+    u32 data [DATA_MAX_SIZE];
+};
+
+struct global_mem {
+    struct common_base cb;
+    union {
+        struct region region[MAX_REGION_INB];
+    } ib;
+    union {
+        struct region region[MAX_REGION_OUTB];
+    } ob;
+};
+
 struct dsc;
 
 extern void set_base(void __iomem* base);
 
-extern u32 get_remaining_request(void);
+// inline u32 get_h2c_buffer_size(void);
 
-extern u32 get_h2c_buffer_size(int channel);
+// inline u32 get_c2h_buffer_size(void);
 
-extern u32 get_c2h_buffer_size(int channel);
+// extern void get_next_dsc_req(struct dsc *dsc);
 
-extern void get_next_dsc_req(struct dsc *dsc);
+// extern void get_final_dsc_req(struct dsc *dsc);
+static inline u32 get_next_inb_region_addr(void);
 
-extern void get_final_dsc_req(struct dsc *dsc);
+static inline u32 get_next_outb_region_addr(void);
 
-extern bool is_only_last_req(void);
+static inline u32 get_final_inb_region_addr(void);
 
-extern bool is_free_req(void);
+static inline u32 get_final_outb_region_addr(void);
 
-extern inline bool is_dsc_valid(struct dsc *dsc);
+inline u32 get_h2c_buffer_size(void);
 
-inline u32 get_region_state(struct dsc *dsc);
+inline u32 get_c2h_buffer_size(void);
 
-extern inline bool is_c2h_xfer(struct dsc *dsc);
+int is_real_mem_available(void);
+int is_buff_available(void);
+int is_backlog_available(void);
+
 
 #ifdef DEBUG_REGION
 #define debug_mem debug_mem
@@ -72,8 +118,8 @@ void debug_mem(void);
 
 #endif
 
-int process_next_req(void);
-void create_global_region_for_testing(void);
+// int process_next_req(void);
+// void create_global_region_for_testing(void);
 
 
 
