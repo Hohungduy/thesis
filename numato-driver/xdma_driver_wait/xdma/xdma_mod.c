@@ -213,9 +213,9 @@ static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (rv)
 		goto err_out;
 
-	rv = xpdev_create_crypto_service(xpdev);
-	if (rv)
-		goto err_out;
+	// rv = xpdev_create_crypto_service(xpdev);
+	// if (rv)
+	// 	goto err_out;
 
 	dev_set_drvdata(&pdev->dev, xpdev);
 
@@ -367,7 +367,7 @@ static void __exit xdma_mod_exit(void)
 	/* unregister this driver from the PCI bus driver */
 	dbg_init("pci_unregister_driver.\n");
 	pci_unregister_driver(&pci_driver);
-	del_timer_sync(&test_data.blinky_timer);
+	// del_timer_sync(&test_data.blinky_timer);
 	xdma_cdev_cleanup();
 }
 

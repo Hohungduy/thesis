@@ -13,7 +13,7 @@
 #include <linux/pci.h>
 #include <linux/workqueue.h>
 #include "libxdma.h"
-
+/*
 #define H2C_CH0_BUFFER_SIZE_OFFSET (0x00)
 #define H2C_CH1_BUFFER_SIZE_OFFSET (0x04)
 #define C2H_CH0_BUFFER_SIZE_OFFSET (0x08)
@@ -40,6 +40,14 @@
 #define DATA_MAX_SIZE                     (1520/32)
 #define MAX_REGION_INB                    (8) 
 #define MAX_REGION_OUTB                   (8)
+*/
+
+#define INB_BASE                          (0x40)
+#define OUTB_BASE                         (0x3200)
+#define INB_BUFF_SIZE                     (08)
+#define OUTB_BUFF_SIZE                    (08)
+#define REGION_SIZE                       (1600)
+
 struct common_base {
     u32 H2C_BUFFER_SIZE;
     u32 pad;
@@ -83,13 +91,6 @@ struct dsc;
 
 extern void set_base(void __iomem* base);
 
-// inline u32 get_h2c_buffer_size(void);
-
-// inline u32 get_c2h_buffer_size(void);
-
-// extern void get_next_dsc_req(struct dsc *dsc);
-
-// extern void get_final_dsc_req(struct dsc *dsc);
 static inline u32 get_next_inb_region_addr(void);
 
 static inline u32 get_next_outb_region_addr(void);
@@ -101,6 +102,9 @@ static inline u32 get_final_outb_region_addr(void);
 inline u32 get_h2c_buffer_size(void);
 
 inline u32 get_c2h_buffer_size(void);
+
+inline u32 get_inb_base(void);
+
 
 int is_real_mem_available(void);
 int is_buff_available(void);

@@ -48,7 +48,7 @@
 
 #include "libxdma.h"
 #include "xdma_thread.h"
-#include "xdma_crypto_service.h"
+// #include "xdma_crypto_service.h"
 
 #define MAGIC_ENGINE	0xEEEEEEEEUL
 #define MAGIC_DEVICE	0xDDDDDDDDUL

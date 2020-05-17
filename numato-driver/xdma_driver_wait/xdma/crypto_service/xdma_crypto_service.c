@@ -340,35 +340,7 @@ int submit_xfer(struct xfer_req * xfer_req)
     // ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			// struct sg_table *sgt, bool dma_mapped, int timeout_ms);
 
-    // Check if it's available to submit ???
-    // if(is_crypto_device_free()){
-    //     goto submit;
-    // }
-    // if (is_real_mem_available()){
-    //     goto submit;
-    // }
-    // if (is_buff_available()){
-
-    // }
-    spin_lock_irqsave(&xcrypto_dev.lock, flags);
-    full = xcrypto_dev.active_xfer > xcrypto_dev.max_xfer;
-
-
-    if (likely(!full))
-    {
-        channel = choose_channel();
-        // Write descriptor 
-
-        // Write crypto data
-        spin_unlock_irqrestore(&xcrypto_dev.lock, flags);
-
-        nbytes = xdma_xfer_submit(dev_hndl, channel, write, ep_addr,
-            &sgt, dma_mapped, timeout_ms);
-        if (nbytes < 0){
-            return nbytes;
-        }
-
-    }
+    
     
 // submit:
 
