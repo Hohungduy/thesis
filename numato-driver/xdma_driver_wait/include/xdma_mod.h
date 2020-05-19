@@ -48,7 +48,7 @@
 
 #include "libxdma.h"
 #include "xdma_thread.h"
-// #include "xdma_crypto_service.h"
+#include "xdma_crypto.h"
 
 #define MAGIC_ENGINE	0xEEEEEEEEUL
 #define MAGIC_DEVICE	0xDDDDDDDDUL
@@ -57,6 +57,8 @@
 
 extern unsigned int desc_blen_max;
 extern unsigned int sgdma_timeout;
+
+struct xdma_crdev;
 
 struct xdma_cdev {
 	unsigned long magic;		/* structure ID for sanity checks */
@@ -71,7 +73,6 @@ struct xdma_cdev {
 	struct device *sys_device;	/* sysfs device */
 	spinlock_t lock;
 };
-
 /* XDMA PCIe device specific book-keeping */
 struct xdma_pci_dev {
 	unsigned long magic;		/* structure ID for sanity checks */
@@ -96,6 +97,8 @@ struct xdma_pci_dev {
 	struct xdma_cdev bypass_cdev_base;
 
 	struct xdma_cdev xvc_cdev;
+
+	struct xdma_crdev *crdev;
 
 	void *data;
 };
