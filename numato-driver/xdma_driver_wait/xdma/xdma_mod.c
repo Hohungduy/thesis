@@ -218,6 +218,12 @@ static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	write_mem(xpdev->xdev->bar[0]);
 
+	/** function */
+
+	set_engine_base(xpdev->xdev->bar[0], 0);
+	set_led_base(xpdev->xdev->bar[0] + 0x10000);
+
+
 	rv = crdev_create(xpdev);
 	if (rv)
 		goto err_out;
