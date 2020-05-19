@@ -27,6 +27,8 @@ struct common_base {
 
     u32 head_outb;
     u32 tail_outb;
+
+    u32 padding_last[6];
 };
 
 struct crypto_dsc {
@@ -56,6 +58,7 @@ struct outbound {
 struct crypto_engine {
     struct common_base comm;
     struct inbound in;
+    u32 padding[880];
     struct outbound out;
 };
 
