@@ -24,11 +24,12 @@
 #include <linux/errno.h>
 #include <linux/aer.h>
 /* include early, to verify it depends only on the headers above */
+#include "xdma_mod.h"
 #include "libxdma_api.h"
 #include "libxdma.h"
-#include "xdma_mod.h"
 #include "xdma_cdev.h"
 #include "version.h"
+#include "just_4_test.h"
 
 #define DRV_MODULE_NAME		"xdma"
 #define DRV_MODULE_DESC		"Xilinx XDMA Reference Driver"
@@ -213,9 +214,13 @@ static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (rv)
 		goto err_out;
 
-	// rv = xpdev_create_crypto_service(xpdev);
-	// if (rv)
-	// 	goto err_out;
+	/** Write mem to test */
+
+	write_mem(xpdev->xdev->bar[0]);
+
+	rv = crdev_create(xpdev);
+	if (rv)
+		goto err_out;
 
 	dev_set_drvdata(&pdev->dev, xpdev);
 
@@ -367,7 +372,7 @@ static void __exit xdma_mod_exit(void)
 	/* unregister this driver from the PCI bus driver */
 	dbg_init("pci_unregister_driver.\n");
 	pci_unregister_driver(&pci_driver);
-	// del_timer_sync(&test_data.blinky_timer);
+	crdev_cleanup();
 	xdma_cdev_cleanup();
 }
 
