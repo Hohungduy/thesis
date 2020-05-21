@@ -6,7 +6,7 @@
 #include "xdma_region.h"
 #include "libxdma_api.h"
 
-#define BUFF_LENGTH (REGION_NUM * 2)
+#define BUFF_LENGTH (REGION_NUM)
 #define BACKLOG_MAX_LENGTH (50)
 
 struct xdma_pci_dev;
@@ -46,11 +46,8 @@ struct xdma_crdev {
     struct xdma_dev *xdev;
     spinlock_t lock;
     struct blinky blinky;
-    struct xfer_req *req_buff[BUFF_LENGTH];
-    int head;
-    int tail;
-
-    struct list_head req_backlog;
+    struct list_head req_processing;
+    struct list_head req_queue;
 };
 
 
@@ -58,5 +55,11 @@ struct xdma_crdev {
 
 int crdev_create(struct xdma_pci_dev *xpdev);
 void crdev_cleanup(void);
+struct xfer_req *alloc_xfer_req(void);
+void free_xfer_req(struct xfer_req *req);
+
+
+ssize_t xdma_xfer_submit_queue(struct xfer_req *xfer_req);
+
 
 #endif

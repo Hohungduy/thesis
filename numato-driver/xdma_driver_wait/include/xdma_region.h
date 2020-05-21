@@ -79,8 +79,12 @@ int set_engine_base(void *base, int engine_idx);
 int set_led_base(void *base);
 void toggle_red_led(void);
 void toggle_blue_led(void);
-int is_engine_full(int channel);
-int is_engine_empty(int channel);
+int is_engine_full(int engine_idx);
+int is_engine_empty(int engine_idx);
+void *get_next_region_ep_addr(int engine_idx);
+void *get_next_data_ep_addr(int engine_idx);
+int increase_head_idx(int engine_idx);
+int active_next_region(int engine_idx);
 
 
 #endif
