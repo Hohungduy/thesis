@@ -55,6 +55,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
 
 
     // 
+    mod_timer(&crdev.blinky.timer, jiffies + (unsigned int)(crdev.blinky.interval*HZ));
 
     return 0;
 }
@@ -119,7 +120,7 @@ ssize_t xdma_xfer_submit_queue(struct xfer_req * xfer_req)
             sg_table.sgl = next_req->sg;
             sg_table.nents = sg_nents(next_req->sg);
             sg_table.orig_nents = sg_nents(next_req->sg);
-
+            
             // submit req from req_queue to engine 
             res = xdma_xfer_submit(dev_hndl, channel, write, 
                 (u64)ep_addr, &sg_table, dma_mapped, timeout_ms);
@@ -132,7 +133,6 @@ ssize_t xdma_xfer_submit_queue(struct xfer_req * xfer_req)
             // move to req_processing
             list_del(&next_req->list);
             list_add_tail(&next_req->list, &crdev.req_processing);
-
         }
 
         return 0;

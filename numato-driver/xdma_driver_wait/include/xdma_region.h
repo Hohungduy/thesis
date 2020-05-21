@@ -8,7 +8,7 @@
 #define DATA_MAX_LEN (1600 - 44)
 #define ENGINE_NUM (1)
 #define ENGINE_OFFSET(x) (0 + x*1)
-#define LED_OFFSET (6464)
+#define LED_OFFSET (0x10000)
 
 
 struct common_base {
