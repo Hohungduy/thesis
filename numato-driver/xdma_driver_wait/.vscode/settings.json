@@ -26,6 +26,7 @@
         "xdma_crypto_service.h": "c",
         "set_memory.h": "c",
         "cacheflush.h": "c",
-        "chrono": "c"
+        "chrono": "c",
+        "list": "c"
     }
 }

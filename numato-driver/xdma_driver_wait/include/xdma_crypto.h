@@ -22,7 +22,8 @@ struct xfer_req{
     int (*complete)(void *data, int res);
     void *data;
     struct scatterlist *sg;
-    struct mycrypto_context ctx; 
+    struct mycrypto_context ctx;
+    int id; 
     struct list_head list;
     spinlock_t lock;
 };
@@ -57,6 +58,8 @@ int crdev_create(struct xdma_pci_dev *xpdev);
 void crdev_cleanup(void);
 struct xfer_req *alloc_xfer_req(void);
 void free_xfer_req(struct xfer_req *req);
+void print_req_queue(void);
+void print_req_processing(void);
 
 
 ssize_t xdma_xfer_submit_queue(struct xfer_req *xfer_req);

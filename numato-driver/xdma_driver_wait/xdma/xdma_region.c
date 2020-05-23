@@ -39,13 +39,16 @@ void *get_next_region_ep_addr(int engine_idx)
 
     return &base->in.region[head + 1];
 }
-void *get_next_data_ep_addr(int engine_idx)
+u64 get_next_data_ep_addr(int engine_idx)
 {
     struct crypto_engine *base = region_base.engine[engine_idx];
 
     u32 head = ioread32(&base->comm.head_inb);
 
-    return &base->in.region[head + 1].data;
+    return offsetof(struct crypto_engine, in) + 
+        offsetof(struct inbound, region) + 
+        sizeof(struct region) * head +
+        offsetof(struct region, data) ;    // return (void *)(&base->in.region[head + 1].data) - (void *)base;
 }
 
 int is_engine_full(int engine_idx)
@@ -54,9 +57,14 @@ int is_engine_full(int engine_idx)
     u32 head = ioread32(&region_base.engine[engine_idx]->comm.head_inb);
     u32 tail = ioread32(&region_base.engine[engine_idx]->comm.tail_inb);
     
-    
+    pr_info("head = %x", head);
+    pr_info("tail = %x", tail);
+
     if (head < 0 || tail < 0)
+    {
         return -1;
+    }
+        
     if (((head + 1) % REGION_NUM) == (tail % REGION_NUM))
         return 1;
     else

@@ -85,41 +85,42 @@ ssize_t xdma_xfer_submit_queue(struct xfer_req * xfer_req)
 {
     void *dev_hndl = crdev.xdev;
     int channel = 0;
-    bool write = TRUE;
+    bool write = 1;
     struct sg_table sg_table;
-    bool dma_mapped = FALSE;
+    bool dma_mapped = 0;
     int timeout_ms = 3;
     int res;
     int status;
-    void * ep_addr;
+    u64 ep_addr;
     int engine_idx = 0;
     struct xfer_req *next_req;
     struct region *region_base;
 
     /** read the status*/
     status = is_engine_full(engine_idx);
-
     // add req to backlog
-    list_add_tail(&crdev.req_queue, &xfer_req->list);
+    list_add_tail(&xfer_req->list, &crdev.req_queue);
     if (status == 1) // full
     {
         // done, return 
+        pr_info("engine buff is full\n");
         return -1;
     }
     else // can submit
     {
-        while ((!is_engine_full(engine_idx)) && list_empty(&crdev.req_queue))
+        while ((!is_engine_full(engine_idx)) && !list_empty(&crdev.req_queue))
         {
             // get ep_addr
             region_base = get_next_region_ep_addr(engine_idx);
             ep_addr = get_next_data_ep_addr(engine_idx);
+            pr_info("send to ep_addr = %lld", ep_addr);
             // Write crypto info
 
             /** sg_table*/
             next_req = list_first_entry(&crdev.req_queue, struct xfer_req, list);
             sg_table.sgl = next_req->sg;
-            sg_table.nents = sg_nents(next_req->sg);
-            sg_table.orig_nents = sg_nents(next_req->sg);
+            sg_table.nents = 1;//sg_nents(next_req->sg);
+            sg_table.orig_nents = 1;//sg_nents(next_req->sg);
             
             // submit req from req_queue to engine 
             res = xdma_xfer_submit(dev_hndl, channel, write, 
@@ -144,7 +145,7 @@ EXPORT_SYMBOL_GPL(xdma_xfer_submit_queue);
 struct xfer_req *alloc_xfer_req(void)
 {
     struct xfer_req *xfer;
-    xfer = (struct xfer_req*)kmalloc(sizeof(*xfer), GFP_KERNEL);
+    xfer = (struct xfer_req *)kzalloc(sizeof(*xfer), GFP_KERNEL);
     if (!xfer)
         return 0;
     spin_lock_init(&xfer->lock);
@@ -156,3 +157,31 @@ void free_xfer_req(struct xfer_req *req)
     kfree(req);
 }
 EXPORT_SYMBOL_GPL(free_xfer_req);
+
+void print_req_queue(void)
+{
+    struct list_head *p;
+    int i = 0;
+    list_for_each(p, &crdev.req_queue){
+        if (p != NULL){
+
+            struct xfer_req *req = list_entry(p, struct xfer_req, list);
+            pr_info("req_queue i = %d pid = %d \n", i, req->id);
+        }
+    }
+}
+EXPORT_SYMBOL_GPL(print_req_queue);
+
+void print_req_processing(void)
+{
+    struct list_head *p;
+    int i = 0;
+    list_for_each(p, &crdev.req_processing){
+        if (p != NULL){
+            struct xfer_req *req = list_entry(p, struct xfer_req, list);
+            pr_info("req_processing i = %d pid = %d \n", i, req->id);
+        }
+
+    }
+}
+EXPORT_SYMBOL_GPL(print_req_processing);
