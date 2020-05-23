@@ -5,6 +5,7 @@
 #include <linux/module.h>
 #include "xdma_region.h"
 #include "libxdma_api.h"
+#include "linux/atomic.h"
 
 #define BUFF_LENGTH (REGION_NUM)
 #define BACKLOG_MAX_LENGTH (50)
@@ -25,7 +26,6 @@ struct xfer_req{
     struct mycrypto_context ctx;
     int id; 
     struct list_head list;
-    spinlock_t lock;
 };
 
 /** LED */
@@ -49,20 +49,29 @@ struct xdma_crdev {
     struct blinky blinky;
     struct list_head req_processing;
     struct list_head req_queue;
+    struct transport_engine *transport;
 };
 
-
+struct transport_engine {
+    spinlock_t lock;
+    int channel_0;
+    int channel_1;
+};
  
 
 int crdev_create(struct xdma_pci_dev *xpdev);
 void crdev_cleanup(void);
-struct xfer_req *alloc_xfer_req(void);
-void free_xfer_req(struct xfer_req *req);
+
+
+
 void print_req_queue(void);
 void print_req_processing(void);
 
 
+
+struct xfer_req *alloc_xfer_req(void);
 ssize_t xdma_xfer_submit_queue(struct xfer_req *xfer_req);
+void free_xfer_req(struct xfer_req *req);
 
 
 #endif

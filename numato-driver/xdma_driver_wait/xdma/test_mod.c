@@ -16,11 +16,11 @@ MODULE_AUTHOR("Xilinx, Inc.");
 MODULE_LICENSE("Dual BSD/GPL");
 
 static unsigned int req_num = 1;
-module_param(req_num, uint, 1);
+module_param(req_num, uint, 0000);
 MODULE_PARM_DESC(req_num, "request and number");
 
 static unsigned int xfer = 0;
-module_param(xfer, uint, 1);
+module_param(xfer, uint, 0000);
 MODULE_PARM_DESC(xfer, "there is or not xfer");
 
 #define MAX_REQ (15)
@@ -51,7 +51,7 @@ static int __init test_init(void)
     struct xfer_req *req[MAX_REQ];
     char *buff[MAX_REQ];
     struct scatterlist *sg;
-
+    pr_info("hjuiutyhrh");
     if (xfer == 1)
     {
         sg = (struct scatterlist *)kmalloc(req_num*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
@@ -81,7 +81,9 @@ static int __init test_init(void)
             pr_info("submit %d \n", i);
         }
     }
+    pr_info("hjuiuh");
     print_req_queue();
+    pr_info("hjuiuhaaa");
     print_req_processing();
 
     return 0;
