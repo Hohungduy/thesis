@@ -219,16 +219,13 @@ static int probe_one(struct pci_dev *pdev, const struct pci_device_id *id)
 	
 
 	/** function */
-	printk("cvghfasdesd");
-	// set_engine_base(xpdev->xdev->bar[0], 0);
-	// set_led_base(xpdev->xdev->bar[0] + 0x10000);
-
 	// write_mem(xpdev->xdev->bar[0]);
-	printk("cvghfasd");
 
 	rv = crdev_create(xpdev);
 	if (rv)
 		goto err_out;
+
+	pr_info("crdev created\n");
 
 	dev_set_drvdata(&pdev->dev, xpdev);
 
