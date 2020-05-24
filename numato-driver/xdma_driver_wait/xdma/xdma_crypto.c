@@ -3,6 +3,26 @@
 struct xdma_crdev crdev;
 struct transport_engine transdev;
 
+void send_event(struct event *ev)
+{
+    unsigned long flags;
+    spin_lock_irqsave(&crdev.rcv_data.events_lock, flags);
+    list_add(&ev->lh, &crdev.rcv_data.events_list);
+    spin_unlock_irqrestore(&crdev.rcv_data.events_lock, flags);
+    wake_up(&crdev.rcv_data.wq_event);
+}
+
+struct event* get_next_event(void)
+{
+    struct event *e;
+    spin_lock(&crdev.rcv_data.events_lock);
+    e = list_first_entry(&crdev.rcv_data.events_list, struct event, lh);
+    if (e)
+        list_del(&e->lh);
+    spin_unlock(&crdev.rcv_data.events_lock);
+    return e;
+}
+
 void blinky_timeout(struct timer_list *timer)
 {
     struct blinky *blinky;
@@ -78,18 +98,54 @@ irqreturn_t err_handler(int irq_no, void *dev)
 // 	return rv;
 // }
 
+
+
+int xfer_deliver_thread(void *data)
+{
+    struct event *e;
+    pr_info("xfer_deliver_thread on\n");
+    // while (true) {
+    //     wait_event(crdev.rcv_data.wq_event, (e = get_next_event()) );
+
+
+    //     xdma_user_isr_enable(crdev.xdev, 0x01);
+    //     /* Event processing */
+    //     if (e->print)
+    //         printk("deliver agent on");
+
+    //     if (e->stop)
+    //         break;
+    // }
+    do_exit(0);
+}
+
+int xfer_rcv_thread(void *data)
+{
+    return 0;
+}
+
+void trigger_work(void)
+{
+    struct event *ev;
+    ev = kmalloc(sizeof(struct event), GFP_ATOMIC | GFP_KERNEL);
+    ev->print = 1;
+    ev->stop = 0;
+    INIT_LIST_HEAD(&ev->lh);
+    send_event(ev);
+}
+
 irqreturn_t xfer_rcv(int irq_no, void *dev)
 {
-    pr_info("xfer_rcv");
-
-
-
+    pr_info("xfer_rcv interrupt\n");
+    xdma_user_isr_disable(crdev.xdev, 0x01);
+    // trigger_work();
     return IRQ_HANDLED;
 }
 
 int crdev_create(struct xdma_pci_dev *xpdev)
 {
     struct xdma_dev *xdev;
+    int i;
 
     xpdev->crdev = &crdev;
 
@@ -115,6 +171,23 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     spin_lock_init(&transdev.lock);
     crdev.transport = &transdev;
 
+    // xfer_rcv_task
+    for (i = 0; i < CORE_NUM; i++)
+    {
+        crdev.rcv_data.xfer_rcv_task[i] = kthread_create_on_node(xfer_rcv_thread,
+             (void *)&crdev.rcv_data, cpu_to_node(i), "crdev_%d_agent", i);
+        INIT_LIST_HEAD(&crdev.rcv_data.callback_queue[i]);
+        spin_lock_init(&crdev.rcv_data.callback_queue_lock[i]);
+        wake_up_process(crdev.rcv_data.xfer_rcv_task[i]);
+    }
+    crdev.rcv_data.xfer_deliver_task =  kthread_create
+        (xfer_deliver_thread, (void *)&crdev.rcv_data, "crdev_deliver_agent");
+    wake_up_process(crdev.rcv_data.xfer_deliver_task);
+
+
+    // event 
+    init_waitqueue_head(&crdev.rcv_data.wq_event);
+    INIT_LIST_HEAD(&crdev.rcv_data.events_list);
 
     //init user_irq
     xdma_user_isr_register(xdev, 0x01, xfer_rcv, &crdev);
@@ -122,45 +195,77 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     xdma_user_isr_enable(xdev, 0x03);
 
 
-    // 
-    mod_timer(&crdev.blinky.timer, jiffies + (unsigned int)(crdev.blinky.interval*HZ));
+    // timer
+    mod_timer(&crdev.blinky.timer, 
+        jiffies + (unsigned int)(crdev.blinky.interval*HZ));
 
+    return 0;
+}
+
+int update_load(int channel)
+{
+    spin_lock_bh(&transdev.lock);
+    switch (channel)
+    {   
+    case 0:
+        transdev.channel[0]--;
+        break;
+    case 1:
+        transdev.channel[1]--;
+        break;
+    default:
+        pr_info("Wrong channel!");
+        break;
+    }
+    spin_unlock_bh(&transdev.lock);
     return 0;
 }
 
 int choose_channel(void)
 {
     spin_lock_bh(&transdev.lock);
-    if (transdev.channel_0 < transdev.channel_1)
+    if (transdev.channel[0] < transdev.channel[1])
     {
-        transdev.channel_0++;
+        transdev.channel[0]++;
         spin_unlock_bh(&transdev.lock);
         return 0;
     }
     else
     {
-        transdev.channel_1++;
+        transdev.channel[1]++;
         spin_unlock_bh(&transdev.lock);
         return 1;
     }
-    
 }
 
 void crdev_cleanup(void)
 {
     struct list_head *p, *n;
+    int i;
 
     del_timer_sync(&crdev.blinky.timer);
-    
+    pr_info("destroy req_queue\n");
     list_for_each_safe(p, n, &crdev.req_queue){
         struct xfer_req* req = list_entry(p, struct xfer_req, list);
         list_del(p);
         kfree(req);
     }
+    pr_info("destroy req_processing\n");
     list_for_each_safe(p, n, &crdev.req_processing){
         struct xfer_req* req = list_entry(p, struct xfer_req, list);
         list_del(p);
         kfree(req);
+    }
+    // pr_info("destroy xfer_rcv_task\n");
+    // for (i = 0; i < CORE_NUM; i++)
+    // {
+    //     kthread_stop(crdev.rcv_data.xfer_rcv_task[i]);
+    // }
+    pr_info("destroy events list\n");
+    list_for_each_safe(p, n, &crdev.rcv_data.events_list){
+        struct event* e = list_entry(p, struct event, lh);
+        list_del(p);
+        kfree(e);
     }
 }
 
@@ -214,10 +319,12 @@ ssize_t xdma_xfer_submit_queue(struct xfer_req * xfer_req)
             // submit req from req_queue to engine 
             res = xdma_xfer_submit(dev_hndl, channel, write, 
                 (u64)ep_addr, &sg_table, dma_mapped, timeout_ms);
+            update_load(channel);
             spin_lock_bh(&crdev.lock);
             // Write region dsc
 
             // update engine buff idx & region dsc & datalen
+            iowrite32((u32)(current->pid), &region_base->xfer_id);
             iowrite32(sg_dma_len(next_req->sg), &region_base->data_len);
             active_next_region(engine_idx);
             increase_head_idx(engine_idx);
