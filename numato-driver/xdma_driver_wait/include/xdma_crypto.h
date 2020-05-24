@@ -6,9 +6,13 @@
 #include "xdma_region.h"
 #include "libxdma_api.h"
 #include "linux/atomic.h"
+#include "linux/workqueue.h"
+#include "linux/kthread.h"
 
 #define BUFF_LENGTH (REGION_NUM)
 #define BACKLOG_MAX_LENGTH (50)
+
+#define CORE_NUM (2)
 
 struct xdma_pci_dev;
 
@@ -42,6 +46,23 @@ struct blinky {
     enum led_state led;
 };
 
+struct event {
+    struct list_head lh;
+    bool stop;
+    bool print;
+};
+
+struct rcv_handler {
+    struct task_struct *xfer_rcv_task[CORE_NUM];
+    struct list_head callback_queue[CORE_NUM];
+    spinlock_t callback_queue_lock[CORE_NUM];
+    struct task_struct *xfer_deliver_task;
+
+    struct wait_queue_head wq_event;
+    struct list_head events_list;
+    spinlock_t events_lock;
+};
+
 struct xdma_crdev {
     struct xdma_pci_dev* xpdev;
     struct xdma_dev *xdev;
@@ -50,12 +71,13 @@ struct xdma_crdev {
     struct list_head req_processing;
     struct list_head req_queue;
     struct transport_engine *transport;
+    struct rcv_handler rcv_data;
+    // struct 
 };
 
 struct transport_engine {
     spinlock_t lock;
-    int channel_0;
-    int channel_1;
+    int channel[CORE_NUM];
 };
  
 
