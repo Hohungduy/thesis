@@ -14,12 +14,16 @@ void send_event(struct event *ev)
 
 struct event* get_next_event(void)
 {
-    struct event *e;
-    spin_lock(&crdev.rcv_data.events_lock);
-    e = list_first_entry(&crdev.rcv_data.events_list, struct event, lh);
-    if (e)
-        list_del(&e->lh);
-    spin_unlock(&crdev.rcv_data.events_lock);
+    struct event *e = NULL;
+    unsigned long flags;
+    spin_lock_irqsave(&crdev.rcv_data.events_lock, flags);
+    if (!list_empty(&crdev.rcv_data.events_list))
+    {
+        e = list_first_entry(&crdev.rcv_data.events_list, struct event, lh);
+        if (e)
+            list_del(&e->lh);
+    }
+    spin_unlock_irqrestore(&crdev.rcv_data.events_lock, flags);
     return e;
 }
 
@@ -56,66 +60,32 @@ irqreturn_t err_handler(int irq_no, void *dev)
     return IRQ_HANDLED;
 }
 
-// int xfer_rcv_threads_create(unsigned int num_threads)
-// {
-// 	struct xdma_kthread *thp;
-// 	int i;
-// 	int rv;
-
-// 	if (thread_cnt) {
-// 		pr_warn("threads already created!");
-// 		return 0;
-// 	}
-
-// 	pr_info("xdma_threads_create\n");
-
-// 	thread_cnt = num_threads;
-
-// 	cs_threads = kzalloc(thread_cnt * sizeof(struct xdma_kthread),
-// 					GFP_KERNEL);
-// 	if (!cs_threads)
-// 		return -ENOMEM;
-
-// 	/* N dma writeback monitoring threads */
-// 	thp = cs_threads;
-// 	for (i = 0; i < thread_cnt; i++, thp++) {
-// 		thp->cpu = i;
-// 		thp->timeout = 0;
-// 		thp->fproc = xdma_thread_cmpl_status_proc;
-// 		thp->fpending = xdma_thread_cmpl_status_pend;
-// 		rv = xdma_kthread_start(thp, "cmpl_status_th", i);
-// 		if (rv < 0)
-// 			goto cleanup_threads;
-// 	}
-
-// 	return 0;
-
-// cleanup_threads:
-// 	kfree(cs_threads);
-// 	cs_threads = NULL;
-// 	thread_cnt = 0;
-
-// 	return rv;
-// }
-
-
-
 int xfer_deliver_thread(void *data)
 {
     struct event *e;
-    pr_info("xfer_deliver_thread on\n");
-    // while (true) {
-    //     wait_event(crdev.rcv_data.wq_event, (e = get_next_event()) );
+    printk("xfer_deliver_thread on\n");
+    while (true) {
+        wait_event(crdev.rcv_data.wq_event, (e = get_next_event()) );
+        if (e){
+
+            /* Event processing */
 
 
-    //     xdma_user_isr_enable(crdev.xdev, 0x01);
-    //     /* Event processing */
-    //     if (e->print)
-    //         printk("deliver agent on");
 
-    //     if (e->stop)
-    //         break;
-    // }
+            
+            if (e->print){
+                printk("deliver agent on\n");
+                pr_info("trigger_work receive event\n");
+                pr_info("print = %d", e->print);
+                pr_info("stop = %d", e->stop);
+            }
+
+            xdma_user_isr_enable(crdev.xdev, 0x01);
+            if (e->stop)
+                break;
+        }
+    }
+    kfree(e);
     do_exit(0);
 }
 
@@ -127,10 +97,13 @@ int xfer_rcv_thread(void *data)
 void trigger_work(void)
 {
     struct event *ev;
+    pr_info("trigger_work\n");
     ev = kmalloc(sizeof(struct event), GFP_ATOMIC | GFP_KERNEL);
-    ev->print = 1;
+    INIT_LIST_HEAD(&ev->lh);
+    ev->print = 0;
     ev->stop = 0;
     INIT_LIST_HEAD(&ev->lh);
+    pr_info("trigger_work send_event\n");
     send_event(ev);
 }
 
@@ -138,7 +111,7 @@ irqreturn_t xfer_rcv(int irq_no, void *dev)
 {
     pr_info("xfer_rcv interrupt\n");
     xdma_user_isr_disable(crdev.xdev, 0x01);
-    // trigger_work();
+    trigger_work();
     return IRQ_HANDLED;
 }
 
@@ -171,6 +144,14 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     spin_lock_init(&transdev.lock);
     crdev.transport = &transdev;
 
+    xdma_user_isr_register(xdev, 0x01, xfer_rcv, &crdev);
+    xdma_user_isr_register(xdev, 0x02, err_handler, &crdev);
+
+    // event 
+    init_waitqueue_head(&crdev.rcv_data.wq_event);
+    INIT_LIST_HEAD(&crdev.rcv_data.events_list);
+    spin_lock_init(&crdev.rcv_data.events_lock);
+
     // xfer_rcv_task
     for (i = 0; i < CORE_NUM; i++)
     {
@@ -181,17 +162,12 @@ int crdev_create(struct xdma_pci_dev *xpdev)
         wake_up_process(crdev.rcv_data.xfer_rcv_task[i]);
     }
     crdev.rcv_data.xfer_deliver_task =  kthread_create
-        (xfer_deliver_thread, (void *)&crdev.rcv_data, "crdev_deliver_agent");
+        (xfer_deliver_thread, (void *)&crdev.rcv_data, "crdev_deliver");
     wake_up_process(crdev.rcv_data.xfer_deliver_task);
 
 
-    // event 
-    init_waitqueue_head(&crdev.rcv_data.wq_event);
-    INIT_LIST_HEAD(&crdev.rcv_data.events_list);
-
     //init user_irq
-    xdma_user_isr_register(xdev, 0x01, xfer_rcv, &crdev);
-    xdma_user_isr_register(xdev, 0x02, err_handler, &crdev);
+
     xdma_user_isr_enable(xdev, 0x03);
 
 
@@ -242,6 +218,15 @@ void crdev_cleanup(void)
 {
     struct list_head *p, *n;
     int i;
+    struct event *ev;
+    
+    pr_info("stop crdev deliver\n");
+    ev = kmalloc(sizeof(struct event), GFP_ATOMIC | GFP_KERNEL);
+    INIT_LIST_HEAD(&ev->lh);
+    ev->print = 1;
+    ev->stop = 1;
+    INIT_LIST_HEAD(&ev->lh);
+    send_event(ev);
 
     del_timer_sync(&crdev.blinky.timer);
     pr_info("destroy req_queue\n");
