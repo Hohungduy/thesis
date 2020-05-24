@@ -27,6 +27,7 @@
         "set_memory.h": "c",
         "cacheflush.h": "c",
         "chrono": "c",
-        "list": "c"
+        "list": "c",
+        "condition_variable": "c"
     }
 }
