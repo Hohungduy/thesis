@@ -32,13 +32,13 @@ int get_sg_from_buf(void *buff, struct scatterlist *sg, int size)
     unsigned int offset = offset_in_page(buff);
     unsigned int nbytes = 
         min_t(unsigned int, PAGE_SIZE - offset, size);
-    pr_info("aae");
+    // pr_info("aae");
     pg = virt_to_page(buff);
     if (!pg){
         pr_info("Cannot convert buffer to page");
         return FALSE;
     }
-    pr_info("aaj");
+    // pr_info("aaj");
     flush_dcache_page(pg);
     sg_set_page(sg, pg, nbytes, offset);
 
@@ -51,7 +51,7 @@ static int __init test_init(void)
     struct xfer_req *req[MAX_REQ];
     char *buff[MAX_REQ];
     struct scatterlist *sg;
-    pr_info("hjuiutyhrh");
+    // pr_info("hjuiutyhrh");
     if (xfer == 1)
     {
         sg = (struct scatterlist *)kmalloc(req_num*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
@@ -81,9 +81,9 @@ static int __init test_init(void)
             pr_info("submit %d \n", i);
         }
     }
-    pr_info("hjuiuh");
+    // pr_info("hjuiuh");
     print_req_queue();
-    pr_info("hjuiuhaaa");
+    // pr_info("hjuiuhaaa");
     print_req_processing();
 
     return 0;
