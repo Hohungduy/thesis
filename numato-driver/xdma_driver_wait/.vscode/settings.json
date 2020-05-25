@@ -28,6 +28,10 @@
         "cacheflush.h": "c",
         "chrono": "c",
         "list": "c",
-        "condition_variable": "c"
+        "condition_variable": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "mutex": "c"
     }
 }
