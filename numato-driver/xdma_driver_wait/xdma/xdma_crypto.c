@@ -63,16 +63,36 @@ irqreturn_t err_handler(int irq_no, void *dev)
 int xfer_deliver_thread(void *data)
 {
     struct event *e;
+    int cpu;
+    u32 xfer_id;
+    struct xdma_crdev *crdev = (struct xdma_crdev *)data;
+    struct list_head * req_processing = 
+        &crdev->req_processing;
+    struct list_head * req_queue = 
+        &crdev->req_queue;
+
     printk("xfer_deliver_thread on\n");
+
     while (true) {
-        wait_event(crdev.rcv_data.wq_event, (e = get_next_event()) );
+        wait_event(crdev->rcv_data.wq_event, (e = get_next_event()) );
         if (e){
 
             /* Event processing */
 
+            // Get xfer_id of next req
 
+            // check in the req_processing
 
-            
+            // build scatterlist
+
+            // xfer data to host 
+
+            // remove req from processing queue 
+
+            // 
+
+            // add req to list of agents
+
             if (e->print){
                 printk("deliver agent on\n");
                 pr_info("trigger_work receive event\n");
@@ -80,7 +100,7 @@ int xfer_deliver_thread(void *data)
                 pr_info("stop = %d", e->stop);
             }
 
-            xdma_user_isr_enable(crdev.xdev, 0x01);
+            xdma_user_isr_enable(crdev->xdev, 0x01);
             if (e->stop)
                 break;
         }
@@ -162,7 +182,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
         wake_up_process(crdev.rcv_data.xfer_rcv_task[i]);
     }
     crdev.rcv_data.xfer_deliver_task =  kthread_create
-        (xfer_deliver_thread, (void *)&crdev.rcv_data, "crdev_deliver");
+        (xfer_deliver_thread, (void *)&crdev, "crdev_deliver");
     wake_up_process(crdev.rcv_data.xfer_deliver_task);
 
 
@@ -310,6 +330,7 @@ ssize_t xdma_xfer_submit_queue(struct xfer_req * xfer_req)
 
             // update engine buff idx & region dsc & datalen
             iowrite32((u32)(current->pid), &region_base->xfer_id);
+            next_req->id = current->pid;
             iowrite32(sg_dma_len(next_req->sg), &region_base->data_len);
             active_next_region(engine_idx);
             increase_head_idx(engine_idx);
