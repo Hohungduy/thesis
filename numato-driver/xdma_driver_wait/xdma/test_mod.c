@@ -10,6 +10,7 @@
 #include "linux/scatterlist.h"
 #include <linux/mm.h>
 #include <asm/cacheflush.h>
+#include "xdma_region.h"
 // #include <linux
 
 MODULE_AUTHOR("Xilinx, Inc.");
@@ -23,7 +24,13 @@ static unsigned int xfer = 0;
 module_param(xfer, uint, 0000);
 MODULE_PARM_DESC(xfer, "there is or not xfer");
 
+static unsigned int write_mem = 0;
+module_param(write_mem, uint, 0000);
+MODULE_PARM_DESC(write_mem, "there is or not xfer");
+
 #define MAX_REQ (15)
+
+void *get_base(void);
 
 int get_sg_from_buf(void *buff, struct scatterlist *sg, int size)
 {
@@ -51,8 +58,9 @@ static int __init test_init(void)
     struct xfer_req *req[MAX_REQ];
     char *buff[MAX_REQ];
     struct scatterlist *sg;
+
     // pr_info("hjuiutyhrh");
-    if (xfer == 1)
+    if (xfer)
     {
         sg = (struct scatterlist *)kmalloc(req_num*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
         // pr_info("aaa");
@@ -69,10 +77,8 @@ static int __init test_init(void)
         }
 
         for (i = 0; i <  req_num; i ++){
-            // pr_info("saa");
             for (j =0; j < i*8 + 1400; j++){
                 buff[i][j] = (i & 0x0F ) | ((j & 0x0F) << 4);
-                // pr_info("buff[%d][%d] = %d",i, j, buff[i][j]);
             }
         }
 
@@ -81,9 +87,22 @@ static int __init test_init(void)
             pr_info("submit %d \n", i);
         }
     }
-    // pr_info("hjuiuh");
+    if (write_mem)
+    {
+        struct crypto_engine *base = 
+            (struct crypto_engine *)get_base();
+        int i, j;
+        struct outbound * out_base = &base->out;
+        
+        for (i = 0; i < REGION_NUM; i++)
+        {
+            iowrite32(0xABCDABCD, &out_base->region[i].region_dsc);
+            
+        }
+
+    }
+
     print_req_queue();
-    // pr_info("hjuiuhaaa");
     print_req_processing();
 
     return 0;

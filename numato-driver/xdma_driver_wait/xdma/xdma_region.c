@@ -2,6 +2,12 @@
 
 static struct base region_base;
 
+void *get_base(void)
+{
+    return &region_base;
+}
+EXPORT_SYMBOL_GPL(get_base);
+
 int set_engine_base(void *base, int engine_idx)
 {
     if (engine_idx >= ENGINE_NUM)
@@ -114,5 +120,5 @@ void test_mem(void)
         printk("region_dsc = %d", ioread32(&region_base.engine[0]->in.region[i].data_len));
     }
     
-
 }
+EXPORT_SYMBOL_GPL(test_mem);
