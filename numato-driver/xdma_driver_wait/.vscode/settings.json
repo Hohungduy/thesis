@@ -32,6 +32,7 @@
         "array": "c",
         "string": "c",
         "string_view": "c",
-        "mutex": "c"
+        "mutex": "c",
+        "tuple": "c"
     }
 }
