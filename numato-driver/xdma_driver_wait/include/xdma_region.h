@@ -5,7 +5,7 @@
 #include <linux/uaccess.h>
 
 #define REGION_NUM (8)
-#define DATA_MAX_LEN (1600 - 44)
+#define DATA_MAX_LEN (1600 - 40 - 16)
 #define ENGINE_NUM (1)
 #define ENGINE_OFFSET(x) (0 + x*1)
 #define LED_OFFSET (0x10000)
@@ -32,7 +32,7 @@ struct common_base {
 };
 
 struct crypto_dsc {
-    u32 data[7];
+    u32 data[6 + 16];
 };
 
 struct region {
