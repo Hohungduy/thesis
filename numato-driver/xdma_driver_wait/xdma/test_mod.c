@@ -54,25 +54,19 @@ int get_sg_from_buf(void *buff, struct scatterlist *sg, int size)
 
 static int __init test_init(void)
 {
-    int i, j;
+    __uint128_t i, j;
     struct xfer_req *req[MAX_REQ];
     char *buff[MAX_REQ];
     struct scatterlist *sg;
 
-    // pr_info("hjuiutyhrh");
     if (xfer)
     {
         sg = (struct scatterlist *)kmalloc(req_num*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
-        // pr_info("aaa");
         for (i = 0; i < req_num; i++){
-            // pr_info("aab");
             req[i] = alloc_xfer_req();
             req[i]->id = current->pid;
             buff[i] = (char *)kmalloc(i*8 + 1400, GFP_KERNEL | GFP_ATOMIC);
-            // sg_init_one(&sg[i], buff[i], i*8 + 1400);
-            // pr_info("aac");
             get_sg_from_buf(buff[i], &sg[i], i*8 + 1400 );
-
             req[i]->sg = &sg[i];
         }
 
@@ -89,17 +83,31 @@ static int __init test_init(void)
     }
     if (write_mem)
     {
-        struct crypto_engine *base = 
-            (struct crypto_engine *)get_base();
-        int i, j;
-        struct outbound * out_base = &base->out;
-        
-        for (i = 0; i < REGION_NUM; i++)
+        struct base *base = 
+            (struct base *)get_base();
+        struct outbound * out_base = &base->engine[0]->out;
+        for (i = 2; i < REGION_NUM; i++)
         {
-            iowrite32(0xABCDABCD, &out_base->region[i].region_dsc);
+            __uint128_t write_bytes = 0;
+            __uint128_t region_descriptor = 0xABCDABCD;
+            __uint128_t xfer_id = i;
+            __uint128_t xfer_dsc = 0;
+            __uint128_t crypto_result = 1;
+            __uint128_t data_len = i*8 + 1400;
+            write_bytes = region_descriptor | (xfer_id << 32)
+                | (xfer_dsc << 64) | (crypto_result << 72) | (data_len << 80); 
+            memcpy_toio(&out_base->region[i].region_dsc, &write_bytes, 16);
+            // iowrite32(0xABCDABCD, &out_base->region[i].region_dsc);
+            // iowrite32(0 | (1 << 8) | (i*8 + 1400) << 16, &out_base->region[i].xfer_dsc);
             
+            for (j =0; j < ((i*8 + 1400)/16); j++){
+                write_bytes = (i << 96) | j;
+                // write_bytes = 0;
+                memcpy_toio((__uint128_t *)&out_base->region[i].data + j, &write_bytes, 16);
+            }
         }
-
+        iowrite32(2,&base->engine[0]->comm.tail_outb);
+        iowrite32(8,&base->engine[0]->comm.head_outb);
     }
 
     print_req_queue();
