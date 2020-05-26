@@ -25,7 +25,7 @@ struct mycrypto_context {
 };
 
 struct xfer_req{
-    int (*complete)(void *data, int res);
+    int (*crypto_complete)(void *data, int res);
     struct mycrypto_context ctx;
 
     int id;
