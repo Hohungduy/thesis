@@ -3,6 +3,11 @@
 struct xdma_crdev crdev;
 struct transport_engine transdev;
 
+struct xdma_crdev *get_crdev(void)
+{
+    return &crdev;
+}
+EXPORT_SYMBOL_GPL(get_crdev);
 int choose_channel(void)
 {
     spin_lock_bh(&transdev.lock);
@@ -105,50 +110,81 @@ int xfer_deliver_thread(void *data)
     unsigned long flags;
     struct crypto_agent *agent = &crdev.agent;
     struct xdma_crdev *crdev = (struct xdma_crdev *)data;
+    int engine_idx = 0;
     // struct list_head * processing_queue = 
         // &crdev->processing_queue;
     // struct list_head * backlog_queue = 
     //     &crdev->agent.backlog_queue;
-
+    struct xfer_req *next_req;
+    struct reqion *region;
+    u64 ep_addr;
+    int res;
     printk("xfer_deliver_thread on\n");
 
     while (true) {
         wait_event(agent->wq_event, (e = get_next_event()) );
         if (e && e->deliver_thread){
-            spin_lock_irqsave(&agent->events_list_lock, flags);
-            list_del(&e->lh);
-            spin_unlock_irqrestore(&agent->events_list_lock, flags);
+            printk("xfer_deliver_thread active\n");
 
-            
+            // while(!is_engine_empty_out(engine_idx)){
+                spin_lock_irqsave(&agent->events_list_lock, flags);
+                // list_del(&e->lh);
+                spin_unlock_irqrestore(&agent->events_list_lock, flags);
+                // kfree(e);
+            //     /* Event processing */
 
-            /* Event processing */
-
-            // Get xfer_id of next req
-            
-            // check in the req_processing
-
-            // build scatterlist
-
-            // xfer data to host 
-
-            // remove req from processing queue 
-
-            // 
-
-            // add req to list of agents
-
-            if (unlikely(e->print)){
-                printk("deliver agent on\n");
-                pr_info("trigger_work receive event\n");
-                pr_info("print = %d", e->print);
-                pr_info("stop = %d", e->stop);
-            }
-            xdma_user_isr_enable(crdev->xdev, 0x01);
+            //     // Get xfer_id of next req
+            //     // check in the req_processing
+            //     spin_lock_irqsave(&crdev->processing_queue_lock, flags);
+                
+            //     if (list_empty(&crdev->processing_queue)){
+            //         pr_info("interrupt but list empty!\n\n");
+            //         spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
+            //         break;
+            //     }
+            //     next_req = list_first_entry(&crdev->processing_queue,
+            //         struct xfer_req, list);
+            //     xfer_id = next_req->id;
+            //     pr_info("xfer_id = %d\n", xfer_id);
+            //     // remove req from processing queue 
+            //     list_del(&next_req->list);
+            //     spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
+            //     // check in the engine
+            //     if (is_engine_empty_out(engine_idx))
+            //     {
+            //         pr_info("interrupt but engine empty\n");
+            //         break;
+            //     }
+            //     region = 
+            //         (struct reqion *)get_region_ep_addr_out(engine_idx);    
+            //     // build scatterlist
+            //     ep_addr = get_data_ep_addr_out(engine_idx);
+            //     // xfer data to host 
+            //     res = xdma_xfer_submit(&crdev->xdev,
+            //         choose_channel(), FALSE, ep_addr, 
+            //         &next_req->sg_table, FALSE, 3);
+            //     if (res < 0)
+            //     {
+            //         pr_info("can not read!!!\n");
+            //         continue;
+            //     }
+            //     // add req to list of agents
+            //     spin_lock_irqsave(&crdev->agent.rcv.data[0].callback_queue_lock, flags);
+            //     list_add_tail(&next_req->list, &crdev->agent.rcv.data[0].callback_queue);
+            //     spin_unlock_irqrestore(&crdev->agent.rcv.data[0].callback_queue_lock, flags);
+                
+            //     if (unlikely(e->print)){
+            //         printk("deliver agent on\n");
+            //         pr_info("trigger_work receive event\n");
+            //         pr_info("print = %d", e->print);
+            //         pr_info("stop = %d", e->stop);
+            //     }
+            // }
+            // // xdma_user_isr_enable(crdev->xdev, 0x01);
             if (e->stop)
                 break;
-            kfree(e);
+            
         }
-        
     }
     kfree(e);
     do_exit(0);
@@ -202,46 +238,46 @@ int xmit_thread(void *data)
         {
             printk("xmit_threadd processing\n");
             // remove first req from backlog
-            spin_lock_bh(&agent->xmit.backlog_queue_lock);
-            next_req = list_first_entry(backlog_queue, 
-                struct xfer_req, list);
-            list_del(&next_req->list);
-            spin_unlock_bh(&agent->xmit.backlog_queue_lock);
+            // spin_lock_bh(&agent->xmit.backlog_queue_lock);
+            // next_req = list_first_entry(backlog_queue, 
+            //     struct xfer_req, list);
+            // list_del(&next_req->list);
+            // spin_unlock_bh(&agent->xmit.backlog_queue_lock);
 
-            // add to tail of processing queue
-            spin_lock_irqsave(&crdev->processing_queue_lock, flags);
-            list_add_tail(&next_req->list, processing_queue);
-            spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
+            // // add to tail of processing queue
+            // spin_lock_irqsave(&crdev->processing_queue_lock, flags);
+            // list_add_tail(&next_req->list, processing_queue);
+            // spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
 
-            /* send data to card  */ // lock ???????????
+            // /* send data to card  */ // lock ???????????
 
-            channel = choose_channel();
-            spin_lock_irqsave(&crdev->region_lock, flags);
-            region_base = get_next_region_ep_addr(engine_idx);
-            ep_addr = get_next_data_ep_addr(engine_idx);
-            spin_unlock_irqrestore(&crdev->region_lock, flags);
+            // channel = choose_channel();
+            // spin_lock_irqsave(&crdev->region_lock, flags);
+            // region_base = get_next_region_ep_addr(engine_idx);
+            // ep_addr = get_next_data_ep_addr(engine_idx);
+            // spin_unlock_irqrestore(&crdev->region_lock, flags);
 
-            pr_info("send to ep_addr = %lld", ep_addr);
-            // Write crypto info
+            // pr_info("send to ep_addr = %lld", ep_addr);
+            // // Write crypto info
             
-            // submit req from req_queue to engine 
-            res = xdma_xfer_submit(dev_hndl, channel, write, 
-                (u64)ep_addr, &next_req->sg_table, dma_mapped, timeout_ms);
+            // // submit req from req_queue to engine 
+            // res = xdma_xfer_submit(dev_hndl, channel, write, 
+            //     (u64)ep_addr, &next_req->sg_table, dma_mapped, timeout_ms);
 
-            // res < 0 ???????????????????????
+            // // res < 0 ???????????????????????
 
-            spin_lock_irqsave(&crdev->region_lock, flags);
-            update_load(channel);
-            // Write region dsc
+            // spin_lock_irqsave(&crdev->region_lock, flags);
+            // update_load(channel);
+            // // Write region dsc
 
-            // update engine buff idx & region dsc & datalen
-            iowrite32((u32)(current->pid), &region_base->xfer_id);
-            next_req->id = current->pid;
-            iowrite32(sg_dma_len(next_req->sg), &region_base->data_len);
-            active_next_region(engine_idx);
-            increase_head_idx(engine_idx);
+            // // update engine buff idx & region dsc & datalen
+            // iowrite32((u32)(current->pid), &region_base->xfer_id);
+            // next_req->id = current->pid;
+            // iowrite32(sg_dma_len(next_req->sg), &region_base->data_len);
+            // active_next_region(engine_idx);
+            // increase_head_idx(engine_idx);
 
-            spin_unlock_irqrestore(&crdev->region_lock, flags);
+            // spin_unlock_irqrestore(&crdev->region_lock, flags);
         }
     }
     do_exit(0);
@@ -250,8 +286,8 @@ int xmit_thread(void *data)
 int xfer_rcv_thread(void *data)
 {
     struct rcv_thread *thread_data = (struct rcv_thread *)data;
-    struct list_head *cbq = &thread_data->callback_queue;
-    spinlock_t *lock = &thread_data->callback_queue_lock;
+    // struct list_head *cbq = &thread_data->callback_queue;
+    // spinlock_t *lock = &thread_data->callback_queue_lock;
 
     struct xfer_req *req;
     struct list_head *p,*n;
@@ -264,32 +300,33 @@ int xfer_rcv_thread(void *data)
     while (true) {
         wait_event(agent->wq_event, (e = get_next_event()) );
         if (e && e->rcv_thread[thread_data->cpu]){
-            spin_lock_irqsave(&agent->events_list_lock, flags);
-            list_del(&e->lh);
-            spin_unlock_irqrestore(&agent->events_list_lock, flags);
-            /* Event processing */
+            printk("xfer_rcv_thread active cpu = %d\n", thread_data->cpu);
+            // spin_lock_irqsave(&agent->events_list_lock, flags);
+            // list_del(&e->lh);
+            // spin_unlock_irqrestore(&agent->events_list_lock, flags);
+            // /* Event processing */
 
-            // Get xfer_id of next req
-            if (list_empty(&thread_data->callback_queue))
-                continue;
-            list_for_each_safe(p, n, &thread_data->callback_queue)
-            {
-                req = list_entry(p, struct xfer_req, list);
-                list_del(p);
-                local_bh_disable();
-                req->complete(req, req->res);
-                local_bh_enable();
-                kfree(req);
-            }
-            if (unlikely(e->print)){
-                printk("deliver agent on\n");
-                pr_info("trigger_work receive event\n");
-                pr_info("print = %d", e->print);
-                pr_info("stop = %d", e->stop);
-            }
-            if (e->stop)
-                break;
-            kfree(e);
+            // // Get xfer_id of next req
+            // if (list_empty(&thread_data->callback_queue))
+            //     continue;
+            // list_for_each_safe(p, n, &thread_data->callback_queue)
+            // {
+            //     req = list_entry(p, struct xfer_req, list);
+            //     list_del(p);
+            //     local_bh_disable();
+            //     req->crypto_complete(req, req->res);
+            //     local_bh_enable();
+            //     kfree(req);
+            // }
+            // if (unlikely(e->print)){
+            //     printk("deliver agent on\n");
+            //     pr_info("trigger_work receive event\n");
+            //     pr_info("print = %d", e->print);
+            //     pr_info("stop = %d", e->stop);
+            // }
+            // if (e->stop)
+            //     break;
+            // kfree(e);
         }
     }
     kfree(e);
