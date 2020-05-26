@@ -11,6 +11,7 @@
 #include <linux/mm.h>
 #include <asm/cacheflush.h>
 #include "xdma_region.h"
+#include "xdma_region.h"
 // #include <linux
 
 MODULE_AUTHOR("Xilinx, Inc.");
@@ -31,6 +32,8 @@ MODULE_PARM_DESC(write_mem, "there is or not xfer");
 #define MAX_REQ (15)
 
 void *get_base(void);
+struct xdma_crdev *get_crdev(void);
+
 
 int get_sg_from_buf(void *buff, struct scatterlist *sg, int size)
 {
@@ -52,12 +55,31 @@ int get_sg_from_buf(void *buff, struct scatterlist *sg, int size)
     return true;
 }
 
+int crypto_complete(void *data, int res)
+{
+    
+    char *buf;
+    int i = 0;
+    struct scatterlist *sg = ((struct xfer_req *)data)->sg;
+
+    pr_info("complete ehehe %d\n", res);
+    buf = sg_virt (sg);
+    for (i = 0; i < 1500; i += 4)
+    {
+        pr_info("address = %i , data = %x",i,  *((u32 *)(&buf[i])));
+    }
+    return 0;
+}
+
 static int __init test_init(void)
 {
     __uint128_t i, j;
     struct xfer_req *req[MAX_REQ];
     char *buff[MAX_REQ];
     struct scatterlist *sg;
+    struct xdma_crdev *crdev;
+    struct list_head *processing;
+    unsigned long flags;
 
     if (xfer)
     {
@@ -78,7 +100,7 @@ static int __init test_init(void)
 
         for (i = 0; i <  req_num; i ++){
             xdma_xfer_submit_queue(req[i]);
-            pr_info("submit %d \n", i);
+            pr_info("submit %lud \n", (unsigned long int)i);
         }
     }
     if (write_mem)
@@ -86,7 +108,10 @@ static int __init test_init(void)
         struct base *base = 
             (struct base *)get_base();
         struct outbound * out_base = &base->engine[0]->out;
-        for (i = 2; i < REGION_NUM; i++)
+#define begin_test (1)
+#define end_test (6)
+        
+        for (i = begin_test; i < end_test; i++)
         {
             __uint128_t write_bytes = 0;
             __uint128_t region_descriptor = 0xABCDABCD;
@@ -106,8 +131,30 @@ static int __init test_init(void)
                 memcpy_toio((__uint128_t *)&out_base->region[i].data + j, &write_bytes, 16);
             }
         }
-        iowrite32(2,&base->engine[0]->comm.tail_outb);
-        iowrite32(8,&base->engine[0]->comm.head_outb);
+        iowrite32(1,&base->engine[0]->comm.tail_outb);
+        iowrite32(6,&base->engine[0]->comm.head_outb);
+
+        crdev = get_crdev();
+        processing = &crdev->processing_queue;
+        
+        
+        sg = (struct scatterlist *)kmalloc(5*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
+        for (i = begin_test; i < end_test; i++){
+            req[i] = alloc_xfer_req();
+            req[i]->id = i;
+            buff[i] = (char *)kzalloc(i*8 + 1400, GFP_KERNEL | GFP_ATOMIC);
+            get_sg_from_buf(buff[i], &sg[i], i*8 + 1400 );
+            req[i]->sg = &sg[i];
+            req[i]->sg_table.sgl = &sg[i];
+            req[i]->sg_table.nents = 1;
+            req[i]->sg_table.orig_nents = 1;
+
+            spin_lock_irqsave(&crdev->processing_queue_lock, flags);
+            list_add(&req[i]->list, &crdev->processing_queue);
+            spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
+            req[i]->crypto_complete = crypto_complete;
+            req[i]->res = i;
+        }
     }
 
     print_req_queue();
