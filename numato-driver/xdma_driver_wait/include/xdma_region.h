@@ -86,5 +86,12 @@ u64 get_next_data_ep_addr(int engine_idx);
 int increase_head_idx(int engine_idx);
 int active_next_region(int engine_idx);
 
+void *get_region_ep_addr_out(int engine_idx);
+u64 get_data_ep_addr_out(int engine_idx);
+int increase_tail_idx_out(int engine_idx);
+int is_engine_empty_out(int engine_idx);
+
+
+
 
 #endif
