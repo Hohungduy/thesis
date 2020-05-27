@@ -68,7 +68,7 @@ u64 get_data_ep_addr_out(int engine_idx)
 {
     struct crypto_engine *base = region_base.engine[engine_idx];
 
-    u32 tail = ioread32(&base->comm.head_outb);
+    u32 tail = ioread32(&base->comm.tail_outb);
 
     return offsetof(struct crypto_engine, out) + 
         offsetof(struct outbound, region) + 
