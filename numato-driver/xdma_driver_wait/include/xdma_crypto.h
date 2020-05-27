@@ -86,9 +86,13 @@ struct crypto_agent {
     struct xmit_handler xmit;
     struct rcv_handler rcv;
 
-    struct wait_queue_head wq_event;
-    struct list_head events_list;
-    spinlock_t events_list_lock;
+    struct wait_queue_head wq_xmit_event;
+    // struct list_head xmit_events_list;
+    // spinlock_t xmit_events_list_lock;
+
+    struct wait_queue_head wq_deliver_event;
+    struct list_head deliver_events_list;
+    spinlock_t deliver_events_list_lock;
 };
 
 struct xdma_crdev {
