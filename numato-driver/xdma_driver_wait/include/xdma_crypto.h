@@ -12,7 +12,7 @@
 
 #define BUFF_LENGTH (REGION_NUM)
 #define BACKLOG_MAX_LENGTH (50)
-
+#define AGENT_NUM (1)
 #define CORE_NUM (2)
 
 struct xdma_pci_dev;
@@ -76,25 +76,33 @@ enum xmit_status {
     XMIT_STATUS_STOP
 };
 
+#define CHANNEL_NUM (2)
+
 struct xmit_handler {
-    struct task_struct *xmit_task;
-    spinlock_t backlog_queue_lock;
-    struct list_head backlog_queue;
+    struct task_struct *deliver_task;
+    struct list_head deliver_list;
+    spinlock_t deliver_list_lock;
+    
     enum xmit_status status;
     spinlock_t region_lock;
+
+    struct wait_queue_head wq_xmit_event;
+    struct list_head xmit_events_list;
+    spinlock_t xmit_events_list_lock;
+
+    struct task_struct *xmit_task[CHANNEL_NUM];
+    spinlock_t xmit_queue_lock[CHANNEL_NUM];
+    struct list_head xmit_queue[CHANNEL_NUM];
 };
 
 struct crypto_agent {
     struct xmit_handler xmit;
     struct rcv_handler rcv;
 
-    struct wait_queue_head wq_xmit_event;
-    // struct list_head xmit_events_list;
-    // spinlock_t xmit_events_list_lock;
-
-    struct wait_queue_head wq_deliver_event;
-    struct list_head deliver_events_list;
-    spinlock_t deliver_events_list_lock;
+    struct list_head processing_queue;
+    int agent_idx;
+    int xfer_idex;
+    spinlock_t agent_lock;
 };
 
 struct xdma_crdev {
@@ -102,16 +110,11 @@ struct xdma_crdev {
     struct xdma_dev *xdev;
     struct blinky blinky;
 
-    
-
-    spinlock_t processing_queue_lock;
-    struct list_head processing_queue;
-
     spinlock_t channel_lock;
-    int channel_load[CORE_NUM];  
+    int channel_load[CHANNEL_NUM];  
 
-    struct crypto_agent agent;
-    atomic_t xfer_idex;
+    struct crypto_agent agent[AGENT_NUM];
+    
 };
 
 struct transport_engine {
