@@ -86,7 +86,6 @@ static int __init test_init(void)
         sg = (struct scatterlist *)kmalloc(req_num*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
         for (i = 0; i < req_num; i++){
             req[i] = alloc_xfer_req();
-            req[i]->id = current->pid;
             buff[i] = (char *)kmalloc(i*8 + 1400, GFP_KERNEL | GFP_ATOMIC);
             get_sg_from_buf(buff[i], &sg[i], i*8 + 1400 );
             req[i]->sg = &sg[i];
@@ -156,9 +155,15 @@ static int __init test_init(void)
             req[i]->res = i;
         }
     }
+    /*
 
-    print_req_queue();
-    print_req_processing();
+    */
+    pr_info("Test module print\n");
+
+    print_xmit_list();
+    print_deliver_list();
+    print_processing_list();
+    pr_info("Test module print end\n");
 
     return 0;
 }

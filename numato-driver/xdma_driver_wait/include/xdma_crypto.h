@@ -30,6 +30,10 @@ struct xfer_req{
 
     int id;
     int res;
+    u64 data_ep_addr;
+    struct region *in_region;
+    struct region *out_region;
+    int region_idx;
     struct scatterlist *sg;
     struct sg_table sg_table;
     struct list_head list;
@@ -99,6 +103,8 @@ struct xmit_handler {
     spinlock_t xmit_queue_lock[CHANNEL_NUM];
     struct list_head xmit_queue[CHANNEL_NUM];
     struct task_data task_data[CHANNEL_NUM];
+
+    u32 booking;
 };
 
 struct crypto_agent {
@@ -107,7 +113,7 @@ struct crypto_agent {
 
     struct list_head processing_queue;
     int agent_idx;
-    int xfer_idex;
+    u32 xfer_idex;
     spinlock_t agent_lock;
 };
 
@@ -133,9 +139,11 @@ void crdev_cleanup(void);
 
 
 
-void print_req_queue(void);
-void print_req_processing(void);
+void print_deliver_list(void);
+void print_processing_list(void);
+void print_xmit_list(void);
 
+void delete_deliver_list(struct xdma_crdev *crdev);
 
 
 struct xfer_req *alloc_xfer_req(void);
