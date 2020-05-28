@@ -67,6 +67,7 @@ struct rcv_thread {
 struct rcv_handler {
     struct rcv_thread data[CORE_NUM];
     struct task_struct *xfer_deliver_task;
+    spinlock_t region_lock;
 };
 
 enum xmit_status {
@@ -80,6 +81,7 @@ struct xmit_handler {
     spinlock_t backlog_queue_lock;
     struct list_head backlog_queue;
     enum xmit_status status;
+    spinlock_t region_lock;
 };
 
 struct crypto_agent {
@@ -100,7 +102,7 @@ struct xdma_crdev {
     struct xdma_dev *xdev;
     struct blinky blinky;
 
-    spinlock_t region_lock;
+    
 
     spinlock_t processing_queue_lock;
     struct list_head processing_queue;
