@@ -213,7 +213,7 @@ int xfer_deliver_thread(void *data)
 }
 int deliver_task(void *data)
 {
-    return 0;
+    do_exit(0);
 }
 
 int xmit_task(void *data)
@@ -429,6 +429,9 @@ int crdev_create(struct xdma_pci_dev *xpdev)
         agent = &crdev->agent[agent_idx];
         xmit = &agent->xmit;
         rcv = &agent->rcv;
+        
+        
+
         // xmit kthread
         xmit->deliver_task =  kthread_create_on_node
             (deliver_task, (void *)&crdev,  
@@ -468,6 +471,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
         // agent->rcv.xfer_deliver_task =  kthread_create_on_node
         //     (xfer_deliver_thread, (void *)&crdev, cpu_to_node(1) ,"crdev_deliver");
         // wake_up_process(agent->rcv.xfer_deliver_task);
+        INIT_LIST_HEAD(&agent->processing_queue);
         agent->agent_idx = agent_idx;
         agent->xfer_idex = 0;
         spin_lock_init(&agent->agent_lock);
@@ -489,20 +493,60 @@ void crdev_cleanup(void)
     struct list_head *p, *n;
     struct xdma_crdev *crdev = g_xpdev->crdev;
     struct event *ev;
-    
-    pr_info("stop crdev deliver\n");
-    ev = kmalloc(sizeof(struct event), GFP_ATOMIC | GFP_KERNEL);
-    INIT_LIST_HEAD(&ev->lh);
-    ev->print = 1;
-    ev->stop = 1;
-    INIT_LIST_HEAD(&ev->lh);
-    send_event(ev);
-
-    pr_info("stop xmit deliver\n");
-    crdev->agent[0].xmit.status = XMIT_STATUS_STOP;
-
-
+    int agent_idx;
+    int channel_idx;
+    unsigned long flags;
+    // Stop timer
     del_timer_sync(&crdev->blinky.timer);
+    
+    pr_info("stop xmit side\n");
+    for (agent_idx = 0; agent_idx < AGENT_NUM; agent_idx++)
+    {
+        pr_info("remove processing queue agent_idx = %d\n", agent_idx);
+        spin_lock_irqsave(&crdev->agent[agent_idx].agent_lock, flags);
+        list_for_each_safe(p, n, &crdev->agent[agent_idx].processing_queue){
+            struct xfer_req* req = list_entry(p, struct xfer_req, list);
+            list_del(p);
+            kfree(req);
+        }
+        spin_unlock_irqrestore(&crdev->agent[agent_idx].agent_lock, flags);
+
+        //xmit
+
+        crdev->agent[agent_idx].xmit.status = XMIT_STATUS_STOP;
+        pr_info("remove deliver_list agent_idx = %d\n", agent_idx);
+        spin_lock_irqsave(&crdev->agent[agent_idx].xmit.deliver_list_lock, flags);
+        list_for_each_safe(p, n, &crdev->agent[agent_idx].xmit.deliver_list){
+            struct xfer_req* req = list_entry(p, struct xfer_req, list);
+            list_del(p);
+            kfree(req);
+        }
+        spin_unlock_irqrestore(&crdev->agent[agent_idx].xmit.deliver_list_lock, flags);
+        pr_info("remove event_list agent_idx = %d\n", agent_idx);
+        spin_lock_irqsave(&crdev->agent[agent_idx].xmit.xmit_events_list_lock, flags);
+        list_for_each_safe(p, n, &crdev->agent[agent_idx].xmit.xmit_events_list){
+            struct event* ev = list_entry(p, struct event, lh);
+            list_del(p);
+            kfree(ev);
+        }
+        spin_unlock_irqrestore(&crdev->agent[agent_idx].xmit.xmit_events_list_lock, flags);
+
+        for (channel_idx = 0; channel_idx < CHANNEL_NUM; channel_idx++)
+        {
+            pr_info("remove xmit agent_idx = %d channel_idx = %d\n", agent_idx, channel_idx);
+            spin_lock_irqsave(&crdev->agent[agent_idx].xmit.xmit_queue_lock[channel_idx], flags);
+            list_for_each_safe(p, n, &crdev->agent[agent_idx].xmit.xmit_queue[channel_idx]){
+                struct xfer_req* req = list_entry(p, struct xfer_req, list);
+                list_del(p);
+                kfree(req);
+            }
+            spin_unlock_irqrestore(&crdev->agent[agent_idx].xmit.xmit_queue_lock[channel_idx], flags);
+        }
+
+        // rcv
+    
+    }
+    
     // pr_info("destroy req_queue\n");
     // list_for_each_safe(p, n, &crdev->agent[0].xmit.backlog_queue){
     //     struct xfer_req* req = list_entry(p, struct xfer_req, list);
