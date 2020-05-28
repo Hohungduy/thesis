@@ -104,14 +104,16 @@ struct xdma_crdev {
 
     spinlock_t processing_queue_lock;
     struct list_head processing_queue;
-    struct transport_engine *transport;
+
+    spinlock_t channel_lock;
+    int channel_load[CORE_NUM];  
+
     struct crypto_agent agent;
     atomic_t xfer_idex;
 };
 
 struct transport_engine {
-    spinlock_t lock;
-    int channel[CORE_NUM];
+
 };
  
 
