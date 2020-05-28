@@ -1,52 +1,54 @@
 #include "xdma_crypto.h"
 
-struct xdma_crdev crdev;
-struct transport_engine transdev;
+struct xdma_crdev *g_crdev;
 
 struct xdma_crdev *get_crdev(void)
 {
-    return &crdev;
+    return g_crdev;
 }
 EXPORT_SYMBOL_GPL(get_crdev);
 int choose_channel(void)
 {
-    spin_lock_bh(&transdev.lock);
-    if (transdev.channel[0] < transdev.channel[1])
+    struct xdma_crdev *crdev = g_crdev;
+    spin_lock_bh(&crdev->channel_lock);
+    if (crdev->channel_load[0] < crdev->channel_load[1])
     {
-        transdev.channel[0]++;
-        spin_unlock_bh(&transdev.lock);
+        crdev->channel_load[0]++;
+        spin_unlock_bh(&crdev->channel_lock);
         return 0;
     }
     else
     {
-        transdev.channel[1]++;
-        spin_unlock_bh(&transdev.lock);
+        crdev->channel_load[1]++;
+        spin_unlock_bh(&crdev->channel_lock);
         return 1;
     }
 }
 
 int update_load(int channel)
 {
-    spin_lock_bh(&transdev.lock);
+    struct xdma_crdev *crdev = g_crdev;
+    spin_lock_bh(&crdev->channel_lock);
     switch (channel)
     {   
     case 0:
-        transdev.channel[0]--;
+        crdev->channel_load[0]--;
         break;
     case 1:
-        transdev.channel[1]--;
+        crdev->channel_load[1]--;
         break;
     default:
         pr_info("Wrong channel!");
         break;
     }
-    spin_unlock_bh(&transdev.lock);
+    spin_unlock_bh(&crdev->channel_lock);
     return 0;
 }
 void send_event(struct event *ev)
 {
     unsigned long flags;
-    struct crypto_agent *agent = &crdev.agent;
+    struct xdma_crdev *crdev = g_crdev;
+    struct crypto_agent *agent = &crdev->agent;
     spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
     list_add(&ev->lh, &agent->deliver_events_list);
     spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
@@ -57,7 +59,8 @@ struct event* get_next_event(void)
 {
     struct event *e = NULL;
     unsigned long flags;
-    struct crypto_agent *agent = &crdev.agent;
+    struct xdma_crdev *crdev = g_crdev;
+    struct crypto_agent *agent = &crdev->agent;
     spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
     if (!list_empty(&agent->deliver_events_list))
     {
@@ -107,9 +110,9 @@ int xfer_deliver_thread(void *data)
     struct event *e;
     // int cpu;
     u32 xfer_id;
-    unsigned long flags;
-    struct crypto_agent *agent = &crdev.agent;
     struct xdma_crdev *crdev = (struct xdma_crdev *)data;
+    unsigned long flags;
+    struct crypto_agent *agent = &crdev->agent;
     int engine_idx = 0;
     // struct list_head * processing_queue = 
         // &crdev->processing_queue;
@@ -213,10 +216,10 @@ int xmit_thread(void *data)
     // struct event *e;
     int engine_idx = 0, channel;
     // u32 xfer_id;
+    struct xdma_crdev *crdev = (struct xdma_crdev *)data;
     unsigned long flags;
     struct xfer_req *next_req;
-    struct crypto_agent * agent = &crdev.agent;
-    struct xdma_crdev *crdev = (struct xdma_crdev *)data;
+    struct crypto_agent * agent = &crdev->agent;
     struct list_head * processing_queue = 
         &crdev->processing_queue;
     struct list_head * backlog_queue = 
@@ -306,11 +309,11 @@ int xfer_rcv_thread(void *data)
     struct rcv_thread *thread_data = (struct rcv_thread *)data;
     // struct list_head *cbq = &thread_data->callback_queue;
     // spinlock_t *lock = &thread_data->callback_queue_lock;
-
+    struct xdma_crdev *crdev = g_crdev;
     struct xfer_req *req;
     struct list_head *p,*n;
     struct event *e;
-    struct crypto_agent *agent= &crdev.agent;
+    struct crypto_agent *agent= &crdev->agent;
     unsigned long flags;
 
     printk("xfer_rcv_thread on\n");
@@ -371,8 +374,9 @@ void trigger_work(void)
 
 irqreturn_t xfer_rcv(int irq_no, void *dev)
 {
+    struct xdma_crdev *crdev = g_crdev;
     pr_info("xfer_rcv interrupt\n");
-    xdma_user_isr_disable(crdev.xdev, 0x01);
+    xdma_user_isr_disable(crdev->xdev, 0x01);
     trigger_work();
     return IRQ_HANDLED;
 }
@@ -382,37 +386,40 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     struct xdma_dev *xdev;
     int i;
     struct crypto_agent *agent; 
-    xpdev->crdev = &crdev;
+    struct xdma_crdev* crdev;
+    crdev = (struct xdma_crdev *)kzalloc(sizeof(*crdev), GFP_KERNEL);
+    g_crdev = crdev;
+    
+    xpdev->crdev = crdev;
 
-    crdev.xpdev = xpdev;
-    crdev.xdev = xpdev->xdev;
-    xdev = crdev.xdev;
+    crdev->xpdev = xpdev;
+    crdev->xdev = xpdev->xdev;
+    xdev = crdev->xdev;
     agent = &xpdev->crdev->agent;
 
     // Timer
-    crdev.blinky.interval = 1;
+    crdev->blinky.interval = 1;
     pr_info("line : %d\n", __LINE__);
-    timer_setup(&crdev.blinky.timer, blinky_timeout, 0);
-    crdev.blinky.led = RED_BLUE;
+    timer_setup(&crdev->blinky.timer, blinky_timeout, 0);
+    crdev->blinky.led = RED_BLUE;
     // Config region base
     set_engine_base(xdev->bar[0] + ENGINE_OFFSET(0), 0);
     set_led_base(xdev->bar[0] + LED_OFFSET);
     // lock
-    spin_lock_init(&crdev.processing_queue_lock);
+    spin_lock_init(&crdev->processing_queue_lock);
     pr_info("line : %d\n", __LINE__);
     // processing queue
-    INIT_LIST_HEAD(&crdev.processing_queue);
+    INIT_LIST_HEAD(&crdev->processing_queue);
     pr_info("line : %d\n", __LINE__);
     // transport engine == xdma engine
-    spin_lock_init(&transdev.lock);
-    crdev.transport = &transdev;
+    spin_lock_init(&crdev->channel_lock);
     pr_info("line : %d\n", __LINE__);
-    xdma_user_isr_register(xdev, 0x01, xfer_rcv, &crdev);
-    xdma_user_isr_register(xdev, 0x02, err_handler, &crdev);
+    xdma_user_isr_register(xdev, 0x01, xfer_rcv, crdev);
+    xdma_user_isr_register(xdev, 0x02, err_handler, crdev);
 
     // region
     pr_info("line : %d\n", __LINE__);
-    spin_lock_init(&crdev.region_lock);
+    spin_lock_init(&crdev->region_lock);
 
     /*
         agent
@@ -458,22 +465,22 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     wake_up_process(agent->rcv.xfer_deliver_task);
 
     // xfer_idx
-    atomic_set(&crdev.xfer_idex, 0);
+    atomic_set(&crdev->xfer_idex, 0);
     //init user_irq
 
     xdma_user_isr_enable(xdev, 0x03);
     pr_info("line : %d\n", __LINE__);
 
     // timer
-    mod_timer(&crdev.blinky.timer, 
-        jiffies + (unsigned int)(crdev.blinky.interval*HZ));
+    mod_timer(&crdev->blinky.timer, 
+        jiffies + (unsigned int)(crdev->blinky.interval*HZ));
 
     return 0;
 }
 void crdev_cleanup(void)
 {
     struct list_head *p, *n;
-    // int i;
+    struct xdma_crdev *crdev = g_crdev;
     struct event *ev;
     
     pr_info("stop crdev deliver\n");
@@ -485,18 +492,18 @@ void crdev_cleanup(void)
     send_event(ev);
 
     pr_info("stop xmit deliver\n");
-    crdev.agent.xmit.status = XMIT_STATUS_STOP;
+    crdev->agent.xmit.status = XMIT_STATUS_STOP;
 
 
-    del_timer_sync(&crdev.blinky.timer);
+    del_timer_sync(&crdev->blinky.timer);
     pr_info("destroy req_queue\n");
-    list_for_each_safe(p, n, &crdev.agent.xmit.backlog_queue){
+    list_for_each_safe(p, n, &crdev->agent.xmit.backlog_queue){
         struct xfer_req* req = list_entry(p, struct xfer_req, list);
         list_del(p);
         kfree(req);
     }
     pr_info("destroy req_processing\n");
-    list_for_each_safe(p, n, &crdev.processing_queue){
+    list_for_each_safe(p, n, &crdev->processing_queue){
         struct xfer_req* req = list_entry(p, struct xfer_req, list);
         list_del(p);
         kfree(req);
@@ -507,7 +514,7 @@ void crdev_cleanup(void)
     //     kthread_stop(agent->rcv.xfer_rcv_task[i]);
     // }
     pr_info("destroy events list\n");
-    list_for_each_safe(p, n, &crdev.agent.deliver_events_list){
+    list_for_each_safe(p, n, &crdev->agent.deliver_events_list){
         struct event* e = list_entry(p, struct event, lh);
         list_del(p);
         kfree(e);
@@ -516,17 +523,18 @@ void crdev_cleanup(void)
 
 int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
 {
+    struct xdma_crdev *crdev = g_crdev;
     spinlock_t *backlog_queue_lock = 
-        &crdev.agent.xmit.backlog_queue_lock;
+        &crdev->agent.xmit.backlog_queue_lock;
     
     xfer_req->sg_table.sgl = xfer_req->sg;
     xfer_req->sg_table.nents = 1;//sg_nents(xfer_req->sg);
     xfer_req->sg_table.orig_nents = 1;//sg_nents(xfer_req->sg);
     
     spin_lock_bh(backlog_queue_lock);
-    list_add_tail(&xfer_req->list, &crdev.agent.xmit.backlog_queue);
+    list_add_tail(&xfer_req->list, &crdev->agent.xmit.backlog_queue);
     spin_unlock_bh(backlog_queue_lock);
-    wake_up(&crdev.agent.wq_xmit_event);
+    wake_up(&crdev->agent.wq_xmit_event);
     return -EINPROGRESS;
 }
 
@@ -534,9 +542,10 @@ EXPORT_SYMBOL_GPL(xdma_xfer_submit_queue);
 
 struct xfer_req *alloc_xfer_req(void)
 {
+    struct xdma_crdev *crdev = g_crdev;
     struct xfer_req *xfer;
     xfer = (struct xfer_req *)kzalloc(sizeof(*xfer), GFP_KERNEL);
-    xfer->id = atomic_inc_return(&crdev.xfer_idex);
+    xfer->id = atomic_inc_return(&crdev->xfer_idex);
     if (!xfer)
         return 0;
     return xfer;
@@ -551,9 +560,10 @@ EXPORT_SYMBOL_GPL(free_xfer_req);
 
 void print_req_queue(void)
 {
+    struct xdma_crdev *crdev = g_crdev;
     struct list_head *p;
     int i = 0;
-    list_for_each(p, &crdev.agent.xmit.backlog_queue){
+    list_for_each(p, &crdev->agent.xmit.backlog_queue){
         struct xfer_req *req = list_entry(p, struct xfer_req, list);
         pr_info("backlog_queue i = %d pid = %d \n", i, req->id);
     }
@@ -562,9 +572,10 @@ EXPORT_SYMBOL_GPL(print_req_queue);
 
 void print_req_processing(void)
 {
+    struct xdma_crdev *crdev = g_crdev;
     struct list_head *p;
     int i = 0;
-    list_for_each(p, &crdev.processing_queue){
+    list_for_each(p, &crdev->processing_queue){
         struct xfer_req *req = list_entry(p, struct xfer_req, list);
         pr_info("processing_queue i = %d pid = %d \n", i, req->id);
     }
