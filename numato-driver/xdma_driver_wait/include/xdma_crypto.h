@@ -78,6 +78,11 @@ enum xmit_status {
 
 #define CHANNEL_NUM (2)
 
+struct task_data {
+    int idx;
+    struct xmit_handler *xmit;
+};
+
 struct xmit_handler {
     struct task_struct *deliver_task;
     struct list_head deliver_list;
@@ -93,6 +98,7 @@ struct xmit_handler {
     struct task_struct *xmit_task[CHANNEL_NUM];
     spinlock_t xmit_queue_lock[CHANNEL_NUM];
     struct list_head xmit_queue[CHANNEL_NUM];
+    struct task_data task_data[CHANNEL_NUM];
 };
 
 struct crypto_agent {

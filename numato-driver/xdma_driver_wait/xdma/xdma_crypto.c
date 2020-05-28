@@ -106,9 +106,10 @@ irqreturn_t err_handler(int irq_no, void *dev)
     return IRQ_HANDLED;
 }
 
-int xfer_deliver_thread(void *data)
-{
-    struct event *e;
+// int xfer_deliver_thread(void *data)
+// {
+//     struct event *e;
+    
     // // int cpu;
     // u32 xfer_id;
     // struct xdma_crdev *crdev = (struct xdma_crdev *)data;
@@ -209,15 +210,37 @@ int xfer_deliver_thread(void *data)
     //     }
     // }
     // kfree(e);
-    do_exit(0);
-}
+//     do_exit(0);
+// }
 int deliver_task(void *data)
 {
+    struct crypto_agent *agent = (struct crypto_agent *)data; 
+    struct list_head *processing = &agent->processing_queue;
+    struct xmit_handler *xmit = &agent->xmit;
+    pr_info("deliver_task wakeup\n");
+
+    while (true) {
+        printk("xmit_task wait_event\n");
+        wait_event(xmit->wq_xmit_event, 
+            (       (!list_empty(&xmit->deliver_list)) 
+                ||  (agent->xmit.status == XMIT_STATUS_STOP)
+            ) 
+        );
+        printk("xmit_task running\n");
+    }
     do_exit(0);
 }
 
 int xmit_task(void *data)
 {
+    struct task_data *task_data = (struct task_data *)data; 
+    struct xmit_handler *xmit = task_data->xmit;
+    int channel_id = task_data->idx;
+    struct crypto_agent *agent = 
+        container_of(xmit, struct crypto_agent, xmit);
+    struct list_head *processing = &agent->processing_queue;
+    // struct list_head *xmit_queue = &xmit->xmit_queue[]
+    pr_info("xmit_task wakeup %d\n", channel_id);
     // // struct event *e;
     // int engine_idx = 0, channel;
     // // u32 xfer_id;
@@ -243,11 +266,14 @@ int xmit_task(void *data)
     // struct region *region_base;
 
     // printk("xmit_thread on\n");
-    // while (true) {
-    //     // printk("xmit_thread wait_event\n");
-    //     wait_event(agent->wq_xmit_event, ((!list_empty(backlog_queue)) 
-    //         || (agent->xmit.status == XMIT_STATUS_STOP)) );
-    //     printk("xmit_thread running\n");
+    while (true) {
+        printk("xmit_task wait_event\n");
+        wait_event(xmit->wq_xmit_event, 
+            (       (!list_empty(&xmit->xmit_queue[channel_id])) 
+                ||  (agent->xmit.status == XMIT_STATUS_STOP)
+            ) 
+        );
+        printk("xmit_task running\n");
 
     //     if (unlikely(agent->xmit.status == XMIT_STATUS_STOP))
     //         break;
@@ -305,13 +331,13 @@ int xmit_task(void *data)
 
     //         spin_unlock_irqrestore(&crdev->agent[0].xmit.region_lock, flags);
     //     }
-    // }
+    }
     do_exit(0);
 }
 
-int xfer_rcv_thread(void *data)
-{
-    // struct rcv_thread *thread_data = (struct rcv_thread *)data;
+// int xfer_rcv_thread(void *data)
+// {
+
     // // struct list_head *cbq = &thread_data->callback_queue;
     // // spinlock_t *lock = &thread_data->callback_queue_lock;
     // struct xdma_crdev *crdev = g_xpdev->crdev;
@@ -358,8 +384,8 @@ int xfer_rcv_thread(void *data)
     // kfree(e);
     // do_exit(0);
 
-    return 0;
-}
+//     return 0;
+// }
 
 void trigger_work(void)
 {
@@ -434,7 +460,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
 
         // xmit kthread
         xmit->deliver_task =  kthread_create_on_node
-            (deliver_task, (void *)&crdev,  
+            (deliver_task, (void *)&crdev->agent,  
             cpu_to_node(agent_idx % CORE_NUM),"crdev_xmit");
         INIT_LIST_HEAD(&xmit->deliver_list);
         spin_lock_init(&xmit->deliver_list_lock);
@@ -449,13 +475,16 @@ int crdev_create(struct xdma_pci_dev *xpdev)
         for (channel_idx = 0; channel_idx < CHANNEL_NUM; channel_idx ++)
         {
             xmit->xmit_task[channel_idx] = 
-                kthread_create_on_node(xmit_task, xmit, 
+                kthread_create_on_node(xmit_task, &xmit->task_data[channel_idx], 
                 cpu_to_node(channel_idx % CORE_NUM), "xmit_task_%d", 
                 channel_idx % CORE_NUM);
             spin_lock_init(&xmit->xmit_queue_lock[channel_idx]);
             INIT_LIST_HEAD(&xmit->xmit_queue[channel_idx]);
+            xmit->task_data[channel_idx].idx  = channel_idx;
+            xmit->task_data[channel_idx].xmit = xmit;
             wake_up_process(xmit->xmit_task[channel_idx]);
         }
+        wake_up_process(xmit->deliver_task);
 
         // xfer_rcv_task
         // for (i = 0; i < CORE_NUM; i++)
