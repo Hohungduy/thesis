@@ -273,10 +273,10 @@ int xmit_thread(void *data)
             /* send data to card  */ // lock ???????????
 
             channel = choose_channel();
-            spin_lock_irqsave(&crdev->region_lock, flags);
+            spin_lock_irqsave(&crdev->agent.xmit.region_lock, flags);
             region_base = get_next_region_ep_addr(engine_idx);
             ep_addr = get_next_data_ep_addr(engine_idx);
-            spin_unlock_irqrestore(&crdev->region_lock, flags);
+            spin_unlock_irqrestore(&crdev->agent.xmit.region_lock, flags);
 
             pr_info("send to ep_addr = %lld", ep_addr);
             // Write crypto info
@@ -287,7 +287,7 @@ int xmit_thread(void *data)
 
             // res < 0 ???????????????????????
 
-            spin_lock_irqsave(&crdev->region_lock, flags);
+            spin_lock_irqsave(&crdev->agent.xmit.region_lock, flags);
             update_load(channel);
             // Write region dsc
 
@@ -298,7 +298,7 @@ int xmit_thread(void *data)
             active_next_region(engine_idx);
             increase_head_idx(engine_idx);
 
-            spin_unlock_irqrestore(&crdev->region_lock, flags);
+            spin_unlock_irqrestore(&crdev->agent.xmit.region_lock, flags);
         }
     }
     do_exit(0);
@@ -419,7 +419,8 @@ int crdev_create(struct xdma_pci_dev *xpdev)
 
     // region
     pr_info("line : %d\n", __LINE__);
-    spin_lock_init(&crdev->region_lock);
+    spin_lock_init(&crdev->agent.xmit.region_lock);
+    spin_lock_init(&crdev->agent.rcv.region_lock);
 
     /*
         agent
