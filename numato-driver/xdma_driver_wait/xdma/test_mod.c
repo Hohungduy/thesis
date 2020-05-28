@@ -135,7 +135,7 @@ static int __init test_init(void)
         iowrite32(6,&base->engine[0]->comm.head_outb);
 
         crdev = get_crdev();
-        processing = &crdev->processing_queue;
+        processing = &crdev->agent[0].processing_queue;
         
         
         sg = (struct scatterlist *)kmalloc(5*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
@@ -149,9 +149,9 @@ static int __init test_init(void)
             req[i]->sg_table.nents = 1;
             req[i]->sg_table.orig_nents = 1;
 
-            spin_lock_irqsave(&crdev->processing_queue_lock, flags);
-            list_add(&req[i]->list, &crdev->processing_queue);
-            spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
+            spin_lock_irqsave(&crdev->agent[0].agent_lock, flags);
+            list_add(&req[i]->list, &crdev->agent[0].processing_queue);
+            spin_unlock_irqrestore(&crdev->agent[0].agent_lock, flags);
             req[i]->crypto_complete = crypto_complete;
             req[i]->res = i;
         }
