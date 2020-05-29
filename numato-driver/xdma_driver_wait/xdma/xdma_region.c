@@ -92,6 +92,13 @@ u64 get_data_ep_addr_out(int engine_idx)
         sizeof(struct region) * tail +
         offsetof(struct region, data) ;    // return (void *)(&base->in.region[head + 1].data) - (void *)base;
 }
+u64 get_region_data_ep_addr(int engine_idx, int region_idx)
+{
+    return offsetof(struct crypto_engine, in) + 
+        offsetof(struct outbound, region) + 
+        sizeof(struct region) * region_idx +
+        offsetof(struct region, data) ;    // return (void *)(&base->in.region[head + 1].data) - (void *)base;
+}
 
 int is_engine_full(int engine_idx)
 {
@@ -163,13 +170,17 @@ int increase_head_inb_idx(int engine_idx, int booking)
     void *tail_addr = &region_base.engine[engine_idx]->comm.tail_inb;
     head_idx = ioread32(head_addr);
     tail_idx = ioread32(tail_addr);
+    pr_info("increase_head_inb_idx head = %d\n", head_idx);
     
-    for (i = head_idx; i == (booking % REGION_NUM); i = (i + 1) % REGION_NUM)
+    for (i = head_idx; i != (booking % REGION_NUM); i = (i + 1) % REGION_NUM)
     {
         region_dsc = ioread32(&region_base.engine[engine_idx]->in.region[i].region_dsc);
+        pr_info("region_dsc %x", region_dsc);
         if (region_dsc == 0xABCDABCD)
         {
             active_inb_region(engine_idx, i);
+            pr_info("write head_dx = %d\n", (i+1)%REGION_NUM);
+            iowrite32((i + 1) % REGION_NUM, head_addr);
         }
         else
         {

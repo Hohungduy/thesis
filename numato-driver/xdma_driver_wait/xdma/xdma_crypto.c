@@ -221,6 +221,7 @@ int min_channel_load(int *channel)
         if (channel[i] < channel[min])
             min = i;
     }
+    channel[min]++;
     return min;
 }
 
@@ -234,6 +235,7 @@ int deliver_task(void *data)
     static int channel_load[CHANNEL_NUM];
     int min_channel;
     unsigned long flags;
+    int engine_idx = 0;
     pr_info("deliver_task wakeup\n");
 
     while (true) {
@@ -249,21 +251,48 @@ int deliver_task(void *data)
         print_deliver_list();
         
         list_for_each_safe(p, n, &xmit->deliver_list){
-            min_channel = min_channel_load(channel_load);
+            if (is_engine_full(engine_idx) || 
+                (get_tail_inb_idx(engine_idx) == (xmit->booking + 1) % REGION_NUM))
+            {
+                if (is_engine_full(engine_idx))
+                    pr_info("enginge full\n");
+                if (get_tail_inb_idx(engine_idx) == (xmit->booking + 2) % REGION_NUM)
+                    pr_info("booked all\n");
 
-            req = list_entry(p, struct xfer_req, list); 
-            spin_lock_irqsave(&xmit->deliver_list_lock, flags);
-            list_del(&req->list);
-            spin_unlock_irqrestore(&xmit->deliver_list_lock, flags);
+                continue;
+            }
+            else
+            {
+                min_channel = min_channel_load(channel_load);
 
-            // xmit->booking = (xmit->booking + 1) % REGION_NUM;
+                req = list_entry(p, struct xfer_req, list); 
+                spin_lock_irqsave(&xmit->deliver_list_lock, flags);
+                list_del(&req->list);
+                spin_unlock_irqrestore(&xmit->deliver_list_lock, flags);
 
-            spin_lock_irqsave(&xmit->xmit_queue_lock[min_channel], flags);
-            list_add(&req->list, &xmit->xmit_queue[min_channel]);
-            spin_unlock_irqrestore(&xmit->xmit_queue_lock[min_channel], flags);
+                req->in_region = get_region_ep_addr(engine_idx, xmit->booking);
+                req->region_idx = xmit->booking;
+                req->data_ep_addr = get_region_data_ep_addr(engine_idx, xmit->booking);
+
+                xmit->booking = (xmit->booking + 1) % REGION_NUM;
+
+                pr_info("deliver task booking %x\n", xmit->booking);
+                pr_info("deliver task in_region %x\n", req->in_region);
+                pr_info("deliver task region_idx %x\n", req->region_idx);
+                pr_info("deliver task data_ep_addr %x\n", req->data_ep_addr);
+
+                spin_lock_irqsave(&xmit->xmit_queue_lock[min_channel], flags);
+                list_add(&req->list, &xmit->xmit_queue[min_channel]);
+                spin_unlock_irqrestore(&xmit->xmit_queue_lock[min_channel], flags);
+                wake_up(&xmit->wq_xmit_event);
+            }
         }
         
-        delete_deliver_list(g_xpdev->crdev);
+        pr_info("deliver_task  print\n");
+        print_xmit_list();
+        print_deliver_list();
+        print_processing_list();
+        pr_info("deliver_task  print end\n");
     }
     do_exit(0);
 }
@@ -296,15 +325,15 @@ int xmit_task(void *data)
     struct region *region_base;
     u64 ep_addr;
 
-    printk("xmit_thread on\n");
+    printk("xmit_thread  %d on\n", channel_idx);
     while (true) {
-        printk("xmit_task wait_event\n");
+        printk("xmit_task %d wait_event \n", channel_idx);
         wait_event(xmit->wq_xmit_event, 
-            (       (!list_empty(&xmit->xmit_queue[channel_idx])) 
+            (       (!list_empty(xmit_queue)) 
                 ||  (agent->xmit.status == XMIT_STATUS_STOP)
             ) 
         );
-        printk("xmit_task running\n");
+        printk("xmit_task running %d\n", channel_idx);
 
         if (unlikely(agent->xmit.status == XMIT_STATUS_STOP))
             break;
@@ -312,7 +341,7 @@ int xmit_task(void *data)
 
         while (!list_empty(xmit_queue))
         {
-            printk("xmit_threadd processing\n");
+            printk("xmit_thread processing %d\n", channel_idx);
 
             // remove first req from backlog
             spin_lock_irqsave(lock, flags);
@@ -328,6 +357,7 @@ int xmit_task(void *data)
             
 
             // submit req from req_queue to engine 
+            pr_info("submit to channel %d region %d", channel_idx, req->region_idx);
             res = xdma_xfer_submit(g_xpdev->crdev->xdev, channel_idx, write, 
                 ep_addr, &req->sg_table, dma_mapped, timeout_ms);
             if (res < 0)
@@ -657,8 +687,8 @@ struct xfer_req *alloc_xfer_req(void)
         return 0;
     
     spin_lock_irqsave(&crdev->agent[0].agent_lock, flags);
-    crdev->agent[0].xfer_idex++;
     xfer->id = crdev->agent[0].xfer_idex;
+    crdev->agent[0].xfer_idex++;
     spin_unlock_irqrestore(&crdev->agent[0].agent_lock, flags);
 
     return xfer;

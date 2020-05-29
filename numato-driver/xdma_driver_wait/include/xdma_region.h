@@ -99,5 +99,7 @@ void write_inb_xfer_id(int engine_idx, int region_idx, u32 xfer_id);
 
 void active_inb_region(int engine_idx, int region_idx);
 
+u64 get_region_data_ep_addr(int engine_idx, int region_idx);
+
 
 #endif
