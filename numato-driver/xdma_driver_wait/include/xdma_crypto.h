@@ -61,17 +61,39 @@ struct event {
     bool deliver_thread;
 };
 
-struct rcv_thread {
-    struct task_struct *xfer_rcv_task;
-    struct list_head callback_queue;
-    spinlock_t callback_queue_lock;
-    int cpu;
+struct task_data {
+    int idx;
+    struct xmit_handler *xmit;
+    struct rcv_handler *rcv;
+};
+
+#define CHANNEL_NUM (2)
+
+enum rcv_status {
+    RCV_STATUS_SLEEP,
+    RCV_STATUS_ACTIVE,
+    RCV_STATUS_STOP
 };
 
 struct rcv_handler {
-    struct rcv_thread data[CORE_NUM];
-    struct task_struct *xfer_deliver_task;
+    struct task_struct *rcv_deliver_task;
+
+    struct task_struct *rcv_task[CHANNEL_NUM];
+    spinlock_t rcv_queue_lock[CHANNEL_NUM];
+    struct list_head rcv_queue[CHANNEL_NUM];
+    struct task_data task_data[CHANNEL_NUM];
+
+    struct task_struct *rcv_callback_task[CHANNEL_NUM];
+    spinlock_t rcv_callback_queue_lock[CHANNEL_NUM];
+    struct list_head rcv_callback_queue[CHANNEL_NUM];
+    struct task_data task_callback_data[CHANNEL_NUM];
+
+    enum rcv_status status;
     spinlock_t region_lock;
+    
+    struct wait_queue_head wq_rcv_event;
+    struct list_head rcv_events_list;
+    spinlock_t rcv_events_list_lock;
 };
 
 enum xmit_status {
@@ -80,15 +102,8 @@ enum xmit_status {
     XMIT_STATUS_STOP
 };
 
-#define CHANNEL_NUM (2)
-
-struct task_data {
-    int idx;
-    struct xmit_handler *xmit;
-};
-
 struct xmit_handler {
-    struct task_struct *deliver_task;
+    struct task_struct *xmit_deliver_task;
     struct list_head deliver_list;
     spinlock_t deliver_list_lock;
     
@@ -128,11 +143,6 @@ struct xdma_crdev {
     struct crypto_agent agent[AGENT_NUM];
     
 };
-
-struct transport_engine {
-
-};
- 
 
 int crdev_create(struct xdma_pci_dev *xpdev);
 void crdev_cleanup(void);
