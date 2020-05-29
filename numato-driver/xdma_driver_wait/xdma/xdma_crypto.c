@@ -8,34 +8,6 @@ struct xdma_crdev *get_crdev(void)
 }
 EXPORT_SYMBOL_GPL(get_crdev);
 
-// void send_event(struct event *ev)
-// {
-    // unsigned long flags;
-    // struct xdma_crdev *crdev = g_xpdev->crdev;
-    // struct crypto_agent *agent = &crdev->agent[0];
-    // spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
-    // list_add(&ev->lh, &agent->deliver_events_list);
-    // spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
-    // wake_up(&agent->wq_deliver_event);
-// }
-
-// struct event* get_next_event(void)
-// {
-    // struct event *e = NULL;
-    // unsigned long flags;
-    // struct xdma_crdev *crdev = g_xpdev->crdev;
-    // struct crypto_agent *agent = &crdev->agent[0];
-    // spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
-    // if (!list_empty(&agent->deliver_events_list))
-    // {
-    //     e = list_first_entry(&agent->deliver_events_list, struct event, lh);
-    //     // if (e)
-    //     //     list_del(&e->lh);
-    // }
-    // spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
-//     return e;
-// }
-
 void blinky_timeout(struct timer_list *timer)
 {
     struct blinky *blinky;
@@ -104,7 +76,9 @@ int rcv_task(void *data)
             pr_info("can not read!!!\n");
             continue;
         }
-        // Read Crypto Dsc
+        // TODO: Read Crypto Dsc
+
+        // TODO: Check booking idex and tail idex
 
         // Call callback
         spin_lock_irqsave(&rcv->rcv_callback_queue_lock[channel_idx], flags);
@@ -161,6 +135,8 @@ int xmit_deliver_task(void *data)
                     pr_info("enginge full\n");
                 if (get_tail_inb_idx(engine_idx) == (xmit->booking + 1) % REGION_NUM)
                     pr_info("booked all\n");
+
+                // TODO: 
 
                 continue;
             }
@@ -220,9 +196,6 @@ int xmit_task(void *data)
     bool dma_mapped = 0;
     int timeout_ms = 3;
     int res;
-    // int status;
-    // u32 tail_idx;
-    // int booking_idx;
 
     struct xfer_req *req;
     struct region *region_base;
@@ -255,7 +228,7 @@ int xmit_task(void *data)
             region_base = req->in_region;
             ep_addr = req->data_ep_addr;
 
-            // Write crypto info // No need to lock
+            // TODO: Write crypto info (No need to lock)
             
 
             // submit req from req_queue to engine 
@@ -265,6 +238,7 @@ int xmit_task(void *data)
             if (res < 0)
             {
                 pr_info("Send failed req_id = %d\n", req->id);
+                // TODO: 
                 continue;
             }
 
@@ -453,6 +427,11 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     struct xmit_handler *xmit;
     struct rcv_handler *rcv;
 
+    pr_info("Size of region %d", sizeof(struct region));
+    pr_info("Size of crypto_engine %d", sizeof(struct crypto_engine));
+    pr_info("Size of crypto_engine %d", sizeof(struct crypto_engine));
+
+
     crdev = (struct xdma_crdev *)kzalloc(sizeof(*crdev), GFP_KERNEL);
     if (!crdev)
     {
@@ -508,7 +487,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     return 0;
 free:
 
-
+    // TODO:
     return -1;
 }
 
@@ -716,3 +695,31 @@ void print_processing_list(void)
     }
 }
 EXPORT_SYMBOL_GPL(print_processing_list);
+
+// void send_event(struct event *ev)
+// {
+    // unsigned long flags;
+    // struct xdma_crdev *crdev = g_xpdev->crdev;
+    // struct crypto_agent *agent = &crdev->agent[0];
+    // spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
+    // list_add(&ev->lh, &agent->deliver_events_list);
+    // spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
+    // wake_up(&agent->wq_deliver_event);
+// }
+
+// struct event* get_next_event(void)
+// {
+    // struct event *e = NULL;
+    // unsigned long flags;
+    // struct xdma_crdev *crdev = g_xpdev->crdev;
+    // struct crypto_agent *agent = &crdev->agent[0];
+    // spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
+    // if (!list_empty(&agent->deliver_events_list))
+    // {
+    //     e = list_first_entry(&agent->deliver_events_list, struct event, lh);
+    //     // if (e)
+    //     //     list_del(&e->lh);
+    // }
+    // spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
+//     return e;
+// }

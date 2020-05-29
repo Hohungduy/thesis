@@ -54,7 +54,6 @@ struct outbound {
     struct region region[REGION_NUM];
 };
 
-
 struct crypto_engine {
     struct common_base comm;
     struct inbound in;
