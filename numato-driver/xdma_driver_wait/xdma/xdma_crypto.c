@@ -7,46 +7,9 @@ struct xdma_crdev *get_crdev(void)
     return g_xpdev->crdev;
 }
 EXPORT_SYMBOL_GPL(get_crdev);
-int choose_channel(void)
-{
-    struct xdma_crdev *crdev = g_xpdev->crdev;
 
-    spin_lock_bh(&crdev->channel_lock);
-    if (crdev->channel_load[0] < crdev->channel_load[1])
-    {
-        crdev->channel_load[0]++;
-        spin_unlock_bh(&crdev->channel_lock);
-        return 0;
-    }
-    else
-    {
-        crdev->channel_load[1]++;
-        spin_unlock_bh(&crdev->channel_lock);
-        return 1;
-    }
-}
-
-int update_load(int channel)
-{
-    struct xdma_crdev *crdev = g_xpdev->crdev;
-    spin_lock_bh(&crdev->channel_lock);
-    switch (channel)
-    {   
-    case 0:
-        crdev->channel_load[0]--;
-        break;
-    case 1:
-        crdev->channel_load[1]--;
-        break;
-    default:
-        pr_info("Wrong channel!");
-        break;
-    }
-    spin_unlock_bh(&crdev->channel_lock);
-    return 0;
-}
-void send_event(struct event *ev)
-{
+// void send_event(struct event *ev)
+// {
     // unsigned long flags;
     // struct xdma_crdev *crdev = g_xpdev->crdev;
     // struct crypto_agent *agent = &crdev->agent[0];
@@ -54,11 +17,11 @@ void send_event(struct event *ev)
     // list_add(&ev->lh, &agent->deliver_events_list);
     // spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
     // wake_up(&agent->wq_deliver_event);
-}
+// }
 
-struct event* get_next_event(void)
-{
-    struct event *e = NULL;
+// struct event* get_next_event(void)
+// {
+    // struct event *e = NULL;
     // unsigned long flags;
     // struct xdma_crdev *crdev = g_xpdev->crdev;
     // struct crypto_agent *agent = &crdev->agent[0];
@@ -70,8 +33,8 @@ struct event* get_next_event(void)
     //     //     list_del(&e->lh);
     // }
     // spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
-    return e;
-}
+//     return e;
+// }
 
 void blinky_timeout(struct timer_list *timer)
 {
@@ -108,87 +71,47 @@ irqreturn_t err_handler(int irq_no, void *dev)
 
 int rcv_task(void *data)
 {
-    printk("xfer_deliver_thread on\n");
+    struct task_data *task_data = (struct task_data *)data;
+    struct rcv_handler *rcv = task_data->rcv;
+    int channel_idx = task_data->idx;
+    int res;
+    unsigned long flags;
+    struct xfer_req *req;
+
+    printk("rcv_task on\n");
 
     while (true) {
-        // wait_event(agent->wq_deliver_event, (TRUE) );
-    //     if (e && e->deliver_thread){
-    //         printk("xfer_deliver_thread active\n");
-    //         spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
-    //         list_del(&e->lh);
-    //         spin_unlock_irqrestore(&agent->deliver_events_list_lock, flags);
-    //         kfree(e);
-    //         while(!is_engine_empty_out(engine_idx)){
-    //             pr_info("engine out is not empty\n");
+        wait_event(rcv->wq_rcv_event, 
+        ( (!list_empty(&rcv->rcv_queue[channel_idx])) ||
+          (rcv->status == RCV_STATUS_STOP)
+        ) 
+        );
+        if (likely(rcv->status == RCV_STATUS_STOP))
+            break;
+        printk("rcv_task active\n");
+        
+        // Get the req to rcv
+        spin_lock_irqsave(&rcv->rcv_queue_lock[channel_idx], flags);
+        req = list_entry(&rcv->rcv_queue[channel_idx], struct xfer_req, list);
+        list_del(&req->list);
+        spin_unlock_irqrestore(&rcv->rcv_queue_lock[channel_idx], flags);
 
-    //             /* Event processing */
+        res = xdma_xfer_submit(g_xpdev->crdev->xdev,
+            channel_idx, FALSE, req->data_ep_addr, 
+            &req->sg_table, FALSE, 3);
+        if (res < 0)
+        {
+            pr_info("can not read!!!\n");
+            continue;
+        }
+        // Read Crypto Dsc
 
-    //             // Get xfer_id of next req
-    //             // check in the req_processing
-    //             spin_lock_irqsave(&crdev->processing_queue_lock, flags);
+        // Call callback
+        spin_lock_irqsave(&rcv->rcv_callback_queue_lock[channel_idx], flags);
+        list_add_tail(&req->list, &rcv->rcv_callback_queue[channel_idx]);
+        spin_unlock_irqrestore(&rcv->rcv_callback_queue_lock[channel_idx], flags);
                 
-    //             if (list_empty(&crdev->processing_queue)){
-    //                 pr_info("interrupt but list empty!\n\n");
-    //                 spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
-    //                 break;
-    //             }
-    //             next_req = list_first_entry(&crdev->processing_queue,
-    //                 struct xfer_req, list);
-    //             xfer_id = next_req->id;
-    //             pr_info("xfer_id = %d\n", xfer_id);
-    //             // remove req from processing queue 
-    //             list_del(&next_req->list);
-    //             spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
-    //             // check in the engine
-    //             if (is_engine_empty_out(engine_idx))
-    //             {
-    //                 pr_info("interrupt but engine empty\n");
-    //                 break;
-    //             }
-    //             region = 
-    //                 (struct reqion *)get_region_ep_addr_out(engine_idx);    
-    //             // build scatterlist
-    //             ep_addr = get_data_ep_addr_out(engine_idx);
-    //             // xfer data to host 
-    //             res = xdma_xfer_submit(crdev->xdev,
-    //                 choose_channel(), FALSE, ep_addr, 
-    //                 &next_req->sg_table, FALSE, 3);
-    //             increase_tail_idx_out(engine_idx);
-    //             if (res < 0)
-    //             {
-    //                 pr_info("can not read!!!\n");
-    //                 continue;
-    //             }
-    //             // add req to list of agents
-    //             spin_lock_irqsave(&crdev->agent[0].rcv.data[0].callback_queue_lock, flags);
-    //             list_add_tail(&next_req->list, &crdev->agent[0].rcv.data[0].callback_queue);
-    //             spin_unlock_irqrestore(&crdev->agent[0].rcv.data[0].callback_queue_lock, flags);
-                
-                
-    //             pr_info("send event complete\n");
-    //             ev = kmalloc(sizeof(struct event), GFP_ATOMIC | GFP_KERNEL);
-    //             ev->print = 0;
-    //             ev->stop = 0;
-    //             ev->deliver_thread = 0;
-    //             for (i = 0; i < CORE_NUM; i++){
-    //                 ev->rcv_thread[i] = 0;
-    //             }
-    //             ev->rcv_thread[0] = 1;
-    //             pr_info("sent event complete\n");
-    //             send_event(ev);
-
-    //             if (unlikely(e->print)){
-    //                 printk("deliver agent on\n");
-    //                 pr_info("trigger_work receive event\n");
-    //                 pr_info("print = %d", e->print);
-    //                 pr_info("stop = %d", e->stop);
-    //             }
-    //         }
-            // xdma_user_isr_enable(crdev->xdev, 0x01);
-    //         if (e->stop)
-    //             break;
-            
-    //     }
+        xdma_user_isr_enable(g_xpdev->crdev->xdev, 0x01);
     }
     do_exit(0);
 }
@@ -236,7 +159,7 @@ int xmit_deliver_task(void *data)
             {
                 if (is_engine_full(engine_idx))
                     pr_info("enginge full\n");
-                if (get_tail_inb_idx(engine_idx) == (xmit->booking + 2) % REGION_NUM)
+                if (get_tail_inb_idx(engine_idx) == (xmit->booking + 1) % REGION_NUM)
                     pr_info("booked all\n");
 
                 continue;
@@ -362,17 +285,14 @@ int xmit_task(void *data)
 
 int rcv_deliver_task(void *data)
 {
-    // struct xdma_crdev *crdev = g_xpdev->crdev;
-    // struct xfer_req *req;
-    // struct list_head *p,*n;
+    struct crypto_agent *agent = (struct crypto_agent *)data;
+    struct xfer_req *req;
+    struct list_head *p,*n;
     // struct event *e;
-    // struct crypto_agent *agent= &crdev->agent[0];
-    // unsigned long flags;
-
-    // printk("xfer_rcv_thread on\n");
-
-    // while (true) {
-    //     wait_event(agent->wq_deliver_event, (e = get_next_event()) );
+    unsigned long flags;
+    printk("xfer_rcv_thread on\n");
+    while (true) {
+        // wait_event(agent->wq_deliver_event, (e = get_next_event()) );
     //     if (e && e->rcv_thread[thread_data->cpu]){
     //         printk("xfer_rcv_thread active cpu = %d\n", thread_data->cpu);
     //         spin_lock_irqsave(&agent->deliver_events_list_lock, flags);
@@ -402,8 +322,7 @@ int rcv_deliver_task(void *data)
     //             break;
     //         kfree(e);
     //     }
-    // }
-    // kfree(e);
+    }
     do_exit(0);
 }
 
@@ -415,6 +334,7 @@ int rcv_callback_task(void *data)
     unsigned long flags;
     struct xfer_req *req;
     struct list_head *p, *n;
+    int res;
     pr_info("rcv_callback_task on\n");
     while (true) {
         wait_event(rcv->wq_rcv_event, 
@@ -434,7 +354,8 @@ int rcv_callback_task(void *data)
             spin_unlock_irqrestore(&rcv->rcv_callback_queue_lock[channel_idx], flags);
 
             local_bh_disable();
-            req->crypto_complete(NULL, req->id);
+            if (req->crypto_complete)
+                    res = req->crypto_complete(NULL, req->id);
             local_bh_enable();
         }
     }
@@ -452,7 +373,7 @@ irqreturn_t xfer_rcv(int irq_no, void *dev)
     struct xdma_crdev *crdev = g_xpdev->crdev;
     pr_info("xfer_rcv interrupt\n");
     xdma_user_isr_disable(crdev->xdev, 0x01);
-    // trigger_rcv_deliver_task();
+    trigger_rcv_deliver_task();
     return IRQ_HANDLED;
 }
 void create_rcv_handler(struct rcv_handler *rcv)
