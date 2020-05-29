@@ -1,0 +1,5 @@
+config MYCRYPTO
+	tristate "emxample"
+	help
+		This is a exmaple, for develop kernel module
+		If you does not sure, say N.
