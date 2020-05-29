@@ -8,6 +8,7 @@
 #include "linux/atomic.h"
 #include "linux/workqueue.h"
 #include "linux/kthread.h"
+#include "linux/delay.h"
 
 #define BUFF_LENGTH (REGION_NUM)
 #define BACKLOG_MAX_LENGTH (50)
@@ -24,11 +25,13 @@ struct mycrypto_context {
 };
 
 struct xfer_req{
-    int (*complete)(void *data, int res);
-    void *data;
-    struct scatterlist *sg;
+    int (*crypto_complete)(void *data, int res);
     struct mycrypto_context ctx;
-    int id; 
+
+    int id;
+    int res;
+    struct scatterlist *sg;
+    struct sg_table sg_table;
     struct list_head list;
 };
 
@@ -50,29 +53,60 @@ struct event {
     struct list_head lh;
     bool stop;
     bool print;
+    bool rcv_thread[CORE_NUM];
+    bool deliver_thread;
+};
+
+struct rcv_thread {
+    struct task_struct *xfer_rcv_task;
+    struct list_head callback_queue;
+    spinlock_t callback_queue_lock;
+    int cpu;
 };
 
 struct rcv_handler {
-    struct task_struct *xfer_rcv_task[CORE_NUM];
-    struct list_head callback_queue[CORE_NUM];
-    spinlock_t callback_queue_lock[CORE_NUM];
+    struct rcv_thread data[CORE_NUM];
     struct task_struct *xfer_deliver_task;
+};
 
-    struct wait_queue_head wq_event;
-    struct list_head events_list;
-    spinlock_t events_lock;
+enum xmit_status {
+    XMIT_STATUS_SLEEP,
+    XMIT_STATUS_ACTIVE,
+    XMIT_STATUS_STOP
+};
+
+struct xmit_handler {
+    struct task_struct *xmit_task;
+    spinlock_t backlog_queue_lock;
+    struct list_head backlog_queue;
+    enum xmit_status status;
+};
+
+struct crypto_agent {
+    struct xmit_handler xmit;
+    struct rcv_handler rcv;
+
+    struct wait_queue_head wq_xmit_event;
+    // struct list_head xmit_events_list;
+    // spinlock_t xmit_events_list_lock;
+
+    struct wait_queue_head wq_deliver_event;
+    struct list_head deliver_events_list;
+    spinlock_t deliver_events_list_lock;
 };
 
 struct xdma_crdev {
     struct xdma_pci_dev* xpdev;
     struct xdma_dev *xdev;
-    spinlock_t lock;
     struct blinky blinky;
-    struct list_head req_processing;
-    struct list_head req_queue;
+
+    spinlock_t region_lock;
+
+    spinlock_t processing_queue_lock;
+    struct list_head processing_queue;
     struct transport_engine *transport;
-    struct rcv_handler rcv_data;
-    // struct 
+    struct crypto_agent agent;
+    atomic_t xfer_idex;
 };
 
 struct transport_engine {
@@ -92,7 +126,7 @@ void print_req_processing(void);
 
 
 struct xfer_req *alloc_xfer_req(void);
-ssize_t xdma_xfer_submit_queue(struct xfer_req *xfer_req);
+int xdma_xfer_submit_queue(struct xfer_req *xfer_req);
 void free_xfer_req(struct xfer_req *req);
 
 
