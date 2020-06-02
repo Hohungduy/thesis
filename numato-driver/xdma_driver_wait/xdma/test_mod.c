@@ -86,7 +86,6 @@ static int __init test_init(void)
         sg = (struct scatterlist *)kmalloc(req_num*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
         for (i = 0; i < req_num; i++){
             req[i] = alloc_xfer_req();
-            req[i]->id = current->pid;
             buff[i] = (char *)kmalloc(i*8 + 1400, GFP_KERNEL | GFP_ATOMIC);
             get_sg_from_buf(buff[i], &sg[i], i*8 + 1400 );
             req[i]->sg = &sg[i];
@@ -135,7 +134,7 @@ static int __init test_init(void)
         iowrite32(6,&base->engine[0]->comm.head_outb);
 
         crdev = get_crdev();
-        processing = &crdev->processing_queue;
+        processing = &crdev->agent[0].processing_queue;
         
         
         sg = (struct scatterlist *)kmalloc(5*sizeof(*sg), GFP_ATOMIC | GFP_KERNEL);
@@ -149,16 +148,22 @@ static int __init test_init(void)
             req[i]->sg_table.nents = 1;
             req[i]->sg_table.orig_nents = 1;
 
-            spin_lock_irqsave(&crdev->processing_queue_lock, flags);
-            list_add(&req[i]->list, &crdev->processing_queue);
-            spin_unlock_irqrestore(&crdev->processing_queue_lock, flags);
+            spin_lock_irqsave(&crdev->agent[0].agent_lock, flags);
+            list_add(&req[i]->list, &crdev->agent[0].processing_queue);
+            spin_unlock_irqrestore(&crdev->agent[0].agent_lock, flags);
             req[i]->crypto_complete = crypto_complete;
             req[i]->res = i;
         }
     }
+    /*
 
-    print_req_queue();
-    print_req_processing();
+    */
+    pr_info("Test module print\n");
+
+    print_xmit_list();
+    print_deliver_list();
+    print_processing_list();
+    pr_info("Test module print end\n");
 
     return 0;
 }
