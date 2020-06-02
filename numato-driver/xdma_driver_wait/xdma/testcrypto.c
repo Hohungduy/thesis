@@ -463,7 +463,7 @@ static int test_aead(void)
     printk(KERN_INFO "length of scatterlist (dst):%d \n",req->dst->length);
     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen + (size_t)authlen;
     //len =  (size_t)ad.req->assoclen;
-    printk(KERN_INFO "LENGHTH FOR ASSOC+ CRYPT: %d \n", len);
+    printk(KERN_INFO "LENGHTH FOR ASSOC+ CRYPT: %ld \n", len);
     printk(KERN_INFO "Data payload-before function test encrypt:\n");
     len =sg_pcopy_to_buffer(ad.req->src,2,sg_buffer,len,0);
     //len =sg_pcopy_from_buffer(&sk.sg,1,scratchpad_copy,len,0);
