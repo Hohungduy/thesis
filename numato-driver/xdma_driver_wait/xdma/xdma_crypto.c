@@ -124,7 +124,7 @@ int xfer_deliver_thread(void *data)
 
     printk("xfer_deliver_thread on\n");
 
-    while (true) {
+    while (1) {
         wait_event(agent->wq_deliver_event, (e = get_next_event()) );
         if (e && e->deliver_thread){
             printk("xfer_deliver_thread active\n");
@@ -165,8 +165,8 @@ int xfer_deliver_thread(void *data)
                 ep_addr = get_data_ep_addr_out(engine_idx);
                 // xfer data to host 
                 res = xdma_xfer_submit(crdev->xdev,
-                    choose_channel(), FALSE, ep_addr, 
-                    &next_req->sg_table, FALSE, 3);
+                    choose_channel(), 0, ep_addr, 
+                    &next_req->sg_table, 0, 3);
                 increase_tail_idx_out(engine_idx);
                 if (res < 0)
                 {
@@ -235,7 +235,7 @@ int xmit_thread(void *data)
     struct region *region_base;
 
     printk("xmit_thread on\n");
-    while (true) {
+    while (1) {
         // printk("xmit_thread wait_event\n");
         wait_event(agent->wq_xmit_event, ((!list_empty(backlog_queue)) 
             || (agent->xmit.status == XMIT_STATUS_STOP)) );
@@ -315,7 +315,7 @@ int xfer_rcv_thread(void *data)
 
     printk("xfer_rcv_thread on\n");
 
-    while (true) {
+    while (1) {
         wait_event(agent->wq_deliver_event, (e = get_next_event()) );
         if (e && e->rcv_thread[thread_data->cpu]){
             printk("xfer_rcv_thread active cpu = %d\n", thread_data->cpu);

@@ -1,4 +1,4 @@
-# ifndef _MYCRYPTO_H_
+#ifndef _MYCRYPTO_H_
 #define _MYCRYPTO_H_
 
 #include <crypto/algapi.h>
@@ -9,7 +9,7 @@
 #include <linux/scatterlist.h>
 #include <linux/highmem.h>
 #include <linux/crypto.h>
-#include "common.h"
+//#include "common.h"
 #define BUFFER_SIZE 128
 
 // Type of algorithms registered
@@ -166,7 +166,7 @@ struct mycrypto_req_operation {
 	
 };
 void mycrypto_dequeue_req(struct mycrypto_dev *mydevice);
-int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
+
 
 /* available algorithms */
 // extern struct aead_alg my_crypto_gcm_aes_alg;

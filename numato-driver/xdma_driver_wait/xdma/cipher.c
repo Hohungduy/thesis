@@ -10,9 +10,9 @@
  */
 
 
-#include "include/mycrypto.h"
-#include "include/common.h"
-#include "include/cipher.h"
+//#include "mycrypto.h"
+//#include "common.h"
+#include "cipher.h"
 
 
 /*	Test function for a typical handle request :
@@ -20,7 +20,7 @@
 	- Using for testing data flow.
 */
 
-static int mycrypto_skcipher_handle_request(struct crypto_async_request *base)
+int mycrypto_skcipher_handle_request(struct crypto_async_request *base)
 {
 	//int ret;
 	
@@ -46,7 +46,7 @@ static int mycrypto_skcipher_handle_request(struct crypto_async_request *base)
 	- Using for testing with the lower layer of driver (pcie layer).
 */
 
-static int mycrypto_skcipher_handle_result(struct crypto_async_request *base, bool *should_complete)
+int mycrypto_skcipher_handle_result(struct crypto_async_request *base, bool *should_complete)
 {
 	//int ret;
 	
@@ -275,7 +275,7 @@ static void my_crypto_aead_cra_exit(struct crypto_tfm *tfm)
 	- Using for testing data flow.
 */
 
-static int mycrypto_aead_handle_request(struct crypto_async_request *base)
+int mycrypto_aead_handle_request(struct crypto_async_request *base)
 {
 	//int ret;
 	
@@ -301,7 +301,7 @@ static int mycrypto_aead_handle_request(struct crypto_async_request *base)
 	- Using for testing with the lower layer of driver (pcie layer).
 */
 
-static int mycrypto_aead_handle_result(struct crypto_async_request *base, bool *should_complete)
+int mycrypto_aead_handle_result(struct crypto_async_request *base, bool *should_complete)
 {
 	//int ret;
 	

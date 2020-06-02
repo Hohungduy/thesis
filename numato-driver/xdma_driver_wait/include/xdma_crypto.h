@@ -18,11 +18,11 @@
 struct xdma_pci_dev;
 
 /** BUFFER */
-// #include "common.h"
+#include "common.h"
 
-struct mycrypto_context {
+// struct mycrypto_context {
 
-};
+// };
 
 struct xfer_req{
     int (*crypto_complete)(void *data, int res);

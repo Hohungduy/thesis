@@ -36,9 +36,11 @@
 #include <crypto/aead.h>
 #include <crypto/internal/aead.h>
 #include <crypto/sha.h>
-#include "include/mycrypto.h"
-#include "include/common.h"
+#include "mycrypto.h"
+#include "common.h"
+#include "xdma_crypto.h"
 
+int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
 /* Limit of the crypto queue before reaching the backlog */
 #define MYCRYPTO_DEFAULT_MAX_QLEN 128
 // global variable for device

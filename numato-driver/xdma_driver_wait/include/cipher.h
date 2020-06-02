@@ -9,6 +9,7 @@
 #include <crypto/sha.h>
 #include <crypto/authenc.h>
 #include <crypto/ghash.h>
+#include "mycrypto.h"
 /* driver logic flags */
 #define AES_MODE_CBC 0
 #define AES_MODE_GCM 1
@@ -18,11 +19,11 @@
 
 #define MYCRYPTO_DIR_DECRYPT 0
 #define MYCRYPTO_DIR_ENCRYPT 1
-static int mycrypto_skcipher_handle_request(struct crypto_async_request *base);
-static int mycrypto_skcipher_handle_result(struct crypto_async_request *base,bool *should_complete);
+int mycrypto_skcipher_handle_request(struct crypto_async_request *base);
+int mycrypto_skcipher_handle_result(struct crypto_async_request *base,bool *should_complete);
 
-static int mycrypto_aead_handle_request(struct crypto_async_request *base);
-static int mycrypto_aead_handle_result(struct crypto_async_request *base,bool *should_complete);
+int mycrypto_aead_handle_request(struct crypto_async_request *base);
+int mycrypto_aead_handle_result(struct crypto_async_request *base,bool *should_complete);
 /* transformation object context
 * it is stored in tfm ->__crt_ctx
 * and tfm = req->base.tfm 
