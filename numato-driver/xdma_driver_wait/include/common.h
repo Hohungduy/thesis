@@ -12,8 +12,8 @@
 
 */
 struct mycrypto_context{
-    struct mycrypto_cipher_op ctx; 
-    struct mycrypto_cipher_req req_ctx;
+    struct mycrypto_cipher_op ctx_op; 
+    struct mycrypto_cipher_req ctx_req;
     u32 error_code:7;
 };
 

@@ -166,14 +166,10 @@ struct mycrypto_req_operation {
 	
 };
 void mycrypto_dequeue_req(struct mycrypto_dev *mydevice);
-
-
 /* available algorithms */
 // extern struct aead_alg my_crypto_gcm_aes_alg;
 extern struct mycrypto_alg_template mycrypto_alg_authenc_hmac_sha256_cbc_aes;
 extern struct mycrypto_alg_template mycrypto_alg_gcm_aes;
 extern struct mycrypto_alg_template mycrypto_alg_authenc_hmac_sha256_ctr_aes;
 extern struct mycrypto_alg_template mycrypto_alg_cbc_aes;
-
-
 #endif

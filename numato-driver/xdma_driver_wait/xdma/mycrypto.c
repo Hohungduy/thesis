@@ -39,8 +39,11 @@
 #include "mycrypto.h"
 #include "common.h"
 #include "xdma_crypto.h"
+//#include "cipher.h"
 
 int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
+void alloc_xfer_mycryptocontext(struct crypto_async_request *req, struct xfer_req *req_xfer);
+
 /* Limit of the crypto queue before reaching the backlog */
 #define MYCRYPTO_DEFAULT_MAX_QLEN 128
 // global variable for device
@@ -49,7 +52,7 @@ struct mycrypto_dev *mydevice_glo;
 
 // static int my_crypto_add_algs(struct mycrypto_dev *mydevice)
 
-static struct mycrypto_alg_template *mycrypto_algs[] ={
+static struct mycrypto_alg_template *mycrypto_algs[] = {
 	&mycrypto_alg_authenc_hmac_sha256_cbc_aes,
 	&mycrypto_alg_authenc_hmac_sha256_ctr_aes,
 	&mycrypto_alg_gcm_aes,
@@ -61,6 +64,17 @@ static struct mycrypto_alg_template *mycrypto_algs[] ={
 
 // }
 
+void alloc_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer)
+{
+	struct aead_request *req = aead_request_cast(base);
+	struct mycrypto_cipher_op ctx = * (struct mycrypto_cipher_op *)crypto_tfm_ctx(req->base.tfm);
+	struct mycrypto_cipher_req req_ctx = * (struct mycrypto_cipher_req *)aead_request_ctx(req);
+	req_xfer->ctx.ctx_op = ctx;
+	req_xfer->ctx.ctx_req = req_ctx;
+	req_xfer->sg = req->src;
+	//req_xfer->crypto_complete
+
+}
 static inline void mycrypto_handle_result(struct mycrypto_dev *mydevice)
 {
 	struct crypto_async_request *req;
@@ -96,6 +110,8 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 {
 	struct crypto_async_request *req = NULL, *backlog = NULL;
 	struct mycrypto_req_operation *opr_ctx;
+	struct xfer_req *req_xfer = NULL;
+
 	printk(KERN_INFO "module mycrypto: dequeue request (after a period time by using workqueue)\n");
 	
 	spin_lock_bh(&mydevice->queue_lock);
@@ -110,6 +126,11 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	if (backlog)
 		backlog->complete(backlog, -EINPROGRESS);
 	
+	//Allocate request for xfer (pcie layer)
+	req_xfer = alloc_xfer_req ();
+	alloc_xfer_mycryptocontext(req, req_xfer);
+
+
 	// Testing handle request function
 	opr_ctx = crypto_tfm_ctx(req->tfm);
 	opr_ctx->handle_request(req);
@@ -122,6 +143,7 @@ static void mycrypto_dequeue_work(struct work_struct *work)
 			container_of(work, struct mycrypto_work_data, work);
 	mycrypto_dequeue_req(data->mydevice);
 }
+
 //--------------------------------------------------------------------
 //--------------timer handler---------------------------------------
 static void handle_timer(struct timer_list *t)

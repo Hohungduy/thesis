@@ -14,7 +14,6 @@
 //#include "common.h"
 #include "cipher.h"
 
-
 /*	Test function for a typical handle request :
 	- This function is registered in cra_init function.
 	- Using for testing data flow.
