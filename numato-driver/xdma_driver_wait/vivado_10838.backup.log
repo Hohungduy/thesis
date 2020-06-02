@@ -1,0 +1,282 @@
+#-----------------------------------------------------------
+# Vivado v2018.2 (64-bit)
+# SW Build 2258646 on Thu Jun 14 20:02:38 MDT 2018
+# IP Build 2256618 on Thu Jun 14 22:10:49 MDT 2018
+# Start of session at: Fri May 29 08:35:14 2020
+# Process ID: 10838
+# Current directory: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait
+# Command line: vivado
+# Log file: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait/vivado.log
+# Journal file: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait/vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr
+Scanning sources...
+Finished scanning sources
+WARNING: [filemgmt 56-3] IPUserFilesDir: Could not find the directory '/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.ip_user_files'.
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/data/ip'.
+open_project: Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 6243.914 ; gain = 265.266 ; free physical = 191 ; free virtual = 18835
+update_compile_order -fileset sources_1
+open_hw
+connect_hw_server
+INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121
+INFO: [Labtools 27-2222] Launching hw_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+****** Xilinx hw_server v2018.2
+  **** Build date : Jun 14 2018-20:18:37
+    ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+
+open_hw_target
+INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210241145210
+set_property PROGRAM.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.bit} [get_hw_devices xc7a200t_0]
+set_property PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0]
+set_property FULL_PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0]
+current_hw_device [get_hw_devices xc7a200t_0]
+refresh_hw_device [lindex [get_hw_devices xc7a200t_0] 0]
+INFO: [Labtools 27-2302] Device xc7a200t (JTAG device index = 0) is programmed with a design that has 1 JTAG AXI core(s).
+create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev [lindex [get_cfgmem_parts {mt25ql01g-spi-x1_x2_x4}] 0]
+source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl
+# set_msg_config -id "Labtoolstcl 44-481" -limit 1000000
+# set numread 0x00010000
+# set address 0x00000000
+# for {set number 0x00004000} {$address < $numread} {incr number} {
+#  set address [format 0x%X [expr $address + 0x10]]
+#  puts "address: $address  "
+#  create_hw_axi_txn "read_$number" -f [get_hw_axis hw_axi_1] -address $address -len 4 -type read 
+#  run_hw_axi read_$number
+# }
+address: 0x10  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x20  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x30  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x40  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000001abcdabcd7060504030201000
+address: 0x50  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x60  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x70  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x80  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x90  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0xA0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0xB0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0xC0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0xD0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0xE0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0xF0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x100  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x110  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x120  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x130  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x140  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x150  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x160  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x170  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x180  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x190  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x1A0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x1B0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x1C0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x1D0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x1E0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x1F0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x200  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x210  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x220  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x230  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x240  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x250  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x260  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x270  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x280  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x290  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x2A0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x2B0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x2C0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x2D0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x2E0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x2F0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x300  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x310  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x320  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x330  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x340  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x350  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x360  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x370  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x380  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x390  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x3A0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x3B0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x3C0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x3D0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x3E0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x3F0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x400  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x410  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x420  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x430  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x440  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x450  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x460  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x470  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x480  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x490  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x4A0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x4B0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x4C0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x4D0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x4E0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x4F0  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x500  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x510  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x520  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x530  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x540  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x550  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x560  
+INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000
+address: 0x570  
+INFO: [Labtoolstcl 44-481] READ DATA is: f2e2d2c2b2a292827060504030201000
+address: 0x580  
+INFO: [Labtoolstcl 44-481] READ DATA is: f4e4d4c4b4a494847262524232221202
+address: 0x590  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000007464544434241404
+address: 0x5A0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x5B0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x5C0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x5D0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x5E0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x5F0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x600  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x610  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x620  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x630  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x640  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x650  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x660  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x670  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x680  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x690  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x6A0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x6B0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x6C0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x6D0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x6E0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x6F0  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x700  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x710  
+INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000
+address: 0x720  
+INFO: [Common 17-41] Interrupt caught. Command should exit soon.
+INFO: [Common 17-41] Interrupt caught. Command should exit soon.
+INFO: [Common 17-41] Interrupt caught. Command should exit soon.
+INFO: [Common 17-41] Interrupt caught. Command should exit soon.

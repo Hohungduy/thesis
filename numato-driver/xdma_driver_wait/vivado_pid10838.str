@@ -1,0 +1,410 @@
+/*
+
+Xilinx Vivado v2018.2 (64-bit) [Major: 2018, Minor: 2]
+SW Build: 2258646 on Thu Jun 14 20:02:38 MDT 2018
+IP Build: 2256618 on Thu Jun 14 22:10:49 MDT 2018
+
+Process ID: 10838
+License: Customer
+
+Current time: 	Fri May 29 08:35:30 ICT 2020
+Time zone: 	Indochina Time (Asia/Ho_Chi_Minh)
+
+OS: Ubuntu
+OS Version: 5.3.0-28-generic
+OS Architecture: amd64
+Available processors (cores): 4
+
+Display: :0
+Screen size: 3286x1080
+Screen resolution (DPI): 96
+Available screens: 2
+Available disk space: 33 GB
+Default font: family=Dialog,name=Dialog,style=plain,size=12
+
+Java version: 	1.8.0_112 64-bit
+Java home: 	/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/tps/lnx64/jre
+Java executable location: 	/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/tps/lnx64/jre/bin/java
+Java initial memory (-Xms): 	128 MB
+Java maximum memory (-Xmx):	 2 GB
+
+
+User name: 	root
+User home directory: /root
+User working directory: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait
+User country: 	US
+User language: 	en
+User locale: 	en_US
+
+RDI_BASEROOT: /home/crypto/ssd/tools/Xilinx20182/Vivado
+HDI_APPROOT: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+RDI_DATADIR: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/data
+RDI_BINDIR: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/bin
+
+Vivado preferences file location: /home/crypto/.Xilinx/Vivado/2018.2/vivado.xml
+Vivado preferences directory: /home/crypto/.Xilinx/Vivado/2018.2/
+Vivado layouts directory: /home/crypto/.Xilinx/Vivado/2018.2/layouts
+PlanAhead jar file location: 	/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/lib/classes/planAhead.jar
+Vivado log file location: 	/home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait/vivado.log
+Vivado journal file location: 	/home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait/vivado.jou
+Engine tmp dir: 	./.Xil/Vivado-10838-crypto
+
+Xilinx Environment Variables
+----------------------------
+XILINX: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/ids_lite/ISE
+XILINX_DSP: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/ids_lite/ISE
+XILINX_PLANAHEAD: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+XILINX_SDK: /home/crypto/ssd/tools/Xilinx20182/SDK/2018.2
+XILINX_VIVADO: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+XILINX_VIVADO_HLS: /home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2
+
+
+GUI allocated memory:	187 MB
+GUI max memory:		3,052 MB
+Engine allocated memory: 862 MB
+
+Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+*/
+
+// TclEventType: START_GUI
+// Tcl Message: start_gui 
+// [GUI Memory]: 66 MB (+67157kb) [00:00:06]
+// [Engine Memory]: 828 MB (+716614kb) [00:00:06]
+selectList(PAResourceQtoS.SyntheticaGettingStartedView_RECENT_PROJECTS, "/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr", 0); // q (O, ck)
+// bx (ck):  Open Project : addNotify
+// Opening Vivado Project: /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr. Version: Vivado v2018.2 
+// TclEventType: DEBUG_PROBE_SET_CHANGE
+// [GUI Memory]: 76 MB (+6622kb) [00:00:07]
+// Tcl Message: open_project /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr 
+// TclEventType: MSGMGR_MOVEMSG
+// TclEventType: FILESET_TARGET_UCF_CHANGE
+// TclEventType: FILE_SET_NEW
+// TclEventType: RUN_COMPLETED
+// TclEventType: FILESET_TARGET_UCF_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: FILESET_TARGET_UCF_CHANGE
+// TclEventType: RUN_CURRENT
+// HMemoryUtils.trashcanNow. Engine heap size: 936 MB. GUI used memory: 38 MB. Current time: 5/29/20 8:35:32 AM ICT
+// TclEventType: FILE_SET_CHANGE
+// TclEventType: IP_LOCK_CHANGE
+// TclEventType: FILE_SET_CHANGE
+// [Engine Memory]: 965 MB (+100453kb) [00:00:12]
+// TclEventType: FILE_SET_CHANGE
+// TclEventType: PROJECT_NEW
+// [Engine Memory]: 1,049 MB (+37316kb) [00:00:13]
+// [GUI Memory]: 80 MB (+148kb) [00:00:14]
+// [GUI Memory]: 84 MB (+183kb) [00:00:16]
+// [GUI Memory]: 91 MB (+3083kb) [00:00:16]
+// Tcl Message: open_project /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr 
+// Tcl Message: Scanning sources... Finished scanning sources 
+// Tcl Message: INFO: [IP_Flow 19-234] Refreshing IP repositories INFO: [IP_Flow 19-1704] No user IP repositories specified INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/home/crypto/ssd/tools/Xilinx20182/Vivado/2018.2/data/ip'. 
+// [GUI Memory]: 98 MB (+2121kb) [00:00:16]
+// Tcl Message: open_project: Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 6243.914 ; gain = 265.266 ; free physical = 191 ; free virtual = 18835 
+// Project name: Aller_200T_PCIe_DMA; location: /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA; part: xc7a200tfbg484-2
+// [Engine Memory]: 1,111 MB (+9551kb) [00:00:17]
+// Elapsed time: 11 seconds
+dismissDialog("Open Project"); // bx (ck)
+// TclEventType: DG_ANALYSIS_MSG_RESET
+// [Engine Memory]: 1,322 MB (+163830kb) [00:00:19]
+// TclEventType: DG_GRAPH_GENERATED
+// Tcl Message: update_compile_order -fileset sources_1 
+selectTree(PAResourceEtoH.FlowNavigatorTreePanel_FLOW_NAVIGATOR_TREE, "[, Program and Debug, Open Hardware Manager]", 21, true); // u (O, ck) - Node
+// Run Command: PAResourceCommand.PACommandNames_OPEN_HARDWARE_MANAGER
+// Tcl Command: 'rdi::info_commands get_hw_probes'
+// Tcl Command: 'load_features labtools'
+// TclEventType: LOAD_FEATURE
+// bx (ck):  Open Hardware Manager : addNotify
+// TclEventType: HW_SESSION_OPEN
+// [GUI Memory]: 111 MB (+8475kb) [00:00:23]
+// Tcl Message: open_hw 
+dismissDialog("Open Hardware Manager"); // bx (ck)
+selectButton(PAResourceOtoP.ProgramDebugTab_OPEN_TARGET, "Open target"); // h (cM, ck)
+selectMenuItem(PAResourceCommand.PACommandNames_AUTO_CONNECT_TARGET, "Auto Connect"); // ad (aj, ck)
+// Run Command: PAResourceCommand.PACommandNames_AUTO_CONNECT_TARGET
+// bx (ck):  Auto Connect : addNotify
+// TclEventType: HW_SERVER_UPDATE
+// Tcl Message: connect_hw_server 
+// Tcl Message: INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121 INFO: [Labtools 27-2222] Launching hw_server... INFO: [Labtools 27-2221] Launch Output:  ****** Xilinx hw_server v2018.2   **** Build date : Jun 14 2018-20:18:37     ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.   
+// TclEventType: HW_TARGET_CHANGE
+// TclEventType: HW_TARGET_CLOSE
+// TclEventType: HW_DEVICE_CHANGE
+// TclEventType: HW_SYSMON_ADD
+// TclEventType: HW_TARGET_UPDATE
+// Tcl Message: open_hw_target 
+// Tcl Message: INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210241145210 
+// TclEventType: HW_DEVICE_CHANGE
+// Tcl Message: set_property PROGRAM.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.bit} [get_hw_devices xc7a200t_0] 
+// TclEventType: HW_DEVICE_CHANGE
+// Tcl Message: set_property PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0] 
+// Tcl Message: set_property FULL_PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0] 
+// Tcl Message: current_hw_device [get_hw_devices xc7a200t_0] 
+// TclEventType: HW_DEVICE_CHANGE
+// TclEventType: HW_SYSMON_CHANGE
+// TclEventType: HW_AXI_CHANGE
+// TclEventType: HW_DEVICE_UPDATE
+// [Engine Memory]: 1,703 MB (+329816kb) [00:00:27]
+// TclEventType: HW_DEVICE_CHANGE
+// TclEventType: HW_DEVICE_PROBES_CHANGE
+// TclEventType: DEBUG_PROBE_SET_CHANGE
+// TclEventType: HW_DEVICE_PROBES_CHANGE
+// TclEventType: HW_CFGMEM_CREATE
+// TclEventType: HW_DEVICE_CHANGE
+// TclEventType: HW_CFGMEM_PART_CHANGE
+// Tcl Message: refresh_hw_device [lindex [get_hw_devices xc7a200t_0] 0] 
+// Tcl Message: INFO: [Labtools 27-2302] Device xc7a200t (JTAG device index = 0) is programmed with a design that has 1 JTAG AXI core(s). 
+// Tcl Message: create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev [lindex [get_cfgmem_parts {mt25ql01g-spi-x1_x2_x4}] 0] 
+dismissDialog("Auto Connect"); // bx (ck)
+// HMemoryUtils.trashcanNow. Engine heap size: 1,718 MB. GUI used memory: 63 MB. Current time: 5/29/20 8:35:52 AM ICT
+// Elapsed time: 15 seconds
+selectMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+selectMenuItem(RDIResourceCommand.RDICommands_RUN_SCRIPT, "Run Tcl Script..."); // ad (ck)
+dismissMenu(PAResourceItoN.MainMenuMgr_TOOLS, "Tools"); // V (q, ck)
+// Run Command: RDIResourceCommand.RDICommands_RUN_SCRIPT
+// Tcl Command: 'rdi::info_commands {device::*}'
+// Tcl Command: 'rdi::info_commands {debug::*}'
+// Tcl Command: 'rdi::info_commands {*}'
+// Elapsed time: 19 seconds
+setFileChooser("/home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl");
+// Source Tcl File: '/home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl'
+// bx (ck):  Source Tcl Script : addNotify
+// Tcl Command: 'source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl'
+// TclEventType: HW_AXI_CHANGE
+// Tcl Message: source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl 
+// Tcl Message: # set_msg_config -id "Labtoolstcl 44-481" -limit 1000000 # set numread 0x00010000 # set address 0x00000000 # for {set number 0x00004000} {$address < $numread} {incr number} { #  set address [format 0x%X [expr $address + 0x10]] #  puts "address: $address  " #  create_hw_axi_txn "read_$number" -f [get_hw_axis hw_axi_1] -address $address -len 4 -type read  #  run_hw_axi read_$number # } 
+// Tcl Message: address: 0x10   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x20   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x30   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x40   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000001abcdabcd7060504030201000 
+// Tcl Message: address: 0x50   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x60   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x70   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x80   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x90   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0xA0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0xB0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0xC0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0xD0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0xE0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0xF0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x100   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x110   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x120   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x130   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x140   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x150   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x160   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x170   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x180   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x190   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x1A0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x1B0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x1C0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x1D0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x1E0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x1F0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x200   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x210   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x220   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x230   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x240   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x250   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x260   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x270   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x280   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x290   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x2A0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x2B0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x2C0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x2D0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x2E0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x2F0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x300   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x310   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x320   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x330   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x340   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x350   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x360   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x370   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x380   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x390   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x3A0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x3B0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x3C0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x3D0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x3E0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x3F0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x400   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x410   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x420   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x430   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x440   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x450   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x460   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x470   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x480   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x490   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x4A0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x4B0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x4C0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x4D0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x4E0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x4F0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x500   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x510   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x520   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x530   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x540   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x550   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x560   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f0e0d0c0b0a090807060504030201000 
+// Tcl Message: address: 0x570   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f2e2d2c2b2a292827060504030201000 
+// Tcl Message: address: 0x580   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: f4e4d4c4b4a494847262524232221202 
+// Tcl Message: address: 0x590   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000007464544434241404 
+// Tcl Message: address: 0x5A0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x5B0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x5C0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x5D0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x5E0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x5F0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x600   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x610   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x620   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x630   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x640   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x650   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x660   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x670   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x680   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x690   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x6A0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x6B0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x6C0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x6D0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x6E0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x6F0   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x700   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x710   
+// Tcl Message: INFO: [Labtoolstcl 44-481] READ DATA is: 00000000000000000000000000000000 
+// Tcl Message: address: 0x720   
+// Elapsed time: 136 seconds
+selectButton(RDIResource.ProgressDialog_BACKGROUND, "Background"); // a (bx)
+// 'cI' command handler elapsed time: 156 seconds
+selectButton("HStatusBar_ProgressStatusItem_Cancel", "Cancel"); // NullButton (af, ck)
+// Tcl Message: INFO: [Common 17-41] Interrupt caught. Command should exit soon. 
+selectCodeEditor(RDIResource.TclConsoleView_TCL_CONSOLE_CODE_EDITOR, 491, 84); // dn (ae, ck)
+// HMemoryUtils.trashcanNow. Engine heap size: 1,738 MB. GUI used memory: 64 MB. Current time: 5/29/20 8:39:02 AM ICT
+// Tcl Message: INFO: [Common 17-41] Interrupt caught. Command should exit soon. 
+// Tcl Message: INFO: [Common 17-41] Interrupt caught. Command should exit soon. INFO: [Common 17-41] Interrupt caught. Command should exit soon. 

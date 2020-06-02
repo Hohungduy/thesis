@@ -43,7 +43,7 @@
 
 int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
 void alloc_xfer_mycryptocontext(struct crypto_async_request *req, struct xfer_req *req_xfer);
-
+int handle_crypto_xfer_callback(void *data, int res);
 /* Limit of the crypto queue before reaching the backlog */
 #define MYCRYPTO_DEFAULT_MAX_QLEN 128
 // global variable for device
@@ -129,7 +129,8 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	//Allocate request for xfer (pcie layer)
 	req_xfer = alloc_xfer_req ();
 	alloc_xfer_mycryptocontext(req, req_xfer);
-
+	xdma_xfer_submit_queue(req_xfer);
+	
 
 	// Testing handle request function
 	opr_ctx = crypto_tfm_ctx(req->tfm);
@@ -143,7 +144,13 @@ static void mycrypto_dequeue_work(struct work_struct *work)
 			container_of(work, struct mycrypto_work_data, work);
 	mycrypto_dequeue_req(data->mydevice);
 }
+//----------------------------------------------------------------
+/* Handle xfer callback request
+*/
+int handle_crypto_xfer_callback(void *data, int res)
+{
 
+}
 //--------------------------------------------------------------------
 //--------------timer handler---------------------------------------
 static void handle_timer(struct timer_list *t)
