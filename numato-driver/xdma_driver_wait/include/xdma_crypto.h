@@ -94,6 +94,8 @@ struct rcv_handler {
     struct wait_queue_head wq_rcv_event;
     struct list_head rcv_events_list;
     spinlock_t rcv_events_list_lock;
+
+    u32 booking;
 };
 
 enum xmit_status {
@@ -129,6 +131,7 @@ struct crypto_agent {
     struct list_head processing_queue;
     int agent_idx;
     u32 xfer_idex;
+    int need_deliver;
     spinlock_t agent_lock;
 };
 

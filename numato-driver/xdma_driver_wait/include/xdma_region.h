@@ -32,7 +32,10 @@ struct common_base {
 };
 
 struct crypto_dsc {
-    u32 data[90];
+    union {
+        u32 data[90];
+
+    } crypto_dsc;
 };
 
 struct region {
@@ -82,22 +85,22 @@ int is_engine_full(int engine_idx);
 int is_engine_empty(int engine_idx);
 void *get_next_region_ep_addr(int engine_idx);
 u64 get_next_data_ep_addr(int engine_idx);
-int increase_head_inb_idx(int engine_idx, int booking);
-int active_next_region(int engine_idx);
+void active_outb_region(int engine_idx, int region_idx);
 
+int increase_head_inb_idx(int engine_idx, int booking);
+int increase_tail_outb_idx(int engine_idx, int booking);
+
+int active_next_region(int engine_idx);
 void *get_region_ep_addr_out(int engine_idx);
 u64 get_data_ep_addr_out(int engine_idx);
 int increase_tail_idx_out(int engine_idx);
 int is_engine_empty_out(int engine_idx);
-
 void *get_region_ep_addr(int engine_idx, int region_idx);
-
 u32 get_tail_inb_idx(int engine_idx);
-
+u32 get_head_outb_idx(int engine_idx);
+u32 get_xfer_id_outb_idx(int engine_idx, int region_num);
 void write_inb_xfer_id(int engine_idx, int region_idx, u32 xfer_id);
-
 void active_inb_region(int engine_idx, int region_idx);
-
 u64 get_region_data_ep_addr(int engine_idx, int region_idx);
 
 
