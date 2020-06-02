@@ -8,18 +8,22 @@
 #include <crypto/internal/aead.h>
 #include <crypto/sha.h>
 #include <crypto/authenc.h>
-
+#include <crypto/ghash.h>
+#include "mycrypto.h"
 /* driver logic flags */
 #define AES_MODE_CBC 0
 #define AES_MODE_GCM 1
 #define AES_MODE_AUTHENC_HMAC_CBC 2
 #define AES_MODE_AUTHENC_HMAC_CTR 3
+#define AUTHENC_MODE_GHASH 4
 
 #define MYCRYPTO_DIR_DECRYPT 0
 #define MYCRYPTO_DIR_ENCRYPT 1
-static int mycrypto_skcipher_handle_request(struct crypto_async_request *base);
-static int mycrypto_skcipher_handle_result(struct crypto_async_request *base,bool *should_complete);
+int mycrypto_skcipher_handle_request(struct crypto_async_request *base);
+int mycrypto_skcipher_handle_result(struct crypto_async_request *base,bool *should_complete);
 
+int mycrypto_aead_handle_request(struct crypto_async_request *base);
+int mycrypto_aead_handle_result(struct crypto_async_request *base,bool *should_complete);
 /* transformation object context
 * it is stored in tfm ->__crt_ctx
 * and tfm = req->base.tfm 
@@ -49,6 +53,11 @@ struct mycrypto_cipher_op{
 	u8 key[AES_KEYSIZE_128];// key
 	u8 *iv; //iv pointer
 	u32 keylen;//keylen
+
+	unsigned int assoclen;
+	unsigned int cryptlen;
+	unsigned int authsize; // another name: digestsize
+	
 	/* all the belows is using for AEAD specific*/
 	u32 hash_alg;
 	u32 state_sz;
@@ -74,4 +83,6 @@ struct mycrypto_cipher_req{
 	int src_nents;
 	int dst_nents;
 };
+
+
 #endif

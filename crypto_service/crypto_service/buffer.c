@@ -23,18 +23,18 @@ bool is_cbuff_full(struct circle_buff* cbuff)
 {
     if ((cbuff->head % cbuff->size) == 
         ((cbuff->tail - 1)% cbuff->size))
-        return TRUE;
+        return 1;
     else
-        return FALSE;
+        return 0;
 }
 
 bool is_cbuff_empty(struct circle_buff* cbuff)
 {
     if ((cbuff->head % cbuff->size) == 
         ((cbuff->tail)% cbuff->size))
-        return TRUE;
+        return 1;
     else
-        return FALSE;
+        return 0;
 }
 
 int push(struct circle_buff *cbuff, void *data)

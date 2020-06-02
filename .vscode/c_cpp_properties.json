@@ -1,19 +1,17 @@
 {
-    "configurations": [
-        {
-            "name": "Linux",
-            "includePath": [
-                "${workspaceFolder}/**",
-                "/lib/modules/5.3.0-51-generic/build/include",
-                "/lib/modules/5.3.0-51-generic/build/include/uapi",
-                "/lib/modules/5.3.0-51-generic/build/include/generated"
-            ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "gnu11",
-            "cppStandard": "gnu++14",
-            "intelliSenseMode": "clang-x64"
-        }
-    ],
+    "configurations": [{
+        "name": "Linux",
+        "includePath": [
+            "${workspaceFolder}/**",
+            "/lib/modules/5.0.0-38-generic/build/include",
+            "/lib/modules/5.0.0-38-generic/build/include/uapi",
+            "/lib/modules/5.0.0-38-generic/build/include/generated"
+        ],
+        "defines": [],
+        "compilerPath": "/usr/bin/gcc",
+        "cStandard": "gnu11",
+        "cppStandard": "gnu++14",
+        "intelliSenseMode": "clang-x64"
+    }],
     "version": 4
 }

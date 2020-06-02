@@ -41,12 +41,12 @@ int get_sg_from_buf(void **buff, struct scatterlist *sg)
         pg = virt_to_page(buff[i]);
         if (!pg){
             pr_info("Cannot convert buffer to page");
-            return FALSE;
+            return 0;
         }
         flush_dcache_page(pg);
         sg_set_page(sg + i, pg, nbytes, offset);
     }
-    return true;
+    return 1;
 }
 
 void my_work_handler(struct work_struct *work)
@@ -287,8 +287,8 @@ int choose_channel()
 int is_full_backlog(int channel)
 {
     if (xcrypto_dev.backlog[channel] >= MAX_BACKLOG)
-        return TRUE;
-    return FALSE;
+        return 1;
+    return 0;
 }
 
 struct xfer_callback_struct *alloc_xfer_callback(void)
@@ -316,8 +316,8 @@ void free_xfer_callback(struct xfer_callback_struct * ptr)
 int is_crypto_device_free(void)
 {
     if (xcrypto_dev.state == CRYPTO_FREE)
-        return TRUE;
-    return FALSE;
+        return 1;
+    return 0;
 }
 
 int submit_xfer(struct xfer_req * xfer_req)
@@ -331,8 +331,8 @@ int submit_xfer(struct xfer_req * xfer_req)
     sgt.sgl = xfer_req->sg;
     sgt.nents = sg_dma_len(xfer_req->sg);
     sgt.orig_nents = sg_dma_len(xfer_req->sg);
-    bool dma_mapped = FALSE;
-    bool write = TRUE;
+    bool dma_mapped = 0;
+    bool write = 1;
     u64 ep_addr;
     int nbytes;
     // struct dsc dsc;

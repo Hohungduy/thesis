@@ -46,7 +46,7 @@ int get_sg_from_buf(void *buff, struct scatterlist *sg, int size)
     pg = virt_to_page(buff);
     if (!pg){
         pr_info("Cannot convert buffer to page");
-        return FALSE;
+        return 0;
     }
     // pr_info("aaj");
     flush_dcache_page(pg);
