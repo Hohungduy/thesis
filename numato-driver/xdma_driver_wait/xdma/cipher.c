@@ -226,8 +226,8 @@ static int my_crypto_aead_aes_setkey(struct crypto_aead *cipher, const u8 *key,u
 	*/
 	//--- Check condition of key (authenc style)
 	printk(KERN_INFO "Module mycrypto:my_crypto_aead_aes_setkey \n");
-	if (crypto_authenc_extractkeys(&keys, key, len) != 0)
-		goto badkey;
+	// if (crypto_authenc_extractkeys(&keys, key, len) != 0)
+	// 	goto badkey;
 	if (keys.enckeylen > sizeof(ctx->key))
 		goto badkey;
 	//-----------------------------------------------------------------
@@ -549,7 +549,7 @@ struct mycrypto_alg_template mycrypto_alg_gcm_aes = {
     		.base = {
         			.cra_name = "gcm(aes)",
 					.cra_driver_name = "mycrypto_gcm_aes",
-					.cra_priority = 250,
+					.cra_priority = 500,
 					.cra_flags = CRYPTO_ALG_ASYNC | CRYPTO_ALG_KERN_DRIVER_ONLY,
 					.cra_blocksize = 1,
 					.cra_ctxsize = sizeof(struct mycrypto_cipher_op),
