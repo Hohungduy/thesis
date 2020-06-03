@@ -11,7 +11,7 @@
 
 #include "testcrypto.h"
 
-static unsigned int req_num = 4;
+static unsigned int req_num = 1;
 module_param(req_num, uint, 0000);
 MODULE_PARM_DESC(req_num, "request and number");
 
@@ -33,7 +33,16 @@ struct aead_def {
     struct aead_request *req;
     struct tcrypt_result result;
 };
-
+const char AAD_const[8] = {0xfe,0xed,0xfa,0xce,0xde,0xad,0xbe,0xef};
+const char key_const[16] = {0xfe,0xff,0xe9,0x92,0x86,0x65,0x73,0x1c,0x6d,0x6a,0x8f,0x94,0x67,0x30,0x83,0x08};
+const char scratchpad_const[60]= {0xd9,0x31,0x32,0x25,0xf8,0x84,0x06,0xe5,
+                                    0xa5,0x59,0x09,0xc5,0xaf,0xf5,0x26,0x9a,
+                                    0x86,0xa7,0xa9,0x53,0x15,0x34,0xf7,0xda,0x2e, 
+                                    0x4c,0x30,0x3d,0x8a,0x31,0x8a,0x72,0x1c,0x3c, 
+                                    0x0c,0x95,0x95,0x68,0x09,0x53,0x2f,0xcf,0x0e,
+                                    0x24,0x49,0xa6,0xb5,0x25,0xb1,0x6a,0xed,0xf5,
+                                    0xaa,0x0d,0xe6,0x57,0xba,0x63,0x7b,0x39};
+const char ivdata_const[12]={0xca,0xfe,0xba,0xbe,0xfa,0xce,0xdb,0xad,0xde,0xca,0xf8,0x88};
 /* Callback function for skcipher type*/
 static void test_skcipher_cb(struct crypto_async_request *req, int error)
 {
@@ -309,16 +318,7 @@ static int test_aead(void)
     char *sg_buffer =NULL; //for printing
     int i_iv,i_AAD,i_data,i_sg,i_key;
     size_t len;
-    const char AAD_const[8] = {0xfe,0xed,0xfa,0xce,0xde,0xad,0xbe,0xef};
-    const char key_const[16] = {0xfe,0xff,0xe9,0x92,0x86,0x65,0x73,0x1c,0x6d,0x6a,0x8f,0x94,0x67,0x30,0x83,0x08};
-    const char scratchpad_const[60]= {0xd9,0x31,0x32,0x25,0xf8,0x84,0x06,0xe5,
-                0xa5,0x59,0x09,0xc5,0xaf,0xf5,0x26,0x9a,
-                0x86,0xa7,0xa9,0x53,0x15,0x34,0xf7,0xda,0x2e, 
-                0x4c,0x30,0x3d,0x8a,0x31,0x8a,0x72,0x1c,0x3c, 
-                0x0c,0x95,0x95,0x68,0x09,0x53,0x2f,0xcf,0x0e,
-                0x24,0x49,0xa6,0xb5,0x25,0xb1,0x6a,0xed,0xf5,
-                0xaa,0x0d,0xe6,0x57,0xba,0x63,0x7b,0x39};
-    const char ivdata_const[12]={0xca,0xfe,0xba,0xbe,0xfa,0xce,0xdb,0xad,0xde,0xca,0xf8,0x88};
+
     
     /*
     * Allocate a tfm (a transformation object) and set the key.
@@ -358,10 +358,10 @@ static int test_aead(void)
         key[i_key]=key_const[i_key];
     }
     printk(KERN_INFO "Key value - before setkey: \n");
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[0],key[1],key[2],key[3]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[4],key[5],key[6],key[7]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[8],key[9],key[10],key[11]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[12],key[13],key[14],key[15]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
     //printk(KERN_INFO "%d \n", key);
     //print_hex_dump_bytes("", DUMP_PREFIX_NONE,key,ARRAY_SIZE(key));
     if (crypto_aead_setkey(aead, key, 16)) {
@@ -370,10 +370,10 @@ static int test_aead(void)
         goto out;
     }
     printk(KERN_INFO "Key value - after setkey:\n");
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[0],key[1],key[2],key[3]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[4],key[5],key[6],key[7]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[8],key[9],key[10],key[11]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[12],key[13],key[14],key[15]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
     //print_hex_dump_bytes("", DUMP_PREFIX_NONE,key,ARRAY_SIZE(key));
     //printk(KERN_INFO "%d \n", key);
     /* IV will be random */
@@ -392,7 +392,7 @@ static int test_aead(void)
     //printk(KERN_INFO "VALUE OF POINTER _ORIGINAL1: %px\n",ivdata_copy);
     for(i_iv = 1; i_iv <= ivlen; i_iv++)
     {
-        printk(KERN_INFO "%d \t", (*ivdata_copy));
+        printk(KERN_INFO "%x \t", (*ivdata_copy));
         ivdata_copy ++;
         if ((i_iv % 4) == 0)
             printk(KERN_INFO "\n");
@@ -419,7 +419,7 @@ static int test_aead(void)
     
     for(i_AAD = 1; i_AAD <= 8; i_AAD ++)
     {
-        printk(KERN_INFO "%d \t", (*AAD_copy));
+        printk(KERN_INFO "%x \t", (*AAD_copy));
         AAD_copy ++;
         if ((i_AAD % 4) == 0)
             printk(KERN_INFO "\n");
@@ -443,7 +443,7 @@ static int test_aead(void)
     
     for(i_data = 1; i_data <= 60; i_data ++)
     {
-        printk(KERN_INFO "%d \t", (*scratchpad_copy));
+        printk(KERN_INFO "%x \t", (*scratchpad_copy));
         scratchpad_copy ++;
         if ((i_data % 4) == 0)
             printk(KERN_INFO "\n");
@@ -509,7 +509,7 @@ static int test_aead(void)
 
     for(i_sg = 1; i_sg <= (req->assoclen +req->cryptlen+authlen); i_sg ++)
     {
-        printk(KERN_INFO "%d \t", (*sg_buffer));
+        printk(KERN_INFO "%x \t", (*sg_buffer));
         sg_buffer ++;
         if ((i_sg % 4) == 0)
             printk(KERN_INFO "\n");
@@ -531,7 +531,7 @@ static int test_aead(void)
     printk(KERN_INFO "Data payload-after function test encrypt:\n");
     for(i_sg = 1; i_sg <= (req->assoclen +req->cryptlen+authlen); i_sg ++)
     {
-        printk(KERN_INFO "%d \t", (*sg_buffer));
+        printk(KERN_INFO "%x \t", (*sg_buffer));
         sg_buffer ++;
         if ((i_sg % 4) == 0)
             printk(KERN_INFO "\n");
