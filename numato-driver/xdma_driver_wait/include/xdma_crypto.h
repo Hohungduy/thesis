@@ -9,11 +9,22 @@
 #include "linux/workqueue.h"
 #include "linux/kthread.h"
 #include "linux/delay.h"
+#include "stdbool.h"
+// #include "linux/types.h "
 
 #define BUFF_LENGTH (REGION_NUM)
 #define BACKLOG_MAX_LENGTH (50)
 #define AGENT_NUM (1)
 #define CORE_NUM (2)
+
+#ifndef TRUE
+#define TRUE (1)
+#endif
+
+
+#ifndef FALSE
+#define FALSE (0)
+#endif
 
 struct xdma_pci_dev;
 

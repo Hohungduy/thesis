@@ -3,6 +3,11 @@
 
 #include <linux/types.h>
 #include <linux/uaccess.h>
+#include <linux/kernel.h>
+// #include <stdio.h>
+// #include <linux/iomap.h>
+// #include <asm-generic/iomap.h>
+#include <linux/pci.h>
 
 #define REGION_NUM (8)
 #define DATA_MAX_LEN (1624)
