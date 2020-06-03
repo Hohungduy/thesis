@@ -1,0 +1,32 @@
+#-----------------------------------------------------------
+# Vivado v2018.2 (64-bit)
+# SW Build 2258646 on Thu Jun 14 20:02:38 MDT 2018
+# IP Build 2256618 on Thu Jun 14 22:10:49 MDT 2018
+# Start of session at: Tue May 26 14:26:38 2020
+# Process ID: 3012
+# Current directory: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait/xdma
+# Command line: vivado
+# Log file: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait/xdma/vivado.log
+# Journal file: /home/crypto/ws/thesis-related/sw/thesis/numato-driver/xdma_driver_wait/xdma/vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project /home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.xpr
+update_compile_order -fileset sources_1
+open_hw
+connect_hw_server
+open_hw_target
+set_property PROGRAM.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.bit} [get_hw_devices xc7a200t_0]
+set_property PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0]
+set_property FULL_PROBES.FILE {/home/crypto/ws/thesis-related/hw/test_memory_mapped/Aller_200T_PCIe_DMA_v2/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA/Aller_200T_PCIe_DMA.runs/impl_1/system_wrapper.ltx} [get_hw_devices xc7a200t_0]
+current_hw_device [get_hw_devices xc7a200t_0]
+refresh_hw_device [lindex [get_hw_devices xc7a200t_0] 0]
+create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev [lindex [get_cfgmem_parts {mt25ql01g-spi-x1_x2_x4}] 0]
+source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl
+source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl
+dreh
+tfh
+j
+source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl
+dfh
+source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl
+source /home/crypto/ws/thesis-related/hw/tcl/mem_read.tcl

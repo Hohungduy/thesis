@@ -11,6 +11,10 @@
 
 #include "testcrypto.h"
 
+static unsigned int req_num = 1;
+module_param(req_num, uint, 0000);
+MODULE_PARM_DESC(req_num, "request and number");
+
 struct tcrypt_result {
     struct completion completion;
     int err;
@@ -29,7 +33,16 @@ struct aead_def {
     struct aead_request *req;
     struct tcrypt_result result;
 };
-
+const char AAD_const[8] = {0xfe,0xed,0xfa,0xce,0xde,0xad,0xbe,0xef};
+const char key_const[16] = {0xfe,0xff,0xe9,0x92,0x86,0x65,0x73,0x1c,0x6d,0x6a,0x8f,0x94,0x67,0x30,0x83,0x08};
+const char scratchpad_const[60]= {0xd9,0x31,0x32,0x25,0xf8,0x84,0x06,0xe5,
+                                    0xa5,0x59,0x09,0xc5,0xaf,0xf5,0x26,0x9a,
+                                    0x86,0xa7,0xa9,0x53,0x15,0x34,0xf7,0xda,0x2e, 
+                                    0x4c,0x30,0x3d,0x8a,0x31,0x8a,0x72,0x1c,0x3c, 
+                                    0x0c,0x95,0x95,0x68,0x09,0x53,0x2f,0xcf,0x0e,
+                                    0x24,0x49,0xa6,0xb5,0x25,0xb1,0x6a,0xed,0xf5,
+                                    0xaa,0x0d,0xe6,0x57,0xba,0x63,0x7b,0x39};
+const char ivdata_const[12]={0xca,0xfe,0xba,0xbe,0xfa,0xce,0xdb,0xad,0xde,0xca,0xf8,0x88};
 /* Callback function for skcipher type*/
 static void test_skcipher_cb(struct crypto_async_request *req, int error)
 {
@@ -180,7 +193,7 @@ static int test_skcipher(void)
      * before proceeding, even if the underlying implementation is asynchronous.
      *
      * To decrypt instead of encrypt, just change crypto_skcipher_encrypt() to
-     * crypto_skcipher_decrypt().
+     * crypto_skcipher_decrypt().ccc
      */
 
     /* We encrypt one block */
@@ -265,10 +278,10 @@ static unsigned int test_aead_encdec(struct aead_def *ad, int enc)
     case -EBUSY:
         rc = wait_for_completion_interruptible(
             &ad->result.completion);
-        if (!rc && !ad->result.err) {
+        if ((!rc) && (!ad->result.err)) {
             reinit_completion(&ad->result.completion);
-            break;
         }
+        break;
     default:
         pr_info("Module testcrypto: aead encrypt returned with %d result %d\n",
             rc, ad->result.err);
@@ -290,8 +303,11 @@ static int test_aead(void)
     struct crypto_aead *aead = NULL;
     struct aead_request *req = NULL;
     char *scratchpad = NULL;
+    //char scratchpad[60];
     char *AAD = NULL;
+    //char AAD[8]; 
     char *ivdata = NULL;
+    //char ivdata[12];
     unsigned char key[16];
     int ret = -EFAULT;
     int assoclen;
@@ -300,8 +316,10 @@ static int test_aead(void)
     char *AAD_copy = NULL; //for printing
     char *scratchpad_copy = NULL;//for printing
     char *sg_buffer =NULL; //for printing
-    int i_iv,i_AAD,i_data,i_sg;
+    int i_iv,i_AAD,i_data,i_sg,i_key;
     size_t len;
+
+    
     /*
     * Allocate a tfm (a transformation object) and set the key.
     *
@@ -333,12 +351,17 @@ static int test_aead(void)
                       &ad.result);
 
     /* AES 128 with random key */
-    get_random_bytes(&key, 16);
+    //get_random_bytes(&key, 16);
+
+    for (i_key =0 ; i_key < 16;i_key++)
+    {
+        key[i_key]=key_const[i_key];
+    }
     printk(KERN_INFO "Key value - before setkey: \n");
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[0],key[1],key[2],key[3]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[4],key[5],key[6],key[7]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[8],key[9],key[10],key[11]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[12],key[13],key[14],key[15]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
     //printk(KERN_INFO "%d \n", key);
     //print_hex_dump_bytes("", DUMP_PREFIX_NONE,key,ARRAY_SIZE(key));
     if (crypto_aead_setkey(aead, key, 16)) {
@@ -347,10 +370,10 @@ static int test_aead(void)
         goto out;
     }
     printk(KERN_INFO "Key value - after setkey:\n");
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[0],key[1],key[2],key[3]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[4],key[5],key[6],key[7]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[8],key[9],key[10],key[11]);
-    printk(KERN_INFO "%d\t%d\t%d\t%d \n",key[12],key[13],key[14],key[15]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+    printk(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
     //print_hex_dump_bytes("", DUMP_PREFIX_NONE,key,ARRAY_SIZE(key));
     //printk(KERN_INFO "%d \n", key);
     /* IV will be random */
@@ -359,14 +382,17 @@ static int test_aead(void)
         pr_info("could not allocate ivdata\n");
         goto out;
     }
-    get_random_bytes(ivdata, 12);
-    
+    //get_random_bytes(ivdata, 12);
+    for (i_iv =0 ; i_iv < 12;i_iv++)
+    {
+        ivdata[i_iv]=ivdata_const[i_iv];
+    }
     ivdata_copy = ivdata; // copy pointer
     printk(KERN_INFO "IV: \n");
     //printk(KERN_INFO "VALUE OF POINTER _ORIGINAL1: %px\n",ivdata_copy);
     for(i_iv = 1; i_iv <= ivlen; i_iv++)
     {
-        printk(KERN_INFO "%d \t", (*ivdata_copy));
+        printk(KERN_INFO "%x \t", (*ivdata_copy));
         ivdata_copy ++;
         if ((i_iv % 4) == 0)
             printk(KERN_INFO "\n");
@@ -380,14 +406,20 @@ static int test_aead(void)
         pr_info("could not allocate scratchpad\n");
         goto out;
     }
-    get_random_bytes(AAD,8);
+    //get_random_bytes(AAD,8);
+    // 8 bytes
+    //AAD[8] = {0xfe,0xed,0xfa,0xce,0xde,0xad,0xbe,0xef};
+    for (i_AAD = 0; i_AAD <8; i_AAD ++)
+    {
+        AAD[i_AAD] = AAD_const[i_AAD];
+    }
     assoclen = 8;
     AAD_copy =AAD;
     printk(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
     
     for(i_AAD = 1; i_AAD <= 8; i_AAD ++)
     {
-        printk(KERN_INFO "%d \t", (*AAD_copy));
+        printk(KERN_INFO "%x \t", (*AAD_copy));
         AAD_copy ++;
         if ((i_AAD % 4) == 0)
             printk(KERN_INFO "\n");
@@ -399,12 +431,19 @@ static int test_aead(void)
         pr_info("could not allocate scratchpad\n");
         goto out;
     }
-    get_random_bytes(scratchpad, 16);
+    //get_random_bytes(scratchpad, 16);
+    // 60 bytes
+    for (i_data =0 ; i_data < 60;i_data++)
+    {
+        scratchpad[i_data]=scratchpad_const[i_data];
+    }
+
     scratchpad_copy = scratchpad; 
     printk(KERN_INFO "Data payload :\n");
-    for(i_data = 1; i_data <= 16; i_data ++)
+    
+    for(i_data = 1; i_data <= 60; i_data ++)
     {
-        printk(KERN_INFO "%d \t", (*scratchpad_copy));
+        printk(KERN_INFO "%x \t", (*scratchpad_copy));
         scratchpad_copy ++;
         if ((i_data % 4) == 0)
             printk(KERN_INFO "\n");
@@ -435,7 +474,7 @@ static int test_aead(void)
         ret = -ENOMEM;
         goto out;
     }
-    sg_buffer =kzalloc(40, GFP_KERNEL);
+    sg_buffer =kzalloc(84, GFP_KERNEL);// 84 = 8 byte (AAD -1st entry) + 60 bytes data(2nd entry)+16 bytes (2nd entry)
     sg_init_table(ad.sg, 2 ); // 2 entries
     sg_set_buf(&ad.sg[0], AAD, 8);
     //ad.sg = sg_next(ad.sg);
@@ -443,7 +482,7 @@ static int test_aead(void)
     sg_set_buf(&ad.sg[1],scratchpad,320);
     //sg_mark_end(ad.sg);
     aead_request_set_ad(req,assoclen);// 12 means that there are 12 octects ( 96 bits) in AAD fields.
-    aead_request_set_crypt(req, ad.sg, ad.sg, 16, ivdata);// 28 bytes = 12 bytes (IV) + 16 bytes (data) 
+    aead_request_set_crypt(req, ad.sg, ad.sg, 60, ivdata);// 60 bytes (data for encryption or decryption) 
     // crypto_init_wait(&sk.wait);
     init_completion(&ad.result.completion);
 
@@ -470,7 +509,7 @@ static int test_aead(void)
 
     for(i_sg = 1; i_sg <= (req->assoclen +req->cryptlen+authlen); i_sg ++)
     {
-        printk(KERN_INFO "%d \t", (*sg_buffer));
+        printk(KERN_INFO "%x \t", (*sg_buffer));
         sg_buffer ++;
         if ((i_sg % 4) == 0)
             printk(KERN_INFO "\n");
@@ -492,7 +531,7 @@ static int test_aead(void)
     printk(KERN_INFO "Data payload-after function test encrypt:\n");
     for(i_sg = 1; i_sg <= (req->assoclen +req->cryptlen+authlen); i_sg ++)
     {
-        printk(KERN_INFO "%d \t", (*sg_buffer));
+        printk(KERN_INFO "%x \t", (*sg_buffer));
         sg_buffer ++;
         if ((i_sg % 4) == 0)
             printk(KERN_INFO "\n");
@@ -514,8 +553,11 @@ out:
 
 static int __init test_init(void)
 {
+    int i;
     printk(KERN_INFO "Module testcrypto: info: init test\n");
-    test_aead();
+    for (i = 0; i < req_num; i ++){
+        test_aead();
+    }
     return 0;
 }
 
