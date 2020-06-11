@@ -1,4 +1,8 @@
 **.o
+**.o.**
 **.ko
 **.mod**
 **vivado**
+**.cmd
+**.symvers
+**modules.order

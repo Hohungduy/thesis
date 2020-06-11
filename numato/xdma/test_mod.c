@@ -11,7 +11,7 @@
 #include <linux/mm.h>
 #include <asm/cacheflush.h>
 #include "xdma_region.h"
-#include "xdma_region.h"
+#include "xdma_crypto.h"
 // #include <linux
 
 MODULE_AUTHOR("Xilinx, Inc.");
