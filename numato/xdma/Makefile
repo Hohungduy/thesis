@@ -15,20 +15,27 @@ TARGET_MODULE:=xdma
 
 EXTRA_CFLAGS := -I$(topdir)/include $(XVC_FLAGS)
 # EXTRA_CFLAGS += -D__LIBXDMA_DEBUG__
-#EXTRA_CFLAGS += -DINTERNAL_TESTING
+# EXTRA_CFLAGS += -DINTERNAL_TESTING
 
 ifneq ($(KERNELRELEASE),)
 	$(TARGET_MODULE)-objs := libxdma.o xdma_cdev.o \
 		cdev_ctrl.o cdev_events.o cdev_sgdma.o cdev_xvc.o \
 		cdev_bypass.o xdma_mod.o xdma_thread.o xdma_crypto.o \
-		xdma_region.o just_4_test.o
+		xdma_region.o
+
 	huy_crypto-objs := cipher.o mycrypto.o
-	obj-m := $(TARGET_MODULE).o test_mod.o testcrypto.o huy_crypto.o
+
+	obj-m := $(TARGET_MODULE).o 
+	# test_mod.o huy_crypto.o
 else
 	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build
 	PWD:=$(shell pwd)
+
+
 all :
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) modules
+
+	cp -f *.ko ../bin
 
 clean:
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) clean

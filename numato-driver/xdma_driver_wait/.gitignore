@@ -1,9 +1,0 @@
-**/vivado**
-./.Xil/
-./.dist/
-**.o
-**.o.**
-**.ko**
-**.mod**
-**Module.symvers
-**modules.order
