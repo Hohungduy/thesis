@@ -3,9 +3,9 @@
         "name": "Linux",
         "includePath": [
             "${workspaceFolder}/**",
-            "/lib/modules/5.0.0-38-generic/build/include",
-            "/lib/modules/5.0.0-38-generic/build/include/uapi",
-            "/lib/modules/5.0.0-38-generic/build/include/generated"
+            "/home/black/black/linuxsystemforrouter/build_dir/target-arm_cortex-a9+vfpv3-d16_musl_eabi/linux-mvebu_cortexa9/linux-4.14.176/include",
+            "/home/black/black/linuxsystemforrouter/build_dir/target-arm_cortex-a9+vfpv3-d16_musl_eabi/linux-mvebu_cortexa9/linux-4.14.176/include/uapi",
+            "/home/black/black/linuxsystemforrouter/build_dir/target-arm_cortex-a9+vfpv3-d16_musl_eabi/linux-mvebu_cortexa9/linux-4.14.176/include/generated"
         ],
         "defines": [],
         "compilerPath": "/usr/bin/gcc",
