@@ -9,6 +9,7 @@
 #include "linux/workqueue.h"
 #include "linux/kthread.h"
 #include "linux/delay.h"
+#include "linux/list.h"
 #include "stdbool.h"
 // #include "linux/types.h "
 
@@ -38,14 +39,15 @@ struct xdma_pci_dev;
 struct xfer_req{
     int (*crypto_complete)(void *data, int res);
     struct mycrypto_context ctx;
+    struct scatterlist *sg;
+    int res;
 
     int id;
-    int res;
+    
     u64 data_ep_addr;
     struct region *in_region;
     struct region *out_region;
     int region_idx;
-    struct scatterlist *sg;
     struct sg_table sg_table;
     struct list_head list;
 };
@@ -152,7 +154,7 @@ struct xdma_crdev {
     struct blinky blinky;
 
     spinlock_t channel_lock;
-    int channel_load[CHANNEL_NUM];  
+    int channel_load[CHANNEL_NUM];
 
     struct crypto_agent agent[AGENT_NUM];
     
@@ -171,6 +173,11 @@ void delete_deliver_list(struct xdma_crdev *crdev);
 
 
 struct xfer_req *alloc_xfer_req(void);
+int set_sg(struct xfer_req *req, struct scatterlist *sg);
+int set_callback(struct xfer_req *req, void *cb);
+int set_ctx(struct xfer_req *req, struct mycrypto_context ctx);
+int get_result(struct xfer_req *req, int *res);
+
 int xdma_xfer_submit_queue(struct xfer_req *xfer_req);
 void free_xfer_req(struct xfer_req *req);
 

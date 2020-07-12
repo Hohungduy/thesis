@@ -2,6 +2,8 @@
 
 struct xdma_pci_dev *g_xpdev;
 
+#define BAR_0_ADDR (xpdev->xdev->bar[0])
+
 struct xdma_crdev *get_crdev(void)
 {
     return g_xpdev->crdev;
@@ -40,8 +42,6 @@ irqreturn_t err_handler(int irq_no, void *dev)
     pr_info("err_handler");
     return IRQ_HANDLED;
 }
-
-
 
 int min_channel_load(int *channel)
 {
@@ -136,7 +136,6 @@ int xmit_task(void *data)
     int channel_idx = task_data->idx;
     struct crypto_agent *agent = 
         container_of(xmit, struct crypto_agent, xmit);
-   
     int engine_idx = 0;
     // u32 xfer_id;
     unsigned long flags;
@@ -460,10 +459,12 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     struct crypto_agent *agent;
     struct xmit_handler *xmit;
     struct rcv_handler *rcv;
+    struct led_region  led;
+    struct crypto_engine engine;
 
-    pr_info("Size of region %ld", sizeof(struct region));
-    pr_info("Size of crypto_engine %ld", sizeof(struct crypto_engine));
-    pr_info("Size of crypto_engine %ld", sizeof(struct crypto_engine));
+    pr_info("Size of region %d", sizeof(struct region_in));
+    pr_info("Size of crypto_engine %d", sizeof(struct crypto_engine));
+    // pr_info("Size of crypto_engine %d", sizeof(struct crypto_engine));
 
 
     crdev = (struct xdma_crdev *)kzalloc(sizeof(*crdev), GFP_KERNEL);
@@ -480,11 +481,15 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     // Timer
     crdev->blinky.interval = 1;
     timer_setup(&crdev->blinky.timer, blinky_timeout, 0);
-    crdev->blinky.led = RED_BLUE;
+    crdev->blinky.led = RED;
     // Config region base
 
-    set_engine_base(xpdev->xdev->bar[0] + ENGINE_OFFSET(0), 0);
-    set_led_base(xpdev->xdev->bar[0] + LED_OFFSET);
+    engine.comm = BAR_0_ADDR + 0x11000;
+    engine.in = BAR_0_ADDR;
+    engine.out = BAR_0_ADDR + 0x10000;
+
+    set_engine_base(engine, 0);
+    set_led_base(BAR_0_ADDR);
     
     // lock
     spin_lock_init(&crdev->channel_lock);
@@ -684,6 +689,47 @@ struct xfer_req *alloc_xfer_req(void)
     return xfer;
 }
 EXPORT_SYMBOL_GPL(alloc_xfer_req);
+
+int set_sg(struct xfer_req *req, struct scatterlist *sg)
+{
+    if (req == NULL)
+        return -1;
+    req->sg = sg;
+    req->sg_table.sgl = sg;
+    req->sg_table.orig_nents = sg_nents(sg);
+    return 0;
+}
+EXPORT_SYMBOL_GPL(set_sg);
+
+int set_callback(struct xfer_req *req, void *cb)
+{
+    if (req == NULL)
+        return -1;
+    req->crypto_complete = cb;
+    return 0;
+}
+EXPORT_SYMBOL_GPL(set_callback);
+
+
+int set_ctx(struct xfer_req *req, struct mycrypto_context ctx)
+{
+    if (req == NULL)
+        return -1;
+    req->ctx = ctx;
+    return 0;
+
+}
+EXPORT_SYMBOL_GPL(set_ctx);
+
+int get_result(struct xfer_req *req, int *res)
+{
+    if (req == NULL)
+    return -1;
+    *res = req->res;
+    return 0;
+}
+EXPORT_SYMBOL_GPL(get_result);
+
 
 void free_xfer_req(struct xfer_req *req)
 {

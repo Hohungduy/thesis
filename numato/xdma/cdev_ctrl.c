@@ -104,7 +104,7 @@ static long version_ioctl(struct xdma_cdev *xcdev, void __user *arg)
 
 	rv = copy_from_user((void *)&obj, arg, sizeof(struct xdma_ioc_info));
 	if (rv) {
-		pr_info("copy from user failed %d/%ld.\n",
+		pr_info("copy from user failed %d/%ud.\n",
 			rv, sizeof(struct xdma_ioc_info));
 		return -EFAULT;
 	}
