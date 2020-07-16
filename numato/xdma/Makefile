@@ -23,9 +23,9 @@ ifneq ($(KERNELRELEASE),)
 		cdev_bypass.o xdma_mod.o xdma_thread.o xdma_crypto.o \
 		xdma_region.o 
 	huy_crypto-objs := cipher.o mycrypto.o
-	obj-m := $(TARGET_MODULE).o  
+	obj-m := $(TARGET_MODULE).o example_use.o
 	# testcrypto.o huy_crypto.o 
-	# test_mod.o
+
 else
 	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build
 	PWD:=$(shell pwd)

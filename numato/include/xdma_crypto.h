@@ -39,14 +39,15 @@ struct xdma_pci_dev;
 struct xfer_req{
     int (*crypto_complete)(void *data, int res);
     struct mycrypto_context ctx;
-    struct scatterlist *sg;
+    struct scatterlist *sg_in;
+    struct scatterlist *sg_out;
     int res;
 
     int id;
-    
+
     u64 data_ep_addr;
-    struct region *in_region;
-    struct region *out_region;
+    struct region_in *in_region;
+    struct region_out *out_region;
     int region_idx;
     struct sg_table sg_table;
     struct list_head list;
