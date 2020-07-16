@@ -2,6 +2,12 @@
 
 static struct base region_base;
 
+void trigger_engine(int engine_idx)
+{
+    u32 trigger_val = ioread32(&region_base.engine.status->trigger);
+    iowrite32(trigger_val ^ 0x00000001, &region_base.engine.status->trigger);
+}
+
 void *get_base(void)
 {
     return &region_base;
@@ -89,6 +95,7 @@ void write_inb_xfer_id(int engine_idx, int region_idx, u32 xfer_id)
     struct crypto_engine base = region_base.engine[engine_idx];
     iowrite32(xfer_id, &base.in->region[region_idx].xfer_id);
 #else  
+    pr_err("%d \n %s\n", __LINE__, __FILE__);
     iowrite32(xfer_id, &region_base.engine.in->region.xfer_id);
 #endif
 }
@@ -158,7 +165,7 @@ u64 get_region_data_ep_addr(int engine_idx, int region_idx)
         offsetof(struct region_in, data) ;    // return (void *)(&base->in.region[head + 1].data) - (void *)base;
 #else   
     return SINGLE_PACKET_INBOUND_RAM_ADDR 
-            + offsetof(struct region_in, data);
+            + offsetof(struct region_in, data[0]);
 #endif
 }
 
@@ -168,8 +175,8 @@ int is_engine_full(int engine_idx)
     u32 head = ioread32(&region_base.engine[engine_idx].comm->head_inb);
     u32 tail = ioread32(&region_base.engine[engine_idx].comm->tail_inb);
     
-    // pr_info("head = %x", head);
-    // pr_info("tail = %x", tail);
+    // pr_err("head = %x", head);
+    // pr_err("tail = %x", tail);
 
     if (head < 0 || tail < 0)
     {
@@ -194,8 +201,8 @@ int is_engine_full_out(int engine_idx)
     u32 head = ioread32(&region_base.engine[engine_idx].comm->head_outb);
     u32 tail = ioread32(&region_base.engine[engine_idx].comm->tail_outb);
     
-    // pr_info("head = %x", head);
-    // pr_info("tail = %x", tail);
+    // pr_err("head = %x", head);
+    // pr_err("tail = %x", tail);
 
     if (head < 0 || tail < 0)
     {
@@ -230,6 +237,12 @@ int is_engine_empty_out(int engine_idx)
                     != CRYPTO_STATUS_BUSY;
 #endif
 }
+
+void *get_region_addr(int engine_idx)
+{
+    // pr_err("%d \n %s\n", __LINE__, __FILE__);
+    return &region_base.engine.in->region;
+}
 // void active_inb_region(int engine_idx, int region_idx)
 // {
 //     struct crypto_engine base = region_base.engine[engine_idx];
@@ -254,16 +267,16 @@ int is_engine_empty_out(int engine_idx)
 //     void *tail_addr = &region_base.engine[engine_idx].comm->tail_inb;
 //     head_idx = ioread32(head_addr);
 //     tail_idx = ioread32(tail_addr);
-//     pr_info("increase_head_inb_idx head = %d\n", head_idx);
+//     pr_err("increase_head_inb_idx head = %d\n", head_idx);
     
 //     for (i = head_idx; i != (booking % REGION_NUM); i = (i + 1) % REGION_NUM)
 //     {
 //         region_dsc = ioread32(&region_base.engine[engine_idx].in->region[i].region_dsc);
-//         pr_info("region_dsc %x", region_dsc);
+//         pr_err("region_dsc %x", region_dsc);
 //         if (region_dsc == 0xABCDABCD)
 //         {
 //             active_inb_region(engine_idx, i);
-//             pr_info("write head_dx = %d\n", (i+1)%REGION_NUM);
+//             pr_err("write head_dx = %d\n", (i+1)%REGION_NUM);
 //             iowrite32((i + 1) % REGION_NUM, head_addr);
 //         }
 //         else
@@ -284,16 +297,16 @@ int is_engine_empty_out(int engine_idx)
 //     void *tail_addr = &region_base.engine[engine_idx].comm->tail_outb;
 //     head_idx = ioread32(head_addr);
 //     tail_idx = ioread32(tail_addr);
-//     pr_info("increase_head_inb_idx head = %d\n", head_idx);
+//     pr_err("increase_head_inb_idx head = %d\n", head_idx);
     
 //     for (i = tail_idx; i != (booking % REGION_NUM); i = (i + 1) % REGION_NUM)
 //     {
 //         region_dsc = ioread32(&region_base.engine[engine_idx].out->region[i].region_dsc);
-//         pr_info( "region_dsc %x", region_dsc );
+//         pr_err( "region_dsc %x", region_dsc );
 //         if (region_dsc == 0xABCDABCD)
 //         {
 //             // active_outb_region(engine_idx, i);
-//             pr_info( "write head_dx = %d\n", (i + 1) % REGION_NUM ) ;
+//             pr_err( "write head_dx = %d\n", (i + 1) % REGION_NUM ) ;
 //             iowrite32( (i + 1) % REGION_NUM, tail_addr );
 //         }
 //         else
@@ -334,12 +347,12 @@ void test_mem(void)
 {
 #ifdef BUFFER
     int i;
-    printk("head_inb   = %d", ioread32(&region_base.engine[0].comm->head_inb));
-    printk("tail_inb   = %d", ioread32(&region_base.engine[0].comm->tail_inb));
+    pr_err("head_inb   = %d", ioread32(&region_base.engine[0].comm->head_inb));
+    pr_err("tail_inb   = %d", ioread32(&region_base.engine[0].comm->tail_inb));
     
     for (i =0; i < REGION_NUM; i++){
-        printk("region_dsc = %d", ioread32(&region_base.engine[0].in->region[i].region_dsc));
-        printk("region_dsc = %d", ioread32(&region_base.engine[0].in->region[i].data_len));
+        pr_err("region_dsc = %d", ioread32(&region_base.engine[0].in->region[i].region_dsc));
+        pr_err("region_dsc = %d", ioread32(&region_base.engine[0].in->region[i].data_len));
     }
 #else  
 

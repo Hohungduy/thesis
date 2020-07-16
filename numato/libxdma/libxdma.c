@@ -56,7 +56,7 @@ static unsigned int poll_mode;
 module_param(poll_mode, uint, 0644);
 MODULE_PARM_DESC(poll_mode, "Set 1 for hw polling, default is 0 (interrupts)");
 
-static unsigned int interrupt_mode;
+static unsigned int interrupt_mode = 1;
 module_param(interrupt_mode, uint, 0644);
 MODULE_PARM_DESC(interrupt_mode, "0 - MSI-x , 1 - MSI, 2 - Legacy");
 

@@ -51,6 +51,8 @@ struct xfer_req{
     int region_idx;
     struct sg_table sg_table;
     struct list_head list;
+
+    struct crypto_dsc_in crypto_dsc;
 };
 
 /** LED */

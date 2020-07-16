@@ -49,11 +49,26 @@ struct common_base {
     u32 padding_last[6];
 };
 
+struct info {
+    u32 keysize     : 4;
+    u32 aadsize     : 4;
+    u32 length      : 11;
+    u32 direction   : 1;
+    u32 free_space_ : 12;
+    u32 free_space[3];
+};
+
+struct iv {
+    u32 tail;
+    u32 iv[2];
+    u32 nonce;
+};
+
 struct crypto_dsc_in {
-    u32 info[4];
+    struct info info;
     u32 icv[4];
     u32 key[8];
-    u32 iv[4];
+    struct iv iv;
     u32 aad[4];
 };
 struct crypto_dsc_out {
@@ -127,6 +142,9 @@ struct base {
     struct led_region led;
 };
 
+void trigger_engine(int engine_idx);
+
+
 
 int set_engine_base(struct crypto_engine base, int engine_idx);
 int set_led_base(void *base);
@@ -134,25 +152,29 @@ void toggle_red_led(void);
 void toggle_blue_led(void);
 int is_engine_full(int engine_idx);
 int is_engine_empty(int engine_idx);
+
+
 void *get_next_region_ep_addr(int engine_idx);
 u64 get_next_data_ep_addr(int engine_idx);
-// void active_outb_region(int engine_idx, int region_idx);
+void *get_region_ep_addr_out(int engine_idx);
+u64 get_data_ep_addr_out(int engine_idx);
+void *get_region_ep_addr(int engine_idx, int region_idx);
+u64 get_region_data_ep_addr(int engine_idx, int region_idx);
 
+void *get_region_addr(int engine_idx);
+
+// void active_outb_region(int engine_idx, int region_idx);
 // int increase_head_inb_idx(int engine_idx, int booking);
 // int increase_tail_outb_idx(int engine_idx, int booking);
 
 // int active_next_region(int engine_idx);
-void *get_region_ep_addr_out(int engine_idx);
-u64 get_data_ep_addr_out(int engine_idx);
 // int increase_tail_idx_out(int engine_idx);
 int is_engine_empty_out(int engine_idx);
-void *get_region_ep_addr(int engine_idx, int region_idx);
 u32 get_tail_inb_idx(int engine_idx);
 u32 get_head_outb_idx(int engine_idx);
 u32 get_xfer_id_outb_idx(int engine_idx, int region_num);
 void write_inb_xfer_id(int engine_idx, int region_idx, u32 xfer_id);
 // void active_inb_region(int engine_idx, int region_idx);
-u64 get_region_data_ep_addr(int engine_idx, int region_idx);
 // int active_next_region_out(int engine_idx);
 
 
