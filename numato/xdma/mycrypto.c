@@ -41,9 +41,18 @@
 #include "xdma_crypto.h"
 //#include "cipher.h"
 
+/*choose mode for test
+ @mode 1: test timer and callback.
+ @mode 2: test with lower layer 
+*/
+// static unsigned int mode = 1;
+// module_param(mode, uint, 0000);
+// MODULE_PARM_DESC(mode, "choose mode");
+
+
 int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
 void alloc_xfer_mycryptocontext(struct crypto_async_request *req, struct xfer_req *req_xfer);
-int handle_crypto_xfer_callback(void *data, int res);
+static int handle_crypto_xfer_callback(void *data, int res);
 /* Limit of the crypto queue before reaching the backlog */
 #define MYCRYPTO_DEFAULT_MAX_QLEN 128
 // global variable for device
@@ -56,6 +65,7 @@ static struct mycrypto_alg_template *mycrypto_algs[] = {
 	&mycrypto_alg_authenc_hmac_sha256_cbc_aes,
 	&mycrypto_alg_authenc_hmac_sha256_ctr_aes,
 	&mycrypto_alg_gcm_aes,
+	&mycrypto_alg_rfc4106_gcm_aes,
 	&mycrypto_alg_cbc_aes
 };
 
@@ -72,16 +82,16 @@ void alloc_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_r
 	req_xfer->ctx.ctx_op = ctx;
 	req_xfer->ctx.ctx_req = req_ctx;
 	req_xfer->sg = req->src;
-	//req_xfer->crypto_complete
+	req_xfer->crypto_complete = handle_crypto_xfer_callback;
 
 }
-static inline void mycrypto_handle_result(struct mycrypto_dev *mydevice)
+static inline void mycrypto_handle_result(struct crypto_async_request *req)
 {
-	struct crypto_async_request *req;
+	//struct crypto_async_request *req;
 	struct mycrypto_req_operation *opr_ctx;
 	int ret;
 	bool should_complete;
-	req = mydevice->req;//prototype ( retrieve from complete queue)
+	//req = mydevice->req;//prototype ( retrieve from complete queue)
 	printk(KERN_INFO "Module mycrypto: handle result\n");
 	opr_ctx = crypto_tfm_ctx(req->tfm);
 	ret = opr_ctx->handle_result(req, &should_complete);
@@ -109,7 +119,7 @@ struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *my
 void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 {
 	struct crypto_async_request *req = NULL, *backlog = NULL;
-	struct mycrypto_req_operation *opr_ctx;
+	//struct mycrypto_req_operation *opr_ctx;
 	struct xfer_req *req_xfer = NULL;
 
 	printk(KERN_INFO "module mycrypto: dequeue request (after a period time by using workqueue)\n");
@@ -125,18 +135,18 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		return;
 	if (backlog)
 		backlog->complete(backlog, -EINPROGRESS);
-	
+
 	//Allocate request for xfer (pcie layer)
-	req_xfer = alloc_xfer_req ();
-	alloc_xfer_mycryptocontext(req, req_xfer);
-	xdma_xfer_submit_queue(req_xfer);
-	
-
+		req_xfer = alloc_xfer_req ();
+		alloc_xfer_mycryptocontext(req, req_xfer);
+		xdma_xfer_submit_queue(req_xfer);
+		
 	// Testing handle request function
-	opr_ctx = crypto_tfm_ctx(req->tfm);
-	opr_ctx->handle_request(req);
-
-	mod_timer(&mydevice->mycrypto_ktimer,jiffies + 1*HZ);
+		//opr_ctx = crypto_tfm_ctx(req->tfm);
+		//opr_ctx->handle_request(req);
+		//mod_timer(&mydevice->mycrypto_ktimer,jiffies + 1*HZ);	
+	
+	
 }
 static void mycrypto_dequeue_work(struct work_struct *work)
 {
@@ -147,23 +157,36 @@ static void mycrypto_dequeue_work(struct work_struct *work)
 //----------------------------------------------------------------
 /* Handle xfer callback request
 */
-int handle_crypto_xfer_callback(void *data, int res)
+static int handle_crypto_xfer_callback(void *data, int res)
 {
+	struct crypto_async_request *req = (struct crypto_async_request *) data;
+	struct mycrypto_dev *mydevice = mydevice_glo;
 
+	pr_info("Module mycrypto: handle callback function from pcie layer \n");
+	if (!req)
+		pr_err("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
+		return res;
+	mycrypto_handle_result(req);
+	queue_work(mydevice->workqueue,
+		   &mydevice->work_data.work);
+	return res;
 }
 //--------------------------------------------------------------------
 //--------------timer handler---------------------------------------
 static void handle_timer(struct timer_list *t)
 {
 	struct mycrypto_dev *mydevice =from_timer(mydevice,t,mycrypto_ktimer);
+	struct crypto_async_request *req;
+	req = mydevice->req;
+
 	printk(KERN_INFO "Module mycrypto: HELLO timer\n");
 	
 	if (!mydevice){
-		printk(KERN_ERR "CAN NOT HANDLE A null POINTER\n");
+		printk(KERN_ERR "Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return;
 	}
 	
-	mycrypto_handle_result(mydevice);
+	mycrypto_handle_result(req);
 	queue_work(mydevice->workqueue,
 		   &mydevice->work_data.work);
 	// handle result copy from buffer and callback
@@ -295,8 +318,9 @@ static int mycrypto_probe(void){
 	printk(KERN_INFO "Failed to register algorithms\n");
 	}
 	printk("device successfully registered \n");
-	// Set up timer (using for testing).
+	// Set up timer and callback handler (using for testing).
 	timer_setup(&mydevice->mycrypto_ktimer,handle_timer,0);
+	
 	// printk(KERN_INFO "mydevice pointer: %px \n",mydevice);
 	// printk(KERN_INFO "mydevice_glo pointer: %px \n",mydevice_glo);
 	// printk(KERN_INFO "VALUE OF flags: %d \n", mydevice->flags);
@@ -315,12 +339,11 @@ static int __init FPGAcrypt_init(void)
 {
  //struct mycrypto_dev *mydevice;
  // Register probe
- 
 	printk(KERN_INFO "Hello, World!\n");
  //probe with simulation
 	mycrypto_probe();
 	//mod_timer(&mydevice_glo->mycrypto_ktimer, jiffies + 4*HZ);
-//  //-------init kernel timer--------------//
+//  //-------init kernel timer (obsolete)--------------//
 // 	init_timers(&mycrypto_ktimer);
 // 	configure_timer(&mycrypto_ktimer);
 

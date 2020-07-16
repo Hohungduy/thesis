@@ -3,6 +3,7 @@
 
 #include <crypto/aes.h>
 #include <crypto/gcm.h>
+#include <crypto/ctr.h>
 #include <crypto/des.h>
 #include <crypto/aead.h>
 #include <crypto/internal/aead.h>
@@ -51,7 +52,8 @@ struct mycrypto_cipher_op{
 	u32 mode;//algoritm used
 	int len;// blocksize
 	u8 key[AES_KEYSIZE_128];// key
-	u8 *iv; //iv pointer
+	u32 nonce; // store nonce (4 Bytes salt)
+	u8 *iv; //iv pointer (8 Bytes iv)
 	u32 keylen;//keylen
 
 	unsigned int assoclen;

@@ -63,10 +63,8 @@ int mycrypto_skcipher_handle_result(struct crypto_async_request *base, bool *sho
 }
 
 /* Using for checking:
-
    -  whether or not the length of request and block size accommodate the critetia.
    -  The number of entries in src and dst list.
-
 */
 static int mycrypto_skcipher_req_init(struct skcipher_request *req)
 {
@@ -139,7 +137,7 @@ static int my_crypto_skcipher_aes_setkey(struct crypto_skcipher *cipher, const u
 	// Get/retrieve transformation object
 	struct mycrypto_cipher_op *ctx = crypto_tfm_ctx(tfm);
 	// Get transformation context 
-	struct mycrypto_dev *mydevice = ctx->mydevice;
+	//struct mycrypto_dev *mydevice = ctx->mydevice;
 	struct crypto_aes_ctx aes; 
 	/* @aes: The location where the processing key (computed key) will be store*/
 	int ret,i;
@@ -218,7 +216,7 @@ static int my_crypto_aead_aes_setkey(struct crypto_aead *cipher, const u8 *key,u
 	struct crypto_tfm *tfm = crypto_aead_tfm(cipher);
 	struct mycrypto_cipher_op *ctx = crypto_tfm_ctx(tfm);
 	//struct my_crypto_hash_state istate,ostate;
-	struct mycrypto_dev *mydevice = ctx->mydevice;
+	//struct mycrypto_dev *mydevice = ctx->mydevice;
 	struct crypto_authenc_keys keys;
 	/* @keys: The location where the processing key  
 	(computed key for encrypt/decrypt and authentication) 
@@ -362,10 +360,8 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	return ret;
 }
 /* Using for checking:
-
    -  whether or not the length of request and block size accommodate the critetia.
    -  The number of entries in src and dst list.
-
 */
 static int mycrypto_aead_req_init(struct aead_request *req)
 {
@@ -451,7 +447,7 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 	// Get/retrieve transformation object
 	struct mycrypto_cipher_op *ctx = crypto_tfm_ctx(tfm);
 	// Get transformation context 
-	struct mycrypto_dev *mydevice = ctx->mydevice;
+	//struct mycrypto_dev *mydevice = ctx->mydevice;
 	struct crypto_aes_ctx aes; 
 	/* @aes: The location where the processing key (computed key) will be store*/
 	u32 hashkey[AES_BLOCK_SIZE >> 2];
@@ -491,6 +487,20 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 	return 0;
 }
 
+static int my_crypto_aead_rfc4106_gcm_setkey(struct crypto_aead *cipher, const u8 *key,unsigned int len)
+{
+	struct crypto_tfm *tfm = crypto_aead_tfm(cipher);
+	// Get/retrieve transformation object
+	struct mycrypto_cipher_op *ctx = crypto_tfm_ctx(tfm);
+	// Get transformation context
+
+	/*last 4 bytes of key are the nonce
+	get this salt value and store in ctx->nonce
+	*/ 
+	ctx->nonce = *(u32 *)(key+len-CTR_RFC3686_NONCE_SIZE);// copy salt to ctx->nonce
+	len -= CTR_RFC3686_NONCE_SIZE;// 16 bytes
+	return my_crypto_aead_gcm_setkey(cipher,key,len);
+}
 static int my_crypto_aead_gcm_setauthsize(struct crypto_aead *tfm, unsigned int authsize)
 {
 	//unsigned int authsize = tfm->authsize;
@@ -510,8 +520,32 @@ static int my_crypto_aead_gcm_setauthsize(struct crypto_aead *tfm, unsigned int 
 	}
 	return 0;
 }
+/*
+ * validate assoclen for RFC4106/RFC4543
+ */
+static int crypto_ipsec_check_assoclen(unsigned int assoclen)
+{
+	switch (assoclen) {
+	case 16: // ivlen +aadlen
+	case 20: // ivlen +aadlen (esn sequence number)
+		break;
+	default:
+		return -EINVAL;
+	}
 
+	return 0;
+}
 
+static int my_crypto_aead_rfc4106_gcm_encrypt(struct aead_request *req)
+{
+		return crypto_ipsec_check_assoclen(req->assoclen) ?:
+	       my_crypto_aead_gcm_encrypt(req);
+}
+static int my_crypto_aead_rfc4106_gcm_decrypt(struct aead_request *req)
+{
+		return crypto_ipsec_check_assoclen(req->assoclen) ?:
+	       my_crypto_aead_gcm_decrypt(req);
+}
 //-----------------------------------------------------------------------
 //struct AEAD algorithm which is registered after driver probing
 struct mycrypto_alg_template mycrypto_alg_cbc_aes = {
@@ -544,10 +578,34 @@ struct mycrypto_alg_template mycrypto_alg_gcm_aes = {
 			.setauthsize = my_crypto_aead_gcm_setauthsize,
     		.encrypt = my_crypto_aead_gcm_encrypt,
     		.decrypt = my_crypto_aead_gcm_decrypt,
-    		.ivsize = 12,
-			.maxauthsize = SHA256_DIGEST_SIZE,
+    		.ivsize = GCM_AES_IV_SIZE,
+			.maxauthsize = GHASH_DIGEST_SIZE,
     		.base = {
         			.cra_name = "gcm(aes)",
+					.cra_driver_name = "mycrypto_gcm_aes",
+					.cra_priority = 500,
+					.cra_flags = CRYPTO_ALG_ASYNC | CRYPTO_ALG_KERN_DRIVER_ONLY,
+					.cra_blocksize = 1,
+					.cra_ctxsize = sizeof(struct mycrypto_cipher_op),
+					.cra_alignmask = 0,
+					.cra_init = my_crypto_aead_gcm_cra_init,
+					.cra_exit = my_crypto_aead_gcm_cra_exit,
+					.cra_module = THIS_MODULE,
+    		},
+	},
+};
+
+struct mycrypto_alg_template mycrypto_alg_rfc4106_gcm_aes = {
+    .type = MYCRYPTO_ALG_TYPE_AEAD,
+	.alg.aead = {
+			.setkey = my_crypto_aead_rfc4106_gcm_setkey,
+			.setauthsize = my_crypto_aead_gcm_setauthsize,
+    		.encrypt = my_crypto_aead_rfc4106_gcm_encrypt,
+    		.decrypt = my_crypto_aead_rfc4106_gcm_decrypt,
+    		.ivsize = GCM_RFC4106_IV_SIZE,
+			.maxauthsize = GHASH_DIGEST_SIZE,
+    		.base = {
+        			.cra_name = "rfc4106(gcm(aes))",
 					.cra_driver_name = "mycrypto_gcm_aes",
 					.cra_priority = 500,
 					.cra_flags = CRYPTO_ALG_ASYNC | CRYPTO_ALG_KERN_DRIVER_ONLY,
@@ -605,5 +663,3 @@ struct mycrypto_alg_template mycrypto_alg_authenc_hmac_sha256_cbc_aes = {
     		},
 	},
 };
-
-
