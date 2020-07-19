@@ -84,7 +84,7 @@ u32 get_xfer_id_outb_idx(int engine_idx, int region_num)
     struct region_out *region = &base.out->region[region_num];
     return ioread32(&region->xfer_id);
 #else  
-    return ioread32(&region_base.engine.out->region.xfer_id);
+    return ioread32(&region_base.engine.in->region.xfer_id);
 #endif
 }
 

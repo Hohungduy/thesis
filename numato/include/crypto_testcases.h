@@ -16,11 +16,12 @@ struct region_in testcase_1_in = {
             .direction   = 1,
             .length = 0b00001001000,
             .aadsize = 12,
-            .keysize = 1
+            .keysize = 0
         },
         .icv  = {0x562dfdb4, 0x2fd04796, 0x8f6cbe72, 0x45901814},
-        .key  = {0x3613a634, 0x906ac73c, 0xbb5d10da, 0x4c80cdef,
-                 0x00000000, 0x00000000, 0x00000000, 0x00000000},
+        .key  = {0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                 0x3613a634, 0x906ac73c, 0xbb5d10da, 0x4c80cdef
+                 },
         .iv   = {
             .nonce = 0x2e443b68, 
             .iv[1] = 0x4956ed7e, 

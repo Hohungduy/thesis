@@ -32,7 +32,7 @@ MODULE_PARM_DESC(xfer, "there is or not xfer");
 // Modify if it is neccessary
 #define MAX_REQ (15)
 #define DATA_LENGTH (1888/4)
-// #define TESTCASE_1_DATA_LENGTH (20)
+#define TESTCASE_1_LENGTH (72)
 
 // Just for debug, dont care
 
@@ -40,44 +40,36 @@ void *get_base(void);
 struct xdma_crdev *get_crdev(void);
 struct scatterlist sg[MAX_REQ*2];
 
-// Skip if scatterlist is okay
-
-int get_sg_from_buf(void *buff, struct scatterlist *sg, int size)
-{
-    struct page *pg;
-
-    unsigned int offset = offset_in_page(buff);
-    unsigned int nbytes = 
-        min_t(unsigned int, PAGE_SIZE - offset, size);
-    // pr_err("aae");
-    pg = virt_to_page(buff);
-    if (!pg){
-        pr_err("Cannot convert buffer to page");
-        return 0;
-    }
-    // pr_err("aaj");
-    flush_dcache_page(pg);
-    sg_set_page(sg, pg, nbytes, offset);
-
-    return true;
-}
+#define KEYSIZE_128 (0)
+#define KEYSIZE_192 (1)
+#define KEYSIZE_256 (2)
+#define AADSIZE_8 (8)
+#define AADSIZE_12 (12)
+#define DIRECTION_ENCRYPT (1)
+#define DIRECTION_DECRYPT (0)
+#define ICV_SIZE (4*4)
+#define KEY_SIZE (8*4)
+#define AAD_SIZE (4*4)
 
 // This is callback function
 
-int crypto_complete(void *data, int res)
+int crypto_complete(struct xfer_req *data, int res)
 {
     char *buf;
     int i = 0;
+    pr_err("Complete with res = %d ! This is callback function! \n", res);
 
     // Step 4: Get data in callback
-    struct scatterlist *sg = ((struct xfer_req *)data)->sg_out;
+    struct scatterlist *sg = data->sg_out;
 
     // Step 5: Do your things - Here we print the data out
-    pr_err("complete ehehe %d\n", res);
+    
     buf = sg_virt (sg);
-    for (i = 0; i < 1500; i += 4)
+    for (i = 0; i < TESTCASE_1_LENGTH; i += 16)
     {
-        pr_err("address = %i , data = %x",i,  *((u32 *)(&buf[i])));
+        pr_err("address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+            *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
+            *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
     }
 
     // Step 6: Free xfer_req
@@ -95,7 +87,7 @@ int crypto_complete(void *data, int res)
         0: print queue only
             print_xmit_list: list of submitted reqs which are not sent to card
             print_processing_list: list of submitted reqs which are sent to card
-            print_deliver_list: list of reqs which are ready for callback
+            print_xmit_deliver_list: list of reqs which are ready for callback
         1: send req and print queue
     req_num: number of transfer (packet)
         default: 1
@@ -106,12 +98,8 @@ u32 i, j;
 int res;
 struct xfer_req *req[MAX_REQ];
 u32 *buff[MAX_REQ];
-// struct xdma_crdev *crdev;
-// struct list_head *processing;
-// unsigned long flags;
 struct mycrypto_context ctx;
 
-#define TESTCASE_1_LENGTH (72)
 
 static int __init test_init(void)
 {
@@ -119,9 +107,6 @@ static int __init test_init(void)
     int res;
     struct xfer_req *req[MAX_REQ];
     u32 *buff[MAX_REQ];
-    // struct xdma_crdev *crdev;
-    // struct list_head *processing;
-    // unsigned long flags;
     struct mycrypto_context ctx;
 
 
@@ -141,30 +126,23 @@ static int __init test_init(void)
             sg_mark_end(&sg[i]);
             // Step 2: Set value for req
             set_sg(req[i], &sg[i]);
-            set_callback(req[i], crypto_complete);
+            set_callback(req[i], &crypto_complete);
                 // Set value for ctx (testcase_1)
                     // INFO
-#define KEYSIZE_128 (0)
-#define KEYSIZE_192 (1)
-#define KEYSIZE_256 (2)
             req[i]->crypto_dsc.info = testcase_1_in.crypto_dsc.info;
-#define AADSIZE_8 (8)
-#define AADSIZE_12 (12)
-#define DIRECTION_ENCRYPT (1)
-#define DIRECTION_DECRYPT (0)
                     // ICV
-#define ICV_SIZE (4*4)
             memcpy(req[i]->crypto_dsc.icv, testcase_1_in.crypto_dsc.icv, ICV_SIZE); 
                     // KEY
-#define KEY_SIZE (8*4)
             memcpy(req[i]->crypto_dsc.key, testcase_1_in.crypto_dsc.key, KEY_SIZE); 
                     // IV
             req[i]->crypto_dsc.iv = testcase_1_in.crypto_dsc.iv;
                     // AAD
-#define AAD_SIZE (4*4)
             memcpy(req[i]->crypto_dsc.aad, testcase_1_in.crypto_dsc.aad, AAD_SIZE); 
 
             set_ctx(req[i], ctx);
+
+            // Set outbound info -- testcase 1
+            set_tag(req[i], 16, 0x70);
         }
         // Set value for buffer - skip if you had buffer
         for (i = 0; i <  req_num; i ++){
@@ -181,19 +159,6 @@ static int __init test_init(void)
             pr_err("submitted req %d \n", i);
         }
     }
-
-
-    // pr_err("Test module print\n");
-    // print_xmit_list();
-    // print_deliver_list();
-    // print_processing_list();
-    // pr_err("Test module print end\n");
-    // while (1)
-    // {
-    //     /* code */
-    // }
-    
-
     return 0;
 }
 
