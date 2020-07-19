@@ -37,24 +37,25 @@ struct xdma_pci_dev;
 // };
 
 struct xfer_req{
+// from user
+
     int (*crypto_complete)(struct xfer_req *data, int res);
     struct mycrypto_context ctx;
     struct scatterlist *sg_in;
     struct scatterlist *sg_out;
-    int res;
-
-    int id;
-
-    u64 data_ep_addr;
-    struct region_in *in_region;
-    struct region_out *out_region;
-    int region_idx;
-    struct sg_table sg_table;
-    struct list_head list;
-
     struct crypto_dsc_in crypto_dsc;
     int tag_offset;
     int tag_length;
+    u32 *tag;
+// Dont touch
+    int res;
+    int id;
+    int region_idx;
+    u64 data_ep_addr;
+    struct region_in *in_region;
+    struct region_out *out_region;
+    struct sg_table sg_table;
+    struct list_head list;
 };
 
 /** LED */
@@ -187,7 +188,7 @@ int set_sg(struct xfer_req *req, struct scatterlist *sg);
 int set_callback(struct xfer_req *req, int (*cb)(struct xfer_req *req, int res));
 int set_ctx(struct xfer_req *req, struct mycrypto_context ctx);
 int get_result(struct xfer_req *req, int *res);
-int set_tag(struct xfer_req *req, int length, int offset);
+int set_tag(struct xfer_req *req, int length, int offset, u32 *buff);
 
 int xdma_xfer_submit_queue(struct xfer_req *xfer_req);
 void free_xfer_req(struct xfer_req *req);

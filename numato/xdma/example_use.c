@@ -71,9 +71,12 @@ int crypto_complete(struct xfer_req *data, int res)
             *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
             *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
     }
-
+    pr_err("tag = %8.0x %8.0x %8.0x %8.0x \n", 
+            *(data->tag + 3), *(data->tag + 2),
+            *(data->tag + 1), *(data->tag));
     // Step 6: Free xfer_req
     kfree(buf); // Skip this if it is not necessary
+    kfree(data->tag);
     free_xfer_req(data); // data is xfer_req
 
     return 0;
@@ -142,7 +145,7 @@ static int __init test_init(void)
             set_ctx(req[i], ctx);
 
             // Set outbound info -- testcase 1
-            set_tag(req[i], 16, 0x70);
+            set_tag(req[i], 16, 0x70, (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
         }
         // Set value for buffer - skip if you had buffer
         for (i = 0; i <  req_num; i ++){

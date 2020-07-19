@@ -2,7 +2,7 @@
 
 struct xdma_pci_dev *g_xpdev;
 
-#define BAR_0_ADDR (xpdev->xdev->bar[0])
+#define BAR_0_ADDR (g_xpdev->xdev->bar[0])
 
 void print_req(struct xfer_req *req)
 {
@@ -434,6 +434,11 @@ int rcv_task(void *data)
         // print_req(req);
         list_del(&req->list);
         spin_unlock_irqrestore(&rcv->rcv_queue_lock[channel_idx], flags);
+#ifdef BUFFER
+
+#else
+        memcpy_fromio(req->tag, BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
+#endif
         // pr_err("rcv_task  print %d\n", __LINE__);
         // print_rcv_list();
         // pr_err("rcv_task  %d\n", __LINE__);
@@ -859,12 +864,13 @@ struct xfer_req *alloc_xfer_req(void)
 }
 EXPORT_SYMBOL_GPL(alloc_xfer_req);
 
-int set_tag(struct xfer_req *req, int length, int offset)
+int set_tag(struct xfer_req *req, int length, int offset, u32* buff)
 {
     if (!req)
         return -1;
     req->tag_length = length;
     req->tag_offset = offset;
+    req->tag = buff;
 }
 EXPORT_SYMBOL_GPL(set_tag);
 
