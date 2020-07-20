@@ -488,7 +488,7 @@ int rcv_task(void *data)
         // print_processing_list();
         // pr_err("rcv_task  print end %d\n", __LINE__);
         wake_up_interruptible(&rcv->wq_rcv_event);
-        xdma_user_isr_enable(g_xpdev->crdev->xdev, 0x01);
+        // xdma_user_isr_enable(g_xpdev->crdev->xdev, 0x01);
         // pr_err("rcv_task  %d\n", __LINE__);
         
     }
@@ -545,7 +545,8 @@ irqreturn_t xfer_rcv(int irq_no, void *dev)
 {
     struct xdma_crdev *crdev = g_xpdev->crdev;
     pr_err("xfer_rcv interrupt\n");
-    xdma_user_isr_disable(crdev->xdev, 0x01);
+    // xdma_user_isr_disable(crdev->xdev, 0x01);
+    clear_usr_irq(0);
     trigger_rcv_deliver_task();
     return IRQ_HANDLED;
 }
@@ -659,6 +660,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     engine.in = BAR_0_ADDR;
     engine.out = BAR_0_ADDR + 0x10000;
     engine.status = BAR_0_ADDR + 0x20000;
+    engine.irq = BAR_0_ADDR + 0x40000;
 #endif
     set_engine_base(engine, 0);
     set_led_base(BAR_0_ADDR);

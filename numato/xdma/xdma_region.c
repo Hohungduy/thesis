@@ -27,6 +27,22 @@ int set_engine_base(struct crypto_engine base, int engine_idx)
 #endif
 }
 
+int clear_usr_irq(int irq_no)
+{
+#ifdef BUFFER
+
+#else 
+    if (irq_no)
+        return -1;
+
+    u32 irq_state;
+    irq_state = ioread32(&region_base.engine.irq->deassert);
+    pr_err("address = %p value = %x %x", &region_base.engine.irq->deassert, irq_state, irq_state ^ 1);
+    iowrite32(irq_state ^ 1, &region_base.engine.irq->deassert);
+    return 0;
+#endif
+}
+
 int set_led_base(void *base)
 {
     region_base.led.red = base + LED_RED_OFFSET;

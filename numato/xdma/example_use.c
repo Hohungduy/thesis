@@ -30,7 +30,7 @@ MODULE_PARM_DESC(xfer, "there is or not xfer");
 
 
 // Modify if it is neccessary
-#define MAX_REQ (15)
+#define MAX_REQ (16)
 #define DATA_LENGTH (1888/4)
 #define TESTCASE_1_LENGTH (72)
 
