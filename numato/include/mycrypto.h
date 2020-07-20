@@ -12,6 +12,16 @@
 //#include "common.h"
 #define BUFFER_SIZE 128
 
+#define KEYSIZE_128 (0)
+#define KEYSIZE_192 (1)
+#define KEYSIZE_256 (2)
+#define AADSIZE_8 (8)
+#define AADSIZE_12 (12)
+#define DIRECTION_ENCRYPT (1)
+#define DIRECTION_DECRYPT (0)
+#define ICV_SIZE (4*4)
+#define KEY_SIZE (8*4)
+#define AAD_SIZE (4*4)
 // Type of algorithms registered
 enum mycrypto_alg_type {
 	MYCRYPTO_ALG_TYPE_SKCIPHER,
@@ -172,4 +182,6 @@ extern struct mycrypto_alg_template mycrypto_alg_authenc_hmac_sha256_cbc_aes;
 extern struct mycrypto_alg_template mycrypto_alg_gcm_aes;
 extern struct mycrypto_alg_template mycrypto_alg_authenc_hmac_sha256_ctr_aes;
 extern struct mycrypto_alg_template mycrypto_alg_cbc_aes;
+extern struct mycrypto_alg_template mycrypto_alg_rfc4106_gcm_aes;
+
 #endif
