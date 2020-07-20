@@ -82,7 +82,7 @@ static struct mycrypto_alg_template *mycrypto_algs[] = {
 
 void alloc_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer)
 {
-	//struct aead_request *req = aead_request_cast(base);
+	struct aead_request *req = aead_request_cast(base);
 	struct mycrypto_cipher_op ctx = * (struct mycrypto_cipher_op *)crypto_tfm_ctx(req->base.tfm);
 	struct mycrypto_cipher_req req_ctx = * (struct mycrypto_cipher_req *)aead_request_ctx(req);
 	req_xfer->ctx.ctx_op = ctx;
@@ -150,12 +150,12 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 
 	// Step 1: Allocate request for xfer_req (pcie layer)
 		req_xfer = alloc_xfer_req ();
-		if (req_xfer == 0)
-			return 0;
+		// if (req_xfer == 0)
+		// 	return 0;
 		aead_req = aead_request_cast(req);
 		
         // Step 2: Set value for req_xfer
-        set_sg(req_xfer, &aead_req->src);
+        set_sg(req_xfer, aead_req->src);
         set_callback(req_xfer, &handle_crypto_xfer_callback);
 		alloc_xfer_mycryptocontext(req, req_xfer);
 		//Set value for struct testcase
@@ -166,10 +166,10 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 			testcase_in.crypto_dsc.info.free_space[i]=0x00000000;
 		}
 		testcase_in.crypto_dsc.info.free_space_ = 0;
-		testcase_in.crypto_dsc.info.direction = req_xfer.ctx.ctx_op.dir;
-		testcase_in.crypto_dsc.info.length = req_xfer.ctx.ctx_op.cryptlen;
-		testcase_in.crypto_dsc.info.aadsize = req_xfer.ctx.ctx_op.assoclen - 8;// substract iv len
-		switch(req_xfer.ctx.ctx_op.keylen)
+		testcase_in.crypto_dsc.info.direction = req_xfer->ctx.ctx_op.dir;
+		testcase_in.crypto_dsc.info.length = req_xfer->ctx.ctx_op.cryptlen;
+		testcase_in.crypto_dsc.info.aadsize = req_xfer->ctx.ctx_op.assoclen - 8;// substract iv len
+		switch(req_xfer->ctx.ctx_op.keylen)
 		{
 			case 16: testcase_in.crypto_dsc.info.keysize = 0;
 			case 24: testcase_in.crypto_dsc.info.keysize = 1;
@@ -178,20 +178,20 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 			//ICV-AUTHENTAG
 		for (i = 0; i < 4; i++)
 		{
-			testcase_in.crypto_dsc.icv[i] = *(u32*)(buff + req_xfer.ctx.ctx_op.cryptlen + req_xfer.ctx.ctx_op.assoclen + i*4 );
+			testcase_in.crypto_dsc.icv[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen + i*4 );
 		}
 		 
 			//KEY
-		key = req_xfer.ctx.ctx_op.key[0];
-		for (i = 0; i < req_xfer.ctx.ctx_op.keylen/4; i++)
+		key = req_xfer->ctx.ctx_op.key[0];
+		for (i = 0; i < req_xfer->ctx.ctx_op.keylen/4; i++)
 		{
 			testcase_in.crypto_dsc.key[i] = *(u32 *)(key + i*4);
 		}
 			//IV
 
-		testcase_in.crypto_dsc.iv.nonce = req_xfer.ctx.ctx_op.nonce;
-		testcase_in.crypto_dsc.iv.iv[0] = *(u32 *)req_xfer.ctx.ctx_op.iv;
-		testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer.ctx.ctx_op.iv + 4;
+		testcase_in.crypto_dsc.iv.nonce = req_xfer->ctx.ctx_op.nonce;
+		testcase_in.crypto_dsc.iv.iv[0] = *(u32 *)(req_xfer->ctx.ctx_op.iv);
+		testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer->ctx.ctx_op.iv + 4);
 		testcase_in.crypto_dsc.iv.tail = 0x00000001;
 			
 			//AAD
@@ -217,7 +217,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 
         // Set outbound info -- testcase 1
         set_tag(req_xfer, 16, 0x20 + testcase_in.crypto_dsc.info.length/16 + 1, (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
-        }
+        
         // Set value for buffer - skip if you had buffer
         //for (i = 0; i <  req_num; i ++){
             //for (j =0; j < TESTCASE_1_LENGTH/4; j++){
@@ -226,7 +226,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
         //}
 
         // Step 3: Submit to card	
-		res = xdma_xfer_submit_queue(req[i]);
+		res = xdma_xfer_submit_queue(req_xfer);
             if (res != -EINPROGRESS)
                 pr_err("Unusual result\n");
             pr_err("submitted req %d \n", i);
@@ -251,9 +251,10 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 {
 	char *buf;
 	int i = 0;
+	struct scatterlist *sg = data->sg_out;
 	pr_err("Complete with res = %d ! This is callback function! \n", res);
 	// Step 4: Get data in callback
-    struct scatterlist *sg = data->sg_out;
+    
 	struct crypto_async_request *req = (struct crypto_async_request *) data->base;
 	struct mycrypto_dev *mydevice = mydevice_glo;
 
