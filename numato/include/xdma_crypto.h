@@ -41,6 +41,7 @@ struct xfer_req{
 
     int (*crypto_complete)(struct xfer_req *data, int res);
     struct mycrypto_context ctx;
+    struct crypto_async_request *base;
     struct scatterlist *sg_in;
     struct scatterlist *sg_out;
     struct crypto_dsc_in crypto_dsc;

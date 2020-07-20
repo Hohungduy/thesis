@@ -37,8 +37,12 @@
 #include <crypto/internal/aead.h>
 #include <crypto/sha.h>
 #include "mycrypto.h"
+#include "xdma_region.h"
+#include "xdma_crypto.h"
+#include "crypto_testcases.h"
 #include "common.h"
 #include "xdma_crypto.h"
+
 //#include "cipher.h"
 
 /*choose mode for test
@@ -49,10 +53,12 @@
 // module_param(mode, uint, 0000);
 // MODULE_PARM_DESC(mode, "choose mode");
 
+struct region_in testcase_in;
+struct region_out testcase_out;
 
 int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
 void alloc_xfer_mycryptocontext(struct crypto_async_request *req, struct xfer_req *req_xfer);
-static int handle_crypto_xfer_callback(void *data, int res);
+static int handle_crypto_xfer_callback(struct xfer_req *data, int res);
 /* Limit of the crypto queue before reaching the backlog */
 #define MYCRYPTO_DEFAULT_MAX_QLEN 128
 // global variable for device
@@ -76,13 +82,14 @@ static struct mycrypto_alg_template *mycrypto_algs[] = {
 
 void alloc_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer)
 {
-	struct aead_request *req = aead_request_cast(base);
+	//struct aead_request *req = aead_request_cast(base);
 	struct mycrypto_cipher_op ctx = * (struct mycrypto_cipher_op *)crypto_tfm_ctx(req->base.tfm);
 	struct mycrypto_cipher_req req_ctx = * (struct mycrypto_cipher_req *)aead_request_ctx(req);
 	req_xfer->ctx.ctx_op = ctx;
 	req_xfer->ctx.ctx_req = req_ctx;
-	req_xfer->sg = req->src;
-	req_xfer->crypto_complete = handle_crypto_xfer_callback;
+	req_xfer->base = base;
+	//req_xfer->sg = req->src;
+	//req_xfer->crypto_complete = handle_crypto_xfer_callback;
 
 }
 static inline void mycrypto_handle_result(struct crypto_async_request *req)
@@ -121,6 +128,11 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	struct crypto_async_request *req = NULL, *backlog = NULL;
 	//struct mycrypto_req_operation *opr_ctx;
 	struct xfer_req *req_xfer = NULL;
+	struct aead_request *aead_req ;
+	u8 *buff;
+	int res;
+	u32 i,j;
+	u8 *key;
 
 	printk(KERN_INFO "module mycrypto: dequeue request (after a period time by using workqueue)\n");
 	
@@ -136,10 +148,88 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	if (backlog)
 		backlog->complete(backlog, -EINPROGRESS);
 
-	//Allocate request for xfer (pcie layer)
+	// Step 1: Allocate request for xfer_req (pcie layer)
 		req_xfer = alloc_xfer_req ();
+		if (req_xfer == 0)
+			return 0;
+		aead_req = aead_request_cast(req);
+		
+        // Step 2: Set value for req_xfer
+        set_sg(req_xfer, &aead_req->src);
+        set_callback(req_xfer, &handle_crypto_xfer_callback);
 		alloc_xfer_mycryptocontext(req, req_xfer);
-		xdma_xfer_submit_queue(req_xfer);
+		//Set value for struct testcase
+		buff = sg_virt (req_xfer->sg_in);
+			// INFO
+		for (i = 0; i <=2; i++)
+		{
+			testcase_in.crypto_dsc.info.free_space[i]=0x00000000;
+		}
+		testcase_in.crypto_dsc.info.free_space_ = 0;
+		testcase_in.crypto_dsc.info.direction = req_xfer.ctx.ctx_op.dir;
+		testcase_in.crypto_dsc.info.length = req_xfer.ctx.ctx_op.cryptlen;
+		testcase_in.crypto_dsc.info.aadsize = req_xfer.ctx.ctx_op.assoclen - 8;// substract iv len
+		switch(req_xfer.ctx.ctx_op.keylen)
+		{
+			case 16: testcase_in.crypto_dsc.info.keysize = 0;
+			case 24: testcase_in.crypto_dsc.info.keysize = 1;
+			case 32: testcase_in.crypto_dsc.info.keysize = 2;
+		}
+			//ICV-AUTHENTAG
+		for (i = 0; i < 4; i++)
+		{
+			testcase_in.crypto_dsc.icv[i] = *(u32*)(buff + req_xfer.ctx.ctx_op.cryptlen + req_xfer.ctx.ctx_op.assoclen + i*4 );
+		}
+		 
+			//KEY
+		key = req_xfer.ctx.ctx_op.key[0];
+		for (i = 0; i < req_xfer.ctx.ctx_op.keylen/4; i++)
+		{
+			testcase_in.crypto_dsc.key[i] = *(u32 *)(key + i*4);
+		}
+			//IV
+
+		testcase_in.crypto_dsc.iv.nonce = req_xfer.ctx.ctx_op.nonce;
+		testcase_in.crypto_dsc.iv.iv[0] = *(u32 *)req_xfer.ctx.ctx_op.iv;
+		testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer.ctx.ctx_op.iv + 4;
+		testcase_in.crypto_dsc.iv.tail = 0x00000001;
+			
+			//AAD
+
+		for (i = 0; i < testcase_in.crypto_dsc.info.aadsize /4; i++)
+		{
+			testcase_in.crypto_dsc.aad[i] = *(u32*)(buff + i*4 );
+		}
+
+        // Set value for ctx (context) testcase)
+            // INFO
+        req_xfer->crypto_dsc.info = testcase_in.crypto_dsc.info;
+            // ICV
+        memcpy(req_xfer->crypto_dsc.icv, testcase_in.crypto_dsc.icv, ICV_SIZE); 
+            // KEY
+        memcpy(req_xfer->crypto_dsc.key, testcase_in.crypto_dsc.key, KEY_SIZE); 
+            // IV
+        req_xfer->crypto_dsc.iv = testcase_in.crypto_dsc.iv;
+            // AAD
+        memcpy(req_xfer->crypto_dsc.aad, testcase_in.crypto_dsc.aad, AAD_SIZE); 
+
+        //set_ctx(req_xfer, ctx);
+
+        // Set outbound info -- testcase 1
+        set_tag(req_xfer, 16, 0x20 + testcase_in.crypto_dsc.info.length/16 + 1, (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
+        }
+        // Set value for buffer - skip if you had buffer
+        //for (i = 0; i <  req_num; i ++){
+            //for (j =0; j < TESTCASE_1_LENGTH/4; j++){
+            //    buff[j] = testcase_in.data[j];
+            //}
+        //}
+
+        // Step 3: Submit to card	
+		res = xdma_xfer_submit_queue(req[i]);
+            if (res != -EINPROGRESS)
+                pr_err("Unusual result\n");
+            pr_err("submitted req %d \n", i);
 		
 	// Testing handle request function
 		//opr_ctx = crypto_tfm_ctx(req->tfm);
@@ -157,9 +247,14 @@ static void mycrypto_dequeue_work(struct work_struct *work)
 //----------------------------------------------------------------
 /* Handle xfer callback request
 */
-static int handle_crypto_xfer_callback(void *data, int res)
+static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 {
-	struct crypto_async_request *req = (struct crypto_async_request *) data;
+	char *buf;
+	int i = 0;
+	pr_err("Complete with res = %d ! This is callback function! \n", res);
+	// Step 4: Get data in callback
+    struct scatterlist *sg = data->sg_out;
+	struct crypto_async_request *req = (struct crypto_async_request *) data->base;
 	struct mycrypto_dev *mydevice = mydevice_glo;
 
 	pr_info("Module mycrypto: handle callback function from pcie layer \n");
@@ -169,6 +264,7 @@ static int handle_crypto_xfer_callback(void *data, int res)
 	mycrypto_handle_result(req);
 	queue_work(mydevice->workqueue,
 		   &mydevice->work_data.work);
+	free_xfer_req(data); // data is xfer_req
 	return res;
 }
 //--------------------------------------------------------------------
