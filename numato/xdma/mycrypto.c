@@ -57,7 +57,7 @@ struct region_in testcase_in;
 struct region_out testcase_out;
 
 int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
-void alloc_xfer_mycryptocontext(struct crypto_async_request *req, struct xfer_req *req_xfer);
+void set_xfer_mycryptocontext(struct crypto_async_request *req, struct xfer_req *req_xfer);
 static int handle_crypto_xfer_callback(struct xfer_req *data, int res);
 /* Limit of the crypto queue before reaching the backlog */
 #define MYCRYPTO_DEFAULT_MAX_QLEN 128
@@ -75,12 +75,7 @@ static struct mycrypto_alg_template *mycrypto_algs[] = {
 	&mycrypto_alg_cbc_aes
 };
 
-// static void mycrypto_tasklet_callback(unsigned long data)
-// {
-
-// }
-
-void alloc_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer)
+void set_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer)
 {
 	struct aead_request *req = aead_request_cast(base);
 	struct mycrypto_cipher_op ctx = * (struct mycrypto_cipher_op *)crypto_tfm_ctx(req->base.tfm);
@@ -131,7 +126,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	struct aead_request *aead_req ;
 	u8 *buff;
 	int res;
-	u32 i,j;
+	u32 i;
 	u8 *key;
 
 	printk(KERN_INFO "module mycrypto: dequeue request (after a period time by using workqueue)\n");
@@ -149,93 +144,83 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		backlog->complete(backlog, -EINPROGRESS);
 
 	// Step 1: Allocate request for xfer_req (pcie layer)
-		req_xfer = alloc_xfer_req ();
-		// if (req_xfer == 0)
-		// 	return 0;
-		aead_req = aead_request_cast(req);
+	
+	req_xfer = alloc_xfer_req ();
+	aead_req = aead_request_cast(req);
 		
-        // Step 2: Set value for req_xfer
-        set_sg(req_xfer, aead_req->src);
-        set_callback(req_xfer, &handle_crypto_xfer_callback);
-		alloc_xfer_mycryptocontext(req, req_xfer);
-		//Set value for struct testcase
-		buff = sg_virt (req_xfer->sg_in);
-			// INFO
-		for (i = 0; i <=2; i++)
-		{
-			testcase_in.crypto_dsc.info.free_space[i]=0x00000000;
-		}
-		testcase_in.crypto_dsc.info.free_space_ = 0;
-		testcase_in.crypto_dsc.info.direction = req_xfer->ctx.ctx_op.dir;
-		testcase_in.crypto_dsc.info.length = req_xfer->ctx.ctx_op.cryptlen;
-		testcase_in.crypto_dsc.info.aadsize = req_xfer->ctx.ctx_op.assoclen - 8;// substract iv len
-		switch(req_xfer->ctx.ctx_op.keylen)
-		{
-			case 16: testcase_in.crypto_dsc.info.keysize = 0;
-			case 24: testcase_in.crypto_dsc.info.keysize = 1;
-			case 32: testcase_in.crypto_dsc.info.keysize = 2;
-		}
-			//ICV-AUTHENTAG
-		for (i = 0; i < 4; i++)
-		{
-			testcase_in.crypto_dsc.icv[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen + i*4 );
-		}
-		 
-			//KEY
-		key = &(req_xfer->ctx.ctx_op.key[0]);
-		for (i = 0; i < req_xfer->ctx.ctx_op.keylen/4; i++)
-		{
-			testcase_in.crypto_dsc.key[i] = *(u32 *)(key + i*4);
-		}
-			//IV
-
-		testcase_in.crypto_dsc.iv.nonce = req_xfer->ctx.ctx_op.nonce;
-		testcase_in.crypto_dsc.iv.iv[0] = *(u32 *)(req_xfer->ctx.ctx_op.iv);
-		testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer->ctx.ctx_op.iv + 4);
-		testcase_in.crypto_dsc.iv.tail = 0x00000001;
+    // Step 2: Set value for req_xfer
+    
+	set_sg(req_xfer, aead_req->src);
+    set_callback(req_xfer, &handle_crypto_xfer_callback);
+	set_xfer_mycryptocontext(req, req_xfer);
+		
+	//Set value for struct testcase
+	
+	buff = sg_virt (req_xfer->sg_in);
+	// INFO
+	for (i = 0; i <=2; i++)
+	{
+		testcase_in.crypto_dsc.info.free_space[i]=0x00000000;
+	}
+	testcase_in.crypto_dsc.info.free_space_ = 0;
+	testcase_in.crypto_dsc.info.direction = req_xfer->ctx.ctx_op.dir;
+	testcase_in.crypto_dsc.info.length = req_xfer->ctx.ctx_op.cryptlen;
+	testcase_in.crypto_dsc.info.aadsize = req_xfer->ctx.ctx_op.assoclen - 8;// substract iv len
+	switch(req_xfer->ctx.ctx_op.keylen)
+	{
+		case 16: testcase_in.crypto_dsc.info.keysize = 0;
+		case 24: testcase_in.crypto_dsc.info.keysize = 1;
+		case 32: testcase_in.crypto_dsc.info.keysize = 2;
+	}
+	//ICV-AUTHENTAG
+	for (i = 0; i < 4; i++)
+	{
+		testcase_in.crypto_dsc.icv[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen + 16 - i*4 );
+	}
+	//KEY
+	key = &(req_xfer->ctx.ctx_op.key[0]);
+	for (i = 0; i < (req_xfer->ctx.ctx_op.keylen/4); i++)
+	{
+		testcase_in.crypto_dsc.key[i] = *(u32 *)(key + req_xfer->ctx.ctx_op.keylen - i*4);
+	}
+	//IV
+	testcase_in.crypto_dsc.iv.nonce = req_xfer->ctx.ctx_op.nonce;
+	testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer->ctx.ctx_op.iv);
+	testcase_in.crypto_dsc.iv.iv[0] = *(u32 *)(req_xfer->ctx.ctx_op.iv + 4);
+	testcase_in.crypto_dsc.iv.tail = 0x00000001;
 			
-			//AAD
+	//AAD
+	for (i = 0; i < testcase_in.crypto_dsc.info.aadsize /4; i++)
+	{
+		testcase_in.crypto_dsc.aad[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.assoclen - 8 - i*4 );
+	}
 
-		for (i = 0; i < testcase_in.crypto_dsc.info.aadsize /4; i++)
-		{
-			testcase_in.crypto_dsc.aad[i] = *(u32*)(buff + i*4 );
-		}
+    // Set value for ctx (context) testcase)
+    // INFO
+    req_xfer->crypto_dsc.info = testcase_in.crypto_dsc.info;
+    // ICV
+    memcpy(req_xfer->crypto_dsc.icv, testcase_in.crypto_dsc.icv, ICV_SIZE); 
+    // KEY
+    memcpy(req_xfer->crypto_dsc.key, testcase_in.crypto_dsc.key, KEY_SIZE); 
+    // IV
+    req_xfer->crypto_dsc.iv = testcase_in.crypto_dsc.iv;
+    // AAD
+    memcpy(req_xfer->crypto_dsc.aad, testcase_in.crypto_dsc.aad, AAD_SIZE); 
 
-        // Set value for ctx (context) testcase)
-            // INFO
-        req_xfer->crypto_dsc.info = testcase_in.crypto_dsc.info;
-            // ICV
-        memcpy(req_xfer->crypto_dsc.icv, testcase_in.crypto_dsc.icv, ICV_SIZE); 
-            // KEY
-        memcpy(req_xfer->crypto_dsc.key, testcase_in.crypto_dsc.key, KEY_SIZE); 
-            // IV
-        req_xfer->crypto_dsc.iv = testcase_in.crypto_dsc.iv;
-            // AAD
-        memcpy(req_xfer->crypto_dsc.aad, testcase_in.crypto_dsc.aad, AAD_SIZE); 
-
-        //set_ctx(req_xfer, ctx);
-
-        // Set outbound info -- testcase 1
-        set_tag(req_xfer, 16, 0x20 + testcase_in.crypto_dsc.info.length/16 + 1, (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
+    //set_ctx(req_xfer, ctx);
+    // Set outbound info -- testcase 1
+    set_tag(req_xfer, 16, 0x20 + testcase_in.crypto_dsc.info.length/16 + 1, (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
         
-        // Set value for buffer - skip if you had buffer
-        //for (i = 0; i <  req_num; i ++){
-            //for (j =0; j < TESTCASE_1_LENGTH/4; j++){
-            //    buff[j] = testcase_in.data[j];
-            //}
-        //}
-
-        // Step 3: Submit to card	
-		res = xdma_xfer_submit_queue(req_xfer);
-            if (res != -EINPROGRESS)
-                pr_err("Unusual result\n");
-            pr_err("submitted req %d \n", i);
+    // Step 3: Submit to card	
+	res = xdma_xfer_submit_queue(req_xfer);
+    if (res != -EINPROGRESS)
+        pr_err("Unusual result\n");
+    pr_err("submitted req %d \n", i);
 		
 	// Testing handle request function
-		//opr_ctx = crypto_tfm_ctx(req->tfm);
-		//opr_ctx->handle_request(req);
-		//mod_timer(&mydevice->mycrypto_ktimer,jiffies + 1*HZ);	
-	
+	//opr_ctx = crypto_tfm_ctx(req->tfm);
+	//opr_ctx->handle_request(req);
+	//mod_timer(&mydevice->mycrypto_ktimer,jiffies + 1*HZ);	
 	
 }
 static void mycrypto_dequeue_work(struct work_struct *work)
@@ -249,15 +234,10 @@ static void mycrypto_dequeue_work(struct work_struct *work)
 */
 static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 {
-	char *buf;
-	int i = 0;
-	struct scatterlist *sg = data->sg_out;
-	pr_err("Complete with res = %d ! This is callback function! \n", res);
 	// Step 4: Get data in callback
-    
 	struct crypto_async_request *req = (struct crypto_async_request *) data->base;
 	struct mycrypto_dev *mydevice = mydevice_glo;
-
+	pr_err("Complete with res = %d ! This is callback function! \n", res);
 	pr_info("Module mycrypto: handle callback function from pcie layer \n");
 	if (!req)
 		pr_err("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
@@ -291,26 +271,13 @@ static void handle_timer(struct timer_list *t)
 	//mycrypto_skcipher_handle_result()
 	//mod_timer(&mycrypto_ktimer, jiffies + 2*HZ);
 }
-// static void configure_timer(struct timer_list *mycrypto_ktimer)
-// {
-// 	struct mycrypto_dev * mydevice_glo;
-// 	mycrypto_ktimer->expires = jiffies + 2*HZ ;
-// 	mycrypto_ktimer->function = handle_timer;
-// 	mycrypto_ktimer->data = (unsigned long)(mydevice_glo);
-
-// }
 
 static void mycrypto_configure(struct mycrypto_dev *mydevice)
 {
 	mydevice->config.engines = 2;
-	// priv->config.cd_size = (sizeof(struct safexcel_command_desc) / sizeof(u32));
-	// priv->config.cd_offset = (priv->config.cd_size + mask) & ~mask;
-	// priv->config.rd_size = (sizeof(struct safexcel_result_desc) / sizeof(u32));
-	// priv->config.rd_offset = (priv->config.rd_size + mask) & ~mask;
 }
 //------------------------------------------------------------
 // Adding or Registering algorithm instace of AEAD /SK cipher crypto
-
 static int mycrypto_add_algs(struct mycrypto_dev *mydevice)
 {
  int i,j,ret = 0;
@@ -417,13 +384,6 @@ static int mycrypto_probe(void){
 	printk("device successfully registered \n");
 	// Set up timer and callback handler (using for testing).
 	timer_setup(&mydevice->mycrypto_ktimer,handle_timer,0);
-	
-	// printk(KERN_INFO "mydevice pointer: %px \n",mydevice);
-	// printk(KERN_INFO "mydevice_glo pointer: %px \n",mydevice_glo);
-	// printk(KERN_INFO "VALUE OF flags: %d \n", mydevice->flags);
-	// printk(KERN_INFO "buffer stores request (in mydevice):%px \n", &mydevice->buffer);
-	// printk(KERN_INFO "req of mydevice:%px \n",&mydevice->req);
-	// printk(KERN_INFO "backlof req of mydevice:%px \n",&mydevice->backlog);
 
 	//mod_timer(&mydevice->mycrypto_ktimer, jiffies + 2*HZ);
 	return 0;
@@ -434,19 +394,11 @@ err_reg_clk:
 //entry point when driver was loaded
 static int __init FPGAcrypt_init(void) 
 {
- //struct mycrypto_dev *mydevice;
+ 
  // Register probe
 	printk(KERN_INFO "Hello, World!\n");
  //probe with simulation
 	mycrypto_probe();
-	//mod_timer(&mydevice_glo->mycrypto_ktimer, jiffies + 4*HZ);
-//  //-------init kernel timer (obsolete)--------------//
-// 	init_timers(&mycrypto_ktimer);
-// 	configure_timer(&mycrypto_ktimer);
-
-// 	// -- TIMER START
-// 	add_timer(&mycrypto_ktimer);
-
  return 0;
 }
 
@@ -474,7 +426,7 @@ static struct pci_driver my_pcie_crypto_driver = {
 	.remove = my_pcie_crypto_remove,
 };
 */
-//module_pci_driver(geode_aes_driver)
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Duy H.Ho");
