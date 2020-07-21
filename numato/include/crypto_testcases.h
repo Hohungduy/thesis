@@ -49,31 +49,39 @@ struct region_out testcase_1_out = {
         }
 };
 
-// struct region_in testcase_2_in = {
-//     .crypto_dsc = {
-//         .info = {0x00000000, 0x00000000, 0x00000000, 0x00084080},
-//         .icv  = {0x83b70d3a, 0xa8bc6ee4, 0xc309e9d8, 0x5a41ad4a},
-//         .key  = {0xfeffe992, 0x8665731c, 0x6d6a8f94, 0x67308308, 
-//                     0x00000000, 0x00000000, 0x00000000, 0x00000000},
-//         .iv   = {0xcafebabe, 0xfacedbad, 0xdecaf888, 0x00000001},
-//         .aad  = {0x00000000, 0x00000000, 0x0000a5f8, 0x0000000a}
-//     },
-//     .data = {
-//         0x4500003e, 0x698f0000, 0x80114dcc, 0xc0a80102,
-//         0xc0a80101, 0x0a980035, 0x002a2343, 0xb2d00100,
-//         0x00010000, 0x00000000, 0x03736970, 0x09637962,
-//         0x65726369, 0x74790264, 0x6b000001, 0x00010001
-//         }
-// };
-// struct region_out testcase_2_out = {
-//     .data = {
-//         0xdeb22cd9, 0xb07c72c1, 0x6e3a65be, 0xeb8df304,
-//         0xa5a5897d, 0x33ae530f, 0x1ba76d5d, 0x114d2a5c,
-//         0x3de81827, 0xc10e9a4f, 0x51330d0e, 0xec416642,
-//         0xcfbb85a5, 0xb47e48a4, 0xec3b9ba9, 0x5d918bd1,
-//         0x83b70d3a, 0xa8bc6ee4, 0xc309e9d8, 0x5a41ad4a
-//         }
-// };
+struct region_in testcase_2_in = {
+    .crypto_dsc = {
+        .info = {
+            // 0c091000
+            .free_space[0] = 0x00000000, 
+            .free_space[1] = 0x00000000, 
+            .free_space[2] = 0x00000000, 
+            .free_space_ = 0,
+            .direction   = 1,
+            .length = 0b00001001000,
+            .aadsize = 12,
+            .keysize = 0
+        },
+        .icv  = {0x562dfdb4, 0x2fd04796, 0x8f6cbe72, 0x45901814},
+        .key  = {0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                 0x3613a634, 0x906ac73c, 0xbb5d10da, 0x4c80cdef
+                 },
+        .iv   = {
+            .nonce = 0x2e443b68, 
+            .iv[1] = 0x4956ed7e, 
+            .iv[0] = 0x3b244cfe, 
+            .tail  = 0x00000001
+        },
+        .aad  = {0x00000000, 0x87654321, 0x00004321, 0x00000000}
+    },
+    .data = {
+        0xc0a80102, 0x80114db7, 0x699a0000, 0x45000048,      
+        0x00010000, 0x38d30100, 0x0a9bf156, 0xc0a80101,      
+        0x64700373, 0x70045f75, 0x045f7369, 0x00000000,      
+        0x02646b00, 0x63697479, 0x79626572, 0x69700963,      
+        0x01020201, 0x00210001 
+        }
+};
 
 // struct region_in testcase_3_in = {
 //     .crypto_dsc = {

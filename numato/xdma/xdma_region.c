@@ -32,10 +32,9 @@ int clear_usr_irq(int irq_no)
 #ifdef BUFFER
 
 #else 
+    u32 irq_state;
     if (irq_no)
         return -1;
-
-    u32 irq_state;
     irq_state = ioread32(&region_base.engine.irq->deassert);
     pr_err("address = %p value = %x %x", &region_base.engine.irq->deassert, irq_state, irq_state ^ 1);
     iowrite32(irq_state ^ 1, &region_base.engine.irq->deassert);
