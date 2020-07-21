@@ -121,11 +121,18 @@ struct crypto_status {
     u32 trigger;
 };
 
+struct interrupt_gpio {
+    u32 interrupt;
+    u32 free;
+    u32 deassert;
+};
+
 struct crypto_engine {
     struct common_base *comm;
     struct inbound *in;
     struct outbound *out;
     struct crypto_status *status;
+    struct interrupt_gpio *irq;
 };
 
 struct led_region {
@@ -143,6 +150,7 @@ struct base {
 };
 
 void trigger_engine(int engine_idx);
+int clear_usr_irq(int irq_no);
 
 
 
