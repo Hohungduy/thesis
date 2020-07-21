@@ -57,11 +57,11 @@ int crypto_complete(struct xfer_req *data, int res)
 {
     char *buf;
     int i = 0;
-    pr_err("Complete with res = %d ! This is callback function! \n", res);
 
     // Step 4: Get data in callback
     struct scatterlist *sg = data->sg_out;
 
+    pr_err("Complete with res = %d ! This is callback function! \n", res);
     // Step 5: Do your things - Here we print the data out
     
     buf = sg_virt (sg);
