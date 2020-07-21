@@ -209,7 +209,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 
     //set_ctx(req_xfer, ctx);
     // Set outbound info -- testcase 1
-    set_tag(req_xfer, 16, 0x20 + testcase_in.crypto_dsc.info.length/16 + 1, (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
+    set_tag(req_xfer, 16, 0x20 + 0x10 * (testcase_in.crypto_dsc.info.length/16 + 1), (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
         
     // Step 3: Submit to card	
 	res = xdma_xfer_submit_queue(req_xfer);
