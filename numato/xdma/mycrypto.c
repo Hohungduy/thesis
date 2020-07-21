@@ -182,7 +182,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		}
 		 
 			//KEY
-		key = req_xfer->ctx.ctx_op.key[0];
+		key = &(req_xfer->ctx.ctx_op.key[0]);
 		for (i = 0; i < req_xfer->ctx.ctx_op.keylen/4; i++)
 		{
 			testcase_in.crypto_dsc.key[i] = *(u32 *)(key + i*4);
