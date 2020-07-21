@@ -23,7 +23,9 @@ ifneq ($(KERNELRELEASE),)
 		cdev_bypass.o xdma_mod.o xdma_thread.o xdma_crypto.o \
 		xdma_region.o 
 	huy_crypto-objs := cipher.o mycrypto.o
-	obj-m := $(TARGET_MODULE).o example_use.o \
+	obj-m := $(TARGET_MODULE).o example_use.o example_use_2.o \
+		example_use_3.o example_use_4.o example_use_5.o \
+		example_use_6.o example_use_7.o example_use_8.o \
 	testcrypto.o huy_crypto.o 
 
 else

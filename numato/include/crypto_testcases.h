@@ -5,6 +5,7 @@
 
 #define TESTCASE_1_ICV_SIZE (4*4)
 
+
 struct region_in testcase_1_in = {
     .crypto_dsc = {
         .info = {
@@ -57,13 +58,13 @@ struct region_in testcase_2_in = {
             .free_space[2] = 0x00000000,
             .free_space_ = 0,
             .direction   = 1,
-            .length = 0b00001001000,
+            .length = 0b00001000000,
             .aadsize = 8,
             .keysize = 0
         },
         .icv  = {0x5a41ad4a, 0xc309e9d8, 0xa8bc6ee4, 0x83b70d3a},
         .key  = {0x00000000, 0x00000000, 0x00000000, 0x00000000,
-                 0x67308308, 0xfeffe992, 0x8665731c, 0x6d6a8f94
+                 0x67308308, 0x6d6a8f94, 0x8665731c, 0xfeffe992  
                 },
         .iv   = {
             .nonce = 0xcafebabe, 
@@ -273,7 +274,7 @@ struct region_in testcase_7_in = {
     },
     .data = {
         0x0a01038f, 0x40067880, 0xa4ad4000, 0x45000028,  
-        0xdd6bb03e, 0xcb712602, 0x0a010612, 0x802306b8,    
+        0xdd6bb03e, 0xcb712602, 0x802306b8, 0x0a010612,     
         0x75680001, 0x501016d0 
         }
 };
@@ -299,7 +300,7 @@ struct region_in testcase_8_in = {
             .keysize = 0
             },
         .icv  = {0x69623436, 0xff170157, 0x5f354f75, 0x651f57e6},
-        .key  = {0x00000000, 0x00000000, 0x00000000, 0x00000000
+        .key  = {0x00000000, 0x00000000, 0x00000000, 0x00000000,
                  0x78899aab, 0x34455667, 0xf0011223, 0xabbccdde},
         .iv   = {
             .nonce = 0xdecaf888, 
