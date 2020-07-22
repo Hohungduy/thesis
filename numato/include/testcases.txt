@@ -44,6 +44,7 @@ Address: 5C -> BB (88 Bytes + 8 Bytes 0 cuoi ciphertext chen vao = 96 byte)
 	61bc17d768fd97320000000000000000
 	459018148f6cbe722fd04796562dfdb4
 
+// tag! sai, cipher dung
 -----------------------------------------------
 Test case 2
 -----------------------------------------------
@@ -88,7 +89,7 @@ Address: 5C -> AB (80 Bytes)
 	3de81827c10e9a4f51330d0eec416642
 	cfbb85a5b47e48a4ec3b9ba95d918bd1
 	83b70d3aa8bc6ee4c309e9d85a41ad4a
-
+tag sai cipher dung
 -----------------------------------------------
 Test case 3
 -----------------------------------------------
@@ -131,7 +132,7 @@ Address: 5C -> 9F (68 Bytes)
 	748a637985771d347f0545659f14e99d
 	ef842d8e000000000000000000000000
 	b335f4eecfdbf831824b4c4915956c96
-
+tg sai cipher dung
 --------------------------------------------------
 Test case 4
 --------------------------------------------------
@@ -175,7 +176,7 @@ Address: 5C -> AB (80 Bytes)
 	456476492719ffb64de7d9dca1e1d894
 	bc3bd57873ed4d181d19d4d5c8c18af3
 	f821d496eeb096e98ad2b69e4799c71d
-
+// tag sai cipher dung
 --------------------------------------------------
 Test case 5
 --------------------------------------------------
@@ -220,7 +221,7 @@ Address: 5C -> AB (80 Bytes)
 	65acbd8701ad79845bf9fe3fba487bc9
 	1755e6662b4c8d0d1f5e22739530320a
 	e0d731cc978ecafaeae88f00e80d6e48
-
+tag sai cipher dung
 --------------------------------------------------
 Test case 6
 --------------------------------------------------
@@ -261,7 +262,7 @@ Address: 5C -> 8B (44 Bytes + 4 BYTES CHEN 0 VO CIPHERTEXT =48 BYTES)
 	fba2ca845e5df9f0f22c3e6e86dd831e
 	1fc65792cd1af9130e1379ed00000000
 	369f071f35e034be95f112e4e7d05d35
-
+tag sai cipher dung
 --------------------------------------------------
 Test case 7
 --------------------------------------------------
@@ -303,7 +304,7 @@ Address: 5C -> B3 (56 Bytes + 6 bytes 0 chen vo cuoi ciphertext)
 	0938b3ab33f828e687b8858b5bfbdbd0
 	315b27452144cc770000000000000000
 	95457b9652037f5318027b5b4cd7a636
-
+sai tag sai cipher
 --------------------------------------------------
 Test case 8
 --------------------------------------------------
@@ -350,3 +351,4 @@ Address: 5C -> BB (92 Bytes + 4 BYTES 0 chen vo cuoi ciphertext)
 	6f2127b27db35724e7845d6800000000
 	651f57e65f354f75ff17015769623436
 	
+// sai tag sai cipher

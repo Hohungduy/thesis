@@ -144,6 +144,11 @@ struct xmit_handler {
     u32 booking;
 };
 
+enum agent_status {
+    FREE,
+    BUSY
+};
+
 struct crypto_agent {
     struct xmit_handler xmit;
     struct rcv_handler rcv;
@@ -152,6 +157,7 @@ struct crypto_agent {
     int agent_idx;
     u32 xfer_idex;
     int need_deliver;
+    enum agent_status status;
     spinlock_t agent_lock;
 };
 

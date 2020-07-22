@@ -185,6 +185,7 @@ int xmit_task(void *data)
     int engine_idx = 0;
     int timeout_ms = 3;
     int res;
+    enum agent_status status;
 
     struct xfer_req *req;
     u64 ep_addr;
@@ -207,6 +208,18 @@ int xmit_task(void *data)
             pr_err("xmit_thread processing %d\n", channel_idx);
             // TODO: Condition to xmit ???? lock ???
 
+#ifdef BUFFER
+
+#else
+            spin_lock(&g_xpdev->crdev->agent[0].agent_lock);
+            status = g_xpdev->crdev->agent[0].status;
+            if (status == BUSY){
+                spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
+                break;
+            }
+            g_xpdev->crdev->agent[0].status = BUSY;
+            spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
+#endif
 
             // remove first req from backlog
             spin_lock_irqsave(lock, flags);
@@ -216,6 +229,7 @@ int xmit_task(void *data)
             spin_unlock_irqrestore(lock, flags);
 
             ep_addr = req->data_ep_addr;
+
 
             // TODO: Write crypto info (No need to lock)
             memcpy_toio(&req->in_region->crypto_dsc, 
@@ -356,6 +370,7 @@ int rcv_task(void *data)
     unsigned long flags;
     u64 outbound_data_addr;
     struct xfer_req *req;
+    enum agent_status status;
 
     pr_err("rcv_task chanel = %d on\n", channel_idx);
 
@@ -384,6 +399,7 @@ int rcv_task(void *data)
 #else
         memcpy_fromio(req->tag, BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
 #endif
+
         res = xdma_xfer_submit(g_xpdev->crdev->xdev,
             channel_idx, FALSE, outbound_data_addr, 
             &req->sg_table, FALSE, 3);
@@ -393,10 +409,15 @@ int rcv_task(void *data)
             continue;
         }
 
+
+
 #ifdef BUFFER
         active_outb_region(engine_idx, req->region_idx);
 #else 
         // TODO: Free region + lock ???
+        spin_lock(&g_xpdev->crdev->agent[0].agent_lock);
+        g_xpdev->crdev->agent[0].status = FREE;
+        spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
 #endif
 
 #ifdef BUFFER
@@ -469,6 +490,13 @@ irqreturn_t xfer_rcv(int irq_no, void *dev)
 {
     pr_err("xfer_rcv interrupt\n");
     clear_usr_irq(0);
+#ifdef BUFFER
+
+#else
+    spin_lock(&g_xpdev->crdev->agent[0].agent_lock);
+    g_xpdev->crdev->agent[0].status = FREE;
+    spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
+#endif
     trigger_rcv_deliver_task();
     return IRQ_HANDLED;
 }
@@ -597,6 +625,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
         agent = &crdev->agent[agent_idx];
         xmit = &agent->xmit;
         rcv = &agent->rcv;
+        agent->status = FREE;
 
         // xmit kthread
         create_xmit_handler(xmit);
