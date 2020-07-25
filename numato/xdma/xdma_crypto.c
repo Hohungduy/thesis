@@ -147,7 +147,22 @@ int xmit_deliver_task(void *data)
                 xmit->booking = (xmit->booking + 1) % REGION_NUM;
 #else  
                 req->in_region = (struct region_in *)get_region_addr(engine_idx);
-                req->data_ep_addr = 0x70;//get_region_data_ep_addr(engine_idx, xmit->booking);
+                //req->data_ep_addr = 0x70 - (req->crypto_dsc.info.aadsize + 8);//fix data mem region
+                
+                switch (req->crypto_dsc.info.aadsize)
+                {
+                case 8:
+                    req->data_ep_addr=0x60;
+                    break;
+                case 12:
+                    req->data_ep_addr=0x5C;
+                    break;               
+                default:
+                    pr_err("Wrong aadsize\n");
+                    break;
+                }
+                
+                //req->data_ep_addr = 0x70;
                 pr_err("deliver task print before add to xmit_queue\n");
 #endif
 #ifdef BUFFER
@@ -231,9 +246,6 @@ int xmit_task(void *data)
             ep_addr = req->data_ep_addr;
 
 
-            // TODO: Write crypto info (No need to lock)
-            memcpy_toio(&req->in_region->crypto_dsc, 
-                    &req->crypto_dsc, sizeof(struct crypto_dsc_in));
 
             // submit req from req_queue to engine 
             pr_err("submit xmit to channel %d region %d", channel_idx, req->region_idx);
@@ -246,6 +258,9 @@ int xmit_task(void *data)
                 // TODO: 
                 continue;
             }
+            // TODO: Write crypto info (No need to lock)
+            memcpy_toio(&req->in_region->crypto_dsc, 
+                    &req->crypto_dsc, sizeof(struct crypto_dsc_in));
             // Write region dsc + see booking, modify head, tail
             spin_lock_irqsave(&agent->agent_lock, flags);
             // Write xfer_id

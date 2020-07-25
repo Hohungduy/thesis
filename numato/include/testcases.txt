@@ -11,11 +11,10 @@ Address: 20 -> 2F (16 Bytes)
 	Authentication Tag = 
 	459018148f6cbe722fd04796562dfdb4
 
-Address: 30 -> 4F (16 MSB bytes KEY + 16 LSB octects 0)
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
 	key = 
-	4c80cdefbb5d10da906ac73c3613a634
 	00000000000000000000000000000000
-
+	4c80cdefbb5d10da906ac73c3613a634
 Address:50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
 	nonce = 
 	2e443b684956ed7e3b244cfe00000001
@@ -41,10 +40,9 @@ Address: 5C -> BB (88 Bytes + 8 Bytes 0 cuoi ciphertext chen vao = 96 byte)
 	8d1b98736696a6fd348509fa13ceac34
 	cfa2436f14a3f3cf65925bf1f4a13c5d
 	15b21e1884f5ff6247aeabb786b93bce
-	61bc17d768fd97320000000000000000
+	000000000000000061bc17d768fd9732
 	459018148f6cbe722fd04796562dfdb4
 
-// tag! sai, cipher dung
 -----------------------------------------------
 Test case 2
 -----------------------------------------------
@@ -58,10 +56,10 @@ Address: 20 -> 2F (16 Bytes)
 	Authentication Tag = 
 	83b70d3aa8bc6ee4c309e9d85a41ad4a
 
-Address: 30 -> 4F (16 MSB bytes KEY + 16 LSB octects 0)
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
 	key = 
-	feffe9928665731c6d6a8f9467308308
 	00000000000000000000000000000000
+	feffe9928665731c6d6a8f9467308308
 
 Address: 50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
 	nonce = 
@@ -89,7 +87,7 @@ Address: 5C -> AB (80 Bytes)
 	3de81827c10e9a4f51330d0eec416642
 	cfbb85a5b47e48a4ec3b9ba95d918bd1
 	83b70d3aa8bc6ee4c309e9d85a41ad4a
-tag sai cipher dung
+
 -----------------------------------------------
 Test case 3
 -----------------------------------------------
@@ -130,9 +128,9 @@ Address: 5C -> 9F (68 Bytes)
 	ff425c9b724599df7a3bcd510194e00d
 	6a78107f1b0b1cbf06efae9d65a5d763
 	748a637985771d347f0545659f14e99d
-	ef842d8e000000000000000000000000
+	000000000000000000000000ef842d8e
 	b335f4eecfdbf831824b4c4915956c96
-tg sai cipher dung
+
 --------------------------------------------------
 Test case 4
 --------------------------------------------------
@@ -146,7 +144,7 @@ Address: 10 -> 1F (12 Bytes 0 +4 Bytes)
 Address: 20 -> 2F (16 Bytes)
 	Authentication Tag = 
 	f821d496eeb096e98ad2b69e4799c71d
-Address: 30 -> 4F (16 MSB bytes KEY + 16 LSB octects 0)
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
 	key = 
 	00000000000000000000000000000000
 	00000000000000000000000000000000
@@ -176,7 +174,7 @@ Address: 5C -> AB (80 Bytes)
 	456476492719ffb64de7d9dca1e1d894
 	bc3bd57873ed4d181d19d4d5c8c18af3
 	f821d496eeb096e98ad2b69e4799c71d
-// tag sai cipher dung
+
 --------------------------------------------------
 Test case 5
 --------------------------------------------------
@@ -190,10 +188,10 @@ Address: 10 -> 1F (12 Bytes 0 +4 Bytes)
 Address: 20 -> 2F (16 Bytes)
 	Authentication Tag = 
 	e0d731cc978ecafaeae88f00e80d6e48
-Address: 30 -> 4F (16 MSB bytes KEY + 16 LSB octects 0)
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
 	key = 
-	3de09874b388e6491988d0c3607eae1f
 	00000000000000000000000000000000
+	3de09874b388e6491988d0c3607eae1f
 
 Address:50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
 	nonce = 
@@ -221,7 +219,7 @@ Address: 5C -> AB (80 Bytes)
 	65acbd8701ad79845bf9fe3fba487bc9
 	1755e6662b4c8d0d1f5e22739530320a
 	e0d731cc978ecafaeae88f00e80d6e48
-tag sai cipher dung
+
 --------------------------------------------------
 Test case 6
 --------------------------------------------------
@@ -235,10 +233,10 @@ Address: 10 -> 1F (12 Bytes 0 +4 Bytes)
 Address: 20 -> 2F (16 Bytes)
 	Authentication Tag = 
 	369f071f35e034be95f112e4e7d05d35
-Address: 30 -> 4F (16 MSB bytes KEY + 16 LSB octects 0)
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
 	key = 
-	3de09874b388e6491988d0c3607eae1f
 	00000000000000000000000000000000
+	3de09874b388e6491988d0c3607eae1f
 
 Address:50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
 	nonce = 
@@ -260,9 +258,9 @@ Address: 5C -> 8B (44 Bytes + 4 BYTES CHEN 0 VO CIPHERTEXT =48 BYTES)
 	- ADDRESS TAG: 7C->8B (16 BYTE CUOI:369f071f35e034be95f112e4e7d05d35)
 	ciphertext+tag = 
 	fba2ca845e5df9f0f22c3e6e86dd831e
-	1fc65792cd1af9130e1379ed00000000
+	000000001fc65792cd1af9130e1379ed
 	369f071f35e034be95f112e4e7d05d35
-tag sai cipher dung
+
 --------------------------------------------------
 Test case 7
 --------------------------------------------------
@@ -270,13 +268,13 @@ Test case 7
 
 Address: 10 -> 1F (12 Bytes 0 +4 Bytes) 
 	INFO 
-	= 0B00000000000010000010100010000010 (BINARY)
+	= 0B00000000000010000010100010000001 (BINARY)
 	= 0x00000000000000000000000000082881 (HECXA)
 
 Address: 20 -> 2F (16 Bytes)
 	Authentication Tag = 
 	95457b9652037f5318027b5b4cd7a636
-Address: 30 -> 4F (24 MSB bytes KEY + 8 LSB octects 0)
+Address: 30 -> 4F (32 bytes KEY )
 	key = 
 	feffe9928665731c6d6a8f9467308308
 	feffe9928665731c0000000000000000
@@ -302,9 +300,9 @@ Address: 5C -> B3 (56 Bytes + 6 bytes 0 chen vo cuoi ciphertext)
 	ctext+tag = 
 	a5b1f8066029aea40e598b8122de0242
 	0938b3ab33f828e687b8858b5bfbdbd0
-	315b27452144cc770000000000000000
+	0000000000000000315b27452144cc77
 	95457b9652037f5318027b5b4cd7a636
-sai tag sai cipher
+
 --------------------------------------------------
 Test case 8
 --------------------------------------------------
@@ -318,10 +316,10 @@ Address: 10 -> 1F (12 Bytes 0 + 4 Bytes)
 Address: 20 -> 2F (16 Bytes)
 	Authentication Tag = 
 	651f57e65f354f75ff17015769623436
-Address: 30 -> 4F (16 MSB bytes KEY + 16 LSB octects 0)
+Address: 30 -> 4F (16 lSB bytes KEY + 16 mSB octects 0)
 	key = 
-	abbccddef00112233445566778899aab
 	00000000000000000000000000000000
+	abbccddef00112233445566778899aab
 
 Address: 50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
 	nonce = 
@@ -348,7 +346,6 @@ Address: 5C -> BB (92 Bytes + 4 BYTES 0 chen vo cuoi ciphertext)
 	e3e7f243d95412e1c349c1d2fbec168f
 	9190feebaf2cb01984e65863965d7472
 	b79da345e0e780191f0d2f0e0f496c22
-	6f2127b27db35724e7845d6800000000
+	000000006f2127b27db35724e7845d68
 	651f57e65f354f75ff17015769623436
 	
-// sai tag sai cipher

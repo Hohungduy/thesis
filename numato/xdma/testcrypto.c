@@ -15,11 +15,11 @@ static unsigned int req_num = 1;
 module_param(req_num, uint, 0000);
 MODULE_PARM_DESC(req_num, "request and number");
 
-static unsigned int test_choice = 1;
+static unsigned int test_choice = 2;
 module_param(test_choice, uint, 0000);
 MODULE_PARM_DESC(test_choice, "Choose test case");
 
-static unsigned int cipher_choice = 1;// 0 for cbc(skcipher), 1 for gcm(aead), 2 for gcm-esp(aead)
+static unsigned int cipher_choice = 3;// 0 for cbc(skcipher), 1 for gcm(aead), 2 for gcm-esp(aead)
 module_param(cipher_choice, uint, 0000);
 MODULE_PARM_DESC(cipher_choice, "Choose cipher type: 0 for cbc, 1 for gcm, 2 for rfc4106");
 
@@ -45,7 +45,37 @@ struct aead_def {
     struct aead_request *req;
     struct tcrypt_result result;
 };
+void print_sg_content(struct scatterlist *sg ,size_t len)
+{
+	char *sg_buffer =NULL; //for printing
+	int i;
+	sg_buffer =kzalloc(len, GFP_KERNEL);
+	len =sg_pcopy_to_buffer(sg,1,sg_buffer,len,0);
+	//pr_info("%d: print sg in dequeue function",__LINE__);
+    for(i = 0; i < (len); i +=16)
+    {
+		pr_err("Print sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+            *((u32 *)(&sg_buffer[i + 12])), *((u32 *)(&sg_buffer[i + 8])), 
+            *((u32 *)(&sg_buffer[i + 4])), *((u32 *)(&sg_buffer[i])));
+    }
+	kfree(sg_buffer);
+}
+void print_sg_virt_content(struct scatterlist *sg)
+{
+    unsigned int length;
+    unsigned int i;
+    char *buf;
 
+    length = sg->length;
+    buf = sg_virt (sg);
+
+    for (i = 0; i < length; i += 16)
+    {
+        pr_err("Print virual sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+            *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
+            *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
+    }
+}
 //--------------------------------------------------------------------------------
 /* Test CBC mode -Type skcipher */
 //-------------------------------------------------------------------------------
@@ -894,16 +924,19 @@ static int test_esp_rfc4106(int test_choice, int endec)
     char *ivdata_copy = NULL; // for printing
     char *AAD_copy = NULL; //for printing
     char *scratchpad_copy = NULL;//for printing
-    char *sg_buffer =NULL; //for printing
-    char *sg_buffer_copy = NULL; //for printing
-    int i_iv,i_AAD,i_data,i_sg,i_key;// index for assign value into iv,AAD,data,key in loop
+    //char *sg_buffer =NULL; //for printing
+    //char *sg_buffer_copy = NULL; //for printing
+    int i_iv,i_AAD,i_data,i_key,i_authen;// index for assign value into iv,AAD,data,key in loop
     unsigned int sg_buffer_len;
-
+    char *authentag =NULL;
+    char *ciphertext=NULL;
     char *packet = NULL; 
-    char *packet_data = NULL; //for printing
+    char *packet_data = NULL;//plaintext
+    char *packet_cipher = NULL;//ciphertext 
+    char *packet_authen = NULL;
     size_t len;
     
-    printk(KERN_INFO "Module testcrypto: starting test_rfc4106\n");
+    printk(KERN_INFO "Module testcrypto: starting test_esp_rfc4106\n");
     switch(test_choice)
     {
         case 1:
@@ -1014,12 +1047,11 @@ static int test_esp_rfc4106(int test_choice, int endec)
     }
     ivdata_copy = ivdata; // copy pointer
     printk(KERN_INFO "IV: \n");
-    for(i_iv = 1; i_iv <= ivlen + 10; i_iv++)
+    for(i_iv = 0; i_iv < ivlen + 10; i_iv+=16)
     {
-        printk(KERN_INFO "%x \t", (*ivdata_copy));
-        ivdata_copy ++;
-        if ((i_iv % 4) == 0)
-            printk(KERN_INFO "\n");
+       pr_err("address of IV = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i_iv ,
+            *((u32 *)(&ivdata_copy[i_iv + 12])),*((u32 *)(&ivdata_copy[i_iv + 8])), 
+            *((u32 *)(&ivdata_copy[i_iv + 4])), *((u32 *)(&ivdata_copy[i_iv])));
     }
 
     /* AAD value (comprise of SPI and Sequence number)-64 bit 
@@ -1034,13 +1066,6 @@ static int test_esp_rfc4106(int test_choice, int endec)
     AAD_copy =AAD_const2;
     printk(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
     
-    // for(i_AAD = 1; i_AAD <= assoclen + 10; i_AAD ++)
-    // {
-    //     printk(KERN_INFO "%x \t", (*AAD_copy));
-    //     AAD_copy ++;
-    //     if ((i_AAD % 4) == 0)
-    //         printk(KERN_INFO "\n");
-    // }
     for (i_AAD = 0; i_AAD < assoclen; i_AAD ++)
     {
         AAD[i_AAD] = AAD_const2[i_AAD];
@@ -1048,12 +1073,11 @@ static int test_esp_rfc4106(int test_choice, int endec)
     AAD_copy =AAD;
     printk(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
     
-    for(i_AAD = 1; i_AAD <= assoclen +10; i_AAD ++)
+    for(i_AAD = 0; i_AAD < assoclen +10; i_AAD +=16)
     {
-        printk(KERN_INFO "%x \t", (*AAD_copy));
-        AAD_copy ++;
-        if ((i_AAD % 4) == 0)
-            printk(KERN_INFO "\n");
+        pr_err("address of AAD = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i_AAD ,
+            *((u32 *)(&AAD_copy[i_AAD + 12])),*((u32 *)(&AAD_copy[i_AAD + 8])), 
+            *((u32 *)(&AAD_copy[i_AAD + 4])), *((u32 *)(&AAD_copy[i_AAD])));
     }
     
     /* Input data will be random */
@@ -1073,15 +1097,55 @@ static int test_esp_rfc4106(int test_choice, int endec)
     scratchpad_copy = scratchpad; 
     printk(KERN_INFO "Data payload :\n");
     
-    for(i_data = 1; i_data <= data_len ; i_data ++)
+    for(i_data = 0; i_data < data_len ; i_data +=16)
     {
-        printk(KERN_INFO "%x \t", (*scratchpad_copy));
-        scratchpad_copy ++;
-        if ((i_data % 4) == 0)
-            printk(KERN_INFO "\n");
+    pr_err("address of data_scratchpad = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i_data ,
+            *((u32 *)(&scratchpad_copy[i_data + 12])),*((u32 *)(&scratchpad_copy[i_data + 8])), 
+            *((u32 *)(&scratchpad_copy[i_data + 4])), *((u32 *)(&scratchpad_copy[i_data])));
     }
 
-    packet = kzalloc(320,GFP_KERNEL);
+    /*Input authentication tag*/
+    authentag = kzalloc(16,GFP_KERNEL);
+    if (!authentag) {
+        pr_info("could not allocate packet\n");
+        goto out;
+    }
+ 
+    for (i_authen = 0 ; i_authen < 16;i_authen++)
+    {
+        authentag[i_authen]=authentag_const2[i_authen];
+    }
+
+    printk(KERN_INFO "Authentag :\n");
+    for(i_authen = 0; i_authen < 16 ; i_authen +=16)
+    {
+    pr_err("address of authentag = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i_authen ,
+            *((u32 *)(&authentag[i_data + 12])),*((u32 *)(&authentag[i_data + 8])), 
+            *((u32 *)(&authentag[i_data + 4])), *((u32 *)(&authentag[i_data])));
+    }
+    /*Input cipher text content*/
+
+    ciphertext = kzalloc(320, GFP_KERNEL);
+    if (!ciphertext) {
+        pr_info("could not allocate ciphertext\n");
+        goto out;
+    }
+
+    for (i_data = 0 ; i_data < data_len;i_data++)
+    {
+        ciphertext[i_data]=ciphertext_const2[i_data];
+    }
+ 
+    printk(KERN_INFO "Data payload :\n");
+    for(i_data = 0; i_data < data_len ; i_data +=16)
+    {
+    pr_err("address of ciphertext = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i_data ,
+            *((u32 *)(&ciphertext[i_data + 12])),*((u32 *)(&ciphertext[i_data + 8])), 
+            *((u32 *)(&ciphertext[i_data + 4])), *((u32 *)(&ciphertext[i_data])));
+    }
+
+    /*Input packet content*/
+    packet = kzalloc(1000,GFP_KERNEL);
     if (!packet) {
         pr_info("could not allocate packet\n");
         goto out;
@@ -1090,12 +1154,31 @@ static int test_esp_rfc4106(int test_choice, int endec)
     {
         packet[i_AAD] = AAD[i_AAD];
     }
-    packet_data = packet + assoclen;
-    for (i_data = 0; i_data < data_len ;i_data++)
-    {
-        packet_data[i_data] = scratchpad[i_data];
-    }
 
+    switch(endec)
+    {
+        case 0:
+        // mode decrypt: input needs tag
+            packet_cipher = packet + assoclen;
+            for (i_data = 0; i_data < data_len ;i_data++)
+            {
+            packet_cipher[i_data] = ciphertext[i_data];
+            }
+            packet_authen = packet_cipher + data_len;
+            for (i_authen = 0 ; i_authen < 16;i_authen++)
+            {
+            packet_authen[i_authen]=authentag[i_authen];
+            }
+            break;
+        case 1:
+        // mode encrypt: input dont need tag
+            packet_data = packet + assoclen;
+            for (i_data = 0; i_data < data_len ;i_data++)
+            {
+                packet_data[i_data] = scratchpad[i_data];
+            }
+            break;
+    }
     ad.tfm = aead;
     ad.req = req;
     printk(KERN_INFO "BEFORE allocate data and AAD into sg list of request\n");
@@ -1120,7 +1203,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
         goto out;
     }
     sg_buffer_len = assoclen + data_len + authlen;
-    sg_buffer =kzalloc(sg_buffer_len, GFP_KERNEL);// 92 = 8 byte (AAD -1st entry) + +8 byte iv + 60 bytes data(2nd entry)+16 bytes (2nd entry)
+    //sg_buffer =kzalloc(sg_buffer_len, GFP_KERNEL);// 92 = 8 byte (AAD -1st entry) + +8 byte iv + 60 bytes data(2nd entry)+16 bytes (2nd entry)
     sg_init_table(ad.sg, 1 ); // 1 entries
     sg_set_buf(ad.sg, packet, assoclen + data_len + authlen);
     //sg_set_buf(&ad.sg[1],scratchpad,320);// for fall-back cases
@@ -1129,33 +1212,13 @@ static int test_esp_rfc4106(int test_choice, int endec)
     scatterwalk_map_and_copy(ivdata, req->dst, req->assoclen-ivlen, ivlen, 1);
     init_completion(&ad.result.completion);
     /* for printint */
-    printk(KERN_INFO "assoclen +ivlen :%d\n", req->assoclen);
-    printk(KERN_INFO "cryptlen :%d\n", req->cryptlen);
-    printk(KERN_INFO "lenth of scatterlist : %d \n", ad.sg->length);
-    printk(KERN_INFO "lenth of scatterlist 0: %d \n", ad.sg[0].length);
-    printk(KERN_INFO "lenth of scatterlist 1: %d \n", ad.sg[1].length);
-    // printk(KERN_INFO "length of scatterlist 2: %d \n", ad.sg[2].length);
-    printk(KERN_INFO "lenght of scatterlist(src 0): %d\n",req->src[0].length);
-    printk(KERN_INFO "length of scatterlist(src 1): %d \n",req->src[1].length);
-    // printk(KERN_INFO "length of scatterlist(src 2): %d \n",req->src[2].length);
-    printk(KERN_INFO "length of scatterlist(src):%d \n",req->src->length);
-    printk(KERN_INFO "length of scatterlist(dst 0): %d \n",req->dst[0].length);
-    printk(KERN_INFO "length of scatterlist(dst 1): %d \n",req->dst[1].length);
-    // printk(KERN_INFO "length of scatterlist(dst 2): %d \n",req->dst[2].length);
-    printk(KERN_INFO "length of scatterlist (dst):%d \n",req->dst->length);
+
     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen + (size_t)authlen ;
     
     printk(KERN_INFO "length packets: %d \n", len);
-    printk(KERN_INFO "packet - BEFORE function test encrypt:\n");
-    len =sg_pcopy_to_buffer(ad.req->src,1,sg_buffer,len,0);
-    sg_buffer_copy =sg_buffer;
-    for(i_sg = 1; i_sg <= (req->assoclen + req->cryptlen + authlen); i_sg ++)
-    {
-        printk(KERN_INFO "%x \t", (*sg_buffer_copy));
-        sg_buffer_copy ++;
-        if ((i_sg % 4) == 0)
-            printk(KERN_INFO "\n");
-    }
+    printk(KERN_INFO "%d packet - BEFORE function test encrypt:\n", __LINE__);
+    print_sg_content(ad.req->src,len);
+    print_sg_virt_content(ad.req->src);
 
     /* encrypt data ( 1 for encryption)*/
     ret = test_rfc4106_encdec(&ad, endec);
@@ -1165,47 +1228,45 @@ static int test_esp_rfc4106(int test_choice, int endec)
     } 
     ivdata_copy = req->iv; // copy pointer
     pr_info("IV after encrypt (in esp->iv): \n");
-    for(i_iv = 1; i_iv <= 8 + 20; i_iv++)
+    for(i_iv = 0; i_iv <= 8 + 24; i_iv+=16)
     {
-        pr_info("%x \t", (*ivdata_copy));
-        ivdata_copy ++;
-        if ((i_iv % 4) == 0)
-            pr_info("\n");
+      pr_err("address of IV = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i_iv ,
+            *((u32 *)(&ivdata_copy[i_iv + 12])),*((u32 *)(&ivdata_copy[i_iv + 8])), 
+            *((u32 *)(&ivdata_copy[i_iv + 4])), *((u32 *)(&ivdata_copy[i_iv])));
     }     
     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen+(size_t)authlen ;
-    len =sg_pcopy_to_buffer(ad.req->src,1,sg_buffer,len,0);
-    printk(KERN_INFO "Packet - AFTER function test encrypt:\n");
-    sg_buffer_copy = sg_buffer;
-    for(i_sg = 1; i_sg <= (req->assoclen + req->cryptlen + authlen); i_sg ++)
-    {
-        printk(KERN_INFO "%x \t", (*sg_buffer_copy));
-        sg_buffer_copy ++;
-        if ((i_sg % 4) == 0)
-            printk(KERN_INFO "\n");
-    }
+
+    print_sg_content(ad.req->src,len);
+    print_sg_virt_content(ad.req->src);
     printk(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
 out:
     if (aead)
         crypto_free_aead(aead);
-    printk(KERN_INFO "aead -rfc 4106 after kfree:\n" );
+    printk(KERN_INFO "Module Testcrypto: aead -rfc 4106 after kfree:\n" );
     if (req)
         aead_request_free(req);
-    printk(KERN_INFO "req -rfc 4106 after kfree:\n" );
+    printk(KERN_INFO "Module Testcrypto: req -rfc 4106 after kfree:\n" );
     if (ivdata)
         kfree(ivdata);
-    printk(KERN_INFO "ivdata -rfc 4106 after kfree:\n" );
+    printk(KERN_INFO "Module Testcrypto: ivdata -rfc 4106 after kfree:\n" );
     if (AAD)
         kfree(AAD);
-    printk(KERN_INFO "AAD -rfc 4106 after kfree:\n" );
+    printk(KERN_INFO "Module Testcrypto: AAD -rfc 4106 after kfree:\n" );
     if (scratchpad)
         kfree(scratchpad);
-    printk(KERN_INFO "scratchpad -rfc 4106 after kfree:\n" );
-    if(sg_buffer)
-        kfree(sg_buffer);
-    printk(KERN_INFO "sg_buffer -rfc 4106 after kfree:\n" );
-    if(packet)
-        kfree(packet);
-    printk(KERN_INFO "packet -rfc4106 after kfree:\n");
+    printk(KERN_INFO "Module Testcrypto: scratchpad -rfc 4106 after kfree:\n" );
+    // if(sg_buffer)
+    //     kfree(sg_buffer);
+    // printk(KERN_INFO "Module Testcrypto: sg_buffer -rfc 4106 after kfree:\n" );
+    // if(packet)
+    //     kfree(packet);
+    // printk(KERN_INFO "Module Testcrypto: authentag -rfc4106 after kfree:\n");
+    // if(authentag)
+    //     kfree(authentag);
+    // printk(KERN_INFO "Module Testcrypto: packet -rfc4106 after kfree:\n");
+    // if(ciphertext)
+    //     kfree(ciphertext);
+    // printk(KERN_INFO "Module Testcrypto: ciphertext -rfc4106 after kfree:\n");
     return ret;
 }
 
@@ -1239,7 +1300,10 @@ static int __init test_init(void)
             {
                 ivdata_const2[i]= ivdata_test1[i];
             }
-
+            for (i=0; i< 16; i++)
+            {
+                authentag_const2[i]= authentag_test1[i];
+            }
             break;
         case 2:
             for (i =0 ; i < test2_len.key_len;i++)
@@ -1254,9 +1318,17 @@ static int __init test_init(void)
             {
                 scratchpad_const2[i]=scratchpad_test2[i];
             }
+            for (i=0; i < test2_len.scratchpad_len; i++)
+            {
+                ciphertext_const2[i]=ciphertext_test2[i];
+            }
             for (i=0; i< test2_len.ivdata_len; i++)
             {
                 ivdata_const2[i]= ivdata_test2[i];
+            }
+            for (i=0; i< 16; i++)
+            {
+                authentag_const2[i]= authentag_test2[i];
             }
             break;
         case 3:
@@ -1276,6 +1348,10 @@ static int __init test_init(void)
             {
                 ivdata_const2[i]= ivdata_test3[i];
             }
+            for (i=0; i< 16; i++)
+            {
+                authentag_const2[i]= authentag_test3[i];
+            }
             break;
         case 4:
             for (i =0 ; i < test4_len.key_len;i++)
@@ -1293,6 +1369,10 @@ static int __init test_init(void)
             for (i=0; i< test4_len.ivdata_len; i++)
             {
                 ivdata_const2[i]= ivdata_test4[i];
+            }
+            for (i=0; i< 16; i++)
+            {
+                authentag_const2[i]= authentag_test4[i];
             }
             break;
         case 5:
@@ -1312,6 +1392,10 @@ static int __init test_init(void)
             {
                 ivdata_const2[i]= ivdata_test5[i];
             }
+            for (i=0; i< 16; i++)
+            {
+                authentag_const2[i]= authentag_test5[i];
+            }
             break;
         case 6:
             for (i =0 ; i < test6_len.key_len;i++)
@@ -1329,6 +1413,10 @@ static int __init test_init(void)
             for (i=0; i< test6_len.ivdata_len; i++)
             {
                 ivdata_const2[i]= ivdata_test6[i];
+            }
+            for (i=0; i< 16; i++)
+            {
+                authentag_const2[i]= authentag_test6[i];
             }
             break;
     }

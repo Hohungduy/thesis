@@ -51,7 +51,8 @@ struct mycrypto_cipher_op{
 	u32 flags;
 	u32 mode;//algoritm used
 	int len;// blocksize
-	u8 key[AES_KEYSIZE_128];// key
+	u32 key[AES_MAX_KEYLENGTH_U32];// key
+	//u8 key[AES_KEYSIZE_128];// key
 	u32 nonce; // store nonce (4 Bytes salt)
 	u8 *iv; //iv pointer (8 Bytes iv)
 	u32 keylen;//keylen

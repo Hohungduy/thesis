@@ -8,6 +8,7 @@
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
  */
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -66,6 +67,37 @@ struct mycrypto_dev *mydevice_glo;
 //struct timer_list mycrypto_ktimer;
 
 // static int my_crypto_add_algs(struct mycrypto_dev *mydevice)
+void print_sg_content(struct scatterlist *sg ,size_t len)
+{
+	char *sg_buffer =NULL; //for printing
+	int i;
+	sg_buffer =kzalloc(len, GFP_KERNEL);
+	len =sg_pcopy_to_buffer(sg,1,sg_buffer,len,0);
+	//pr_info("%d: print sg in dequeue function",__LINE__);
+    for(i = 0; i < (len); i +=16)
+    {
+		pr_err("address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+            *((u32 *)(&sg_buffer[i + 12])), *((u32 *)(&sg_buffer[i + 8])), 
+            *((u32 *)(&sg_buffer[i + 4])), *((u32 *)(&sg_buffer[i])));
+    }
+	kfree(sg_buffer);
+}
+void print_sg_virt_content(struct scatterlist *sg)
+{
+    unsigned int length;
+    unsigned int i;
+    char *buf;
+
+    length = sg->length;
+    buf = sg_virt (sg);
+
+    for (i = 0; i < length; i += 16)
+    {
+        pr_err("Print virual sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+            *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
+            *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
+    }
+}
 
 static struct mycrypto_alg_template *mycrypto_algs[] = {
 	&mycrypto_alg_authenc_hmac_sha256_cbc_aes,
@@ -83,6 +115,7 @@ void set_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req
 	req_xfer->ctx.ctx_op = ctx;
 	req_xfer->ctx.ctx_req = req_ctx;
 	req_xfer->base = base;
+	pr_info("%d : set_xfer_mycryptocontext",__LINE__);
 	//req_xfer->sg = req->src;
 	//req_xfer->crypto_complete = handle_crypto_xfer_callback;
 
@@ -127,9 +160,10 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	u8 *buff;
 	int res;
 	u32 i;
-	u8 *key;
-
-	printk(KERN_INFO "module mycrypto: dequeue request (after a period time by using workqueue)\n");
+	__le32 *key;
+	__le32 key_tmp[8];
+	
+	printk(KERN_INFO "Module mycrypto: dequeue request (after a period time by using workqueue)\n");
 	
 	spin_lock_bh(&mydevice->queue_lock);
 	if (!mydevice->req) {
@@ -137,26 +171,31 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		mydevice->req = req;
 	}
 	spin_unlock_bh(&mydevice->queue_lock);
-
+	pr_info("%d:%s",__LINE__,__func__);
 	if (!req)
-		return;
+		return ;
 	if (backlog)
 		backlog->complete(backlog, -EINPROGRESS);
-
+	pr_info("%d:%s",__LINE__,__func__);
 	// Step 1: Allocate request for xfer_req (pcie layer)
 	
 	req_xfer = alloc_xfer_req ();
 	aead_req = aead_request_cast(req);
-		
+	pr_info("%d:%s",__LINE__,__func__);
     // Step 2: Set value for req_xfer
     
 	set_sg(req_xfer, aead_req->src);
+	pr_info("%d:%s",__LINE__,__func__);
+	//print_content
+	print_sg_virt_content(aead_req->src);
     set_callback(req_xfer, &handle_crypto_xfer_callback);
 	set_xfer_mycryptocontext(req, req_xfer);
-		
 	//Set value for struct testcase
-	
+	pr_info("%d :Module mycrypto:print sg content in dequeue function\n",__LINE__);
+	print_sg_virt_content(req_xfer->sg_in);
+
 	buff = sg_virt (req_xfer->sg_in);
+	//pr_info("%d : set buf",__LINE__);
 	// INFO
 	for (i = 0; i <=2; i++)
 	{
@@ -169,32 +208,99 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	switch(req_xfer->ctx.ctx_op.keylen)
 	{
 		case 16: testcase_in.crypto_dsc.info.keysize = 0;
+					break;
 		case 24: testcase_in.crypto_dsc.info.keysize = 1;
+					break;
 		case 32: testcase_in.crypto_dsc.info.keysize = 2;
+					break;
 	}
+	pr_info("%d :Module mycrypto: set info\n",__LINE__);
 	//ICV-AUTHENTAG
-	for (i = 0; i < 4; i++)
-	{
-		testcase_in.crypto_dsc.icv[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen + 16 - i*4 );
-	}
+	memcpy(testcase_in.crypto_dsc.icv,buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen,ICV_SIZE);
+	pr_info("%d :Module mycrypto: icv set\n",__LINE__);
+	// for (i = 0; i < 4; i++)
+	// {
+	// 	testcase_in.crypto_dsc.icv[i] = *((u32*)(buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen + 16 - i*4) );
+	// }
 	//KEY
-	key = &(req_xfer->ctx.ctx_op.key[0]);
-	for (i = 0; i < (req_xfer->ctx.ctx_op.keylen/4); i++)
+	for (i = 0; i < KEYMEM/4 ; i+=4)
+    {
+        pr_err("req_xfer->ctx.ctx_op.key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
+			(req_xfer->ctx.ctx_op.key[i + 3]),(req_xfer->ctx.ctx_op.key[i + 2]), 
+            (req_xfer->ctx.ctx_op.key[i + 1]),(req_xfer->ctx.ctx_op.key[i]));
+    }
+	switch (req_xfer->ctx.ctx_op.keylen)
 	{
-		testcase_in.crypto_dsc.key[i] = *(u32 *)(key + req_xfer->ctx.ctx_op.keylen - i*4);
+		case 16:
+			for (i = 0; i < (KEYMEM - 16)/4; i++)
+			{
+				key_tmp[i]=0x00000000;
+			}
+			for (i = (KEYMEM - 16)/4; i < KEYMEM/4;i++)
+			{
+				key_tmp[i]=req_xfer->ctx.ctx_op.key[i-((KEYMEM - 16)/4)];
+			}
+			break;
+		case 24:
+			for (i = 0; i < (KEYMEM - 24)/4; i++)
+			{
+				key_tmp[i]=0x00000000;
+			}
+			for (i = (KEYMEM - 24)/4; i < KEYMEM/4;i++)
+			{
+				key_tmp[i]=req_xfer->ctx.ctx_op.key[i-(KEYMEM - 24)/4];
+			}
+			break;
+		case 32:
+			for (i = 0; i < KEYMEM/4;i++)
+			{
+				key_tmp[i]=req_xfer->ctx.ctx_op.key[i];
+			}
+			break;
 	}
+	key = &(key_tmp[0]);
+
+	// for (i = 0; i < KEYMEM/4 ; i++)
+    // {
+    //     pr_err("key_tmp = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
+	// 		*((u32 *)(&key_tmp[i + 3])), *((u32 *)(&key_tmp[i + 2])), 
+    //         *((u32 *)(&key_tmp[i + 1])), *((u32 *)(&key_tmp[i])));
+    // }
+	pr_info("%d :Module mycrypto: key set\n",__LINE__);
+	for (i = 0; i < KEYMEM/4 ; i+=4)
+    {
+        pr_err("key_tmp = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
+			(key_tmp[i + 3]), (key_tmp[i + 2]), 
+            (key_tmp[i + 1]), (key_tmp[i]));
+    }
+	
+	// for (i = 0; i < (req_xfer->ctx.ctx_op.keylen/4); i++)
+	// {
+	// 	testcase_in.crypto_dsc.key[i] = *(u32 *)(key + req_xfer->ctx.ctx_op.keylen - i*4);
+	// }
+	memcpy(testcase_in.crypto_dsc.key,key,KEY_SIZE);
+	for (i = 0; i < KEYMEM/4 ; i+=4)
+    {
+        pr_err("testcase_in.crypto_dsc.key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
+			(testcase_in.crypto_dsc.key[i + 3]), (testcase_in.crypto_dsc.key[i + 2]), 
+            (testcase_in.crypto_dsc.key[i + 1]), (testcase_in.crypto_dsc.key[i]));
+    }
+    //pr_err("testcase_in.crypto_dsc.key = %32.0x",(testcase_in.crypto_dsc.key));
 	//IV
 	testcase_in.crypto_dsc.iv.nonce = req_xfer->ctx.ctx_op.nonce;
-	testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer->ctx.ctx_op.iv);
-	testcase_in.crypto_dsc.iv.iv[0] = *(u32 *)(req_xfer->ctx.ctx_op.iv + 4);
+	testcase_in.crypto_dsc.iv.iv[0] = *(u32 *)(req_xfer->ctx.ctx_op.iv);
+	testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer->ctx.ctx_op.iv + 4);
 	testcase_in.crypto_dsc.iv.tail = 0x00000001;
-			
-	//AAD
-	for (i = 0; i < testcase_in.crypto_dsc.info.aadsize /4; i++)
-	{
-		testcase_in.crypto_dsc.aad[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.assoclen - 8 - i*4 );
-	}
 
+    pr_err("Module mycrypto:testcase_in.crypto_dsc.iv.iv - data =  %8.0x %8.0x \n",  
+            (testcase_in.crypto_dsc.iv.iv[1]), (testcase_in.crypto_dsc.iv.iv[0]));
+    
+	//AAD
+	// for (i = 0; i < testcase_in.crypto_dsc.info.aadsize /4; i++)
+	// {
+	// 	testcase_in.crypto_dsc.aad[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.assoclen - 8 - i*4 );
+	// }
+	memcpy(testcase_in.crypto_dsc.aad,buff,testcase_in.crypto_dsc.info.aadsize);
     // Set value for ctx (context) testcase)
     // INFO
     req_xfer->crypto_dsc.info = testcase_in.crypto_dsc.info;
@@ -215,7 +321,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	res = xdma_xfer_submit_queue(req_xfer);
     if (res != -EINPROGRESS)
         pr_err("Unusual result\n");
-    pr_err("submitted req %d \n", i);
+    pr_err("%d: Module mycrypto : submitted req %d \n",__LINE__,i);
 		
 	// Testing handle request function
 	//opr_ctx = crypto_tfm_ctx(req->tfm);
@@ -223,25 +329,44 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	//mod_timer(&mydevice->mycrypto_ktimer,jiffies + 1*HZ);	
 	
 }
+
 static void mycrypto_dequeue_work(struct work_struct *work)
 {
 	struct mycrypto_work_data *data =
 			container_of(work, struct mycrypto_work_data, work);
 	mycrypto_dequeue_req(data->mydevice);
 }
+
 //----------------------------------------------------------------
 /* Handle xfer callback request
 */
 static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
-{
+{    
+	char *buf;
+    int i = 0;
 	// Step 4: Get data in callback
+	struct scatterlist *sg = data->sg_out;
 	struct crypto_async_request *req = (struct crypto_async_request *) data->base;
 	struct mycrypto_dev *mydevice = mydevice_glo;
 	pr_err("Complete with res = %d ! This is callback function! \n", res);
 	pr_info("Module mycrypto: handle callback function from pcie layer \n");
-	if (!req)
+	// Step 5: Do your things - Here we print the data out
+    
+    buf = sg_virt (sg);
+    for (i = 0; i < 72 ; i += 16)
+    {
+        pr_err("address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+            *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
+            *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
+    }
+    pr_err("tag = %8.0x %8.0x %8.0x %8.0x \n", 
+            *(data->tag + 3), *(data->tag + 2),
+            *(data->tag + 1), *(data->tag));
+	
+	if (!req){ 
 		pr_err("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return res;
+	}
 	mycrypto_handle_result(req);
 	queue_work(mydevice->workqueue,
 		   &mydevice->work_data.work);

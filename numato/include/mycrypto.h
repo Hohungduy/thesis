@@ -22,6 +22,8 @@
 #define ICV_SIZE (4*4)
 #define KEY_SIZE (8*4)
 #define AAD_SIZE (4*4)
+//length of key field in region memory
+#define KEYMEM (32)
 // Type of algorithms registered
 enum mycrypto_alg_type {
 	MYCRYPTO_ALG_TYPE_SKCIPHER,
@@ -176,6 +178,7 @@ struct mycrypto_req_operation {
 	
 };
 void mycrypto_dequeue_req(struct mycrypto_dev *mydevice);
+
 /* available algorithms */
 // extern struct aead_alg my_crypto_gcm_aes_alg;
 extern struct mycrypto_alg_template mycrypto_alg_authenc_hmac_sha256_cbc_aes;

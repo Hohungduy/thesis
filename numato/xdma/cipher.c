@@ -9,7 +9,6 @@
  * by the Free Software Foundation.
  */
 
-
 //#include "mycrypto.h"
 //#include "common.h"
 #include "cipher.h"
@@ -30,7 +29,7 @@ int mycrypto_skcipher_handle_request(struct crypto_async_request *base)
 	//context for skcipher request
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	size_t len = (size_t)req->cryptlen;
-	printk(KERN_INFO "module mycrypto: handle request (copy to buffer)\n");
+	printk(KERN_INFO "Module mycrypto: handle request (copy to buffer)\n");
 	//ret = mycrypto_handle_request(base,req_ctx,req->src,req->dst,req->cryptlen,0,0,req->iv);
 	len = sg_pcopy_to_buffer(req->src, req_ctx->src_nents,
 				 mydevice->buffer,
@@ -54,7 +53,7 @@ int mycrypto_skcipher_handle_result(struct crypto_async_request *base, bool *sho
 	struct mycrypto_cipher_req *req_ctx = skcipher_request_ctx(req);
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	size_t len = (size_t)req->cryptlen;
-	printk(KERN_INFO "module mycrypto: handle request (copy from buffer)\n");
+	printk(KERN_INFO "Module mycrypto: handle request (copy from buffer)\n");
 	len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
 				 mydevice->buffer,
 				 len, 0);
@@ -107,7 +106,7 @@ static int mycrypto_queue_skcipher_req(struct crypto_async_request *base,
 	// Get skcipher request from its asysc request.
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	int ret;
-	printk(KERN_INFO "module mycrypto: enqueue request\n");
+	printk(KERN_INFO "Module mycrypto: enqueue request\n");
 
 	req_ctx->dir = dir;
 	ctx->mode = mode;
@@ -246,12 +245,12 @@ badkey:
 }
 static int my_crypto_aead_aes_encrypt(struct aead_request *req)
 {
-	printk(KERN_INFO " mycrypto_aead_aes_encrypt \n");
+	printk(KERN_INFO "Module mycrypto: mycrypto_aead_aes_encrypt \n");
 	return 0;
 }
 static int my_crypto_aead_aes_decrypt(struct aead_request *req)
 {
-	printk(KERN_INFO "mycrypto_aead_aes_decrypt \n");
+	printk(KERN_INFO "Module mycrypto: mycrypto_aead_aes_decrypt \n");
 	return 0;
 }
 static int my_crypto_aead_cra_init(struct crypto_tfm *tfm)
@@ -283,7 +282,7 @@ int mycrypto_aead_handle_request(struct crypto_async_request *base)
 	//context for skcipher request
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	size_t len = (size_t)req->cryptlen;
-	printk(KERN_INFO "module mycrypto: handle request (copy to buffer)\n");
+	printk(KERN_INFO "Module mycrypto: handle request (copy to buffer)\n");
 	//ret = mycrypto_handle_request(base,req_ctx,req->src,req->dst,req->cryptlen,0,0,req->iv);
 	len = sg_pcopy_to_buffer(req->src, req_ctx->src_nents,
 				 mydevice->buffer,
@@ -307,7 +306,7 @@ int mycrypto_aead_handle_result(struct crypto_async_request *base, bool *should_
 	struct mycrypto_cipher_req *req_ctx = aead_request_ctx(req);
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	size_t len = (size_t)req->cryptlen;
-	printk(KERN_INFO "module mycrypto: handle request (copy from buffer)\n");
+	printk(KERN_INFO "Module mycrypto: handle request (copy from buffer)\n");
 	len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
 				 mydevice->buffer,
 				 len, 0);
@@ -335,7 +334,7 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	struct crypto_aead *tfm = crypto_aead_reqtfm(req);
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	int ret;
-	printk(KERN_INFO "module mycrypto: enqueue request\n");
+	printk(KERN_INFO "Module mycrypto: enqueue request\n");
 
 	req_ctx->dir = dir;
 	ctx->mode = mode;
@@ -461,9 +460,17 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 		return ret;
 	}
 	// copy key stored in aes to ctx
-	for(i = 0; i < len /sizeof(u32); i++)
+	//ctx->keylen = (aes.key_length-16)/4;
+	ctx->keylen=len;
+	for(i = 0; i < len/sizeof(u32); i++)
 		ctx->key[i] = cpu_to_le32(aes.key_enc[i]);
-	ctx->keylen = len;
+	for (i = 0; i < 8 ; i+=4)
+    {
+        pr_err("file cipher.c:ctx->key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
+			(ctx->key[i + 3]),(ctx->key[i + 2]), 
+            (ctx->key[i + 1]),(ctx->key[i]));
+    }
+	
 	//Beside, it is not necessary to fill aes.key_dec.
 	//If you wanna continue, just refer to setkey function for skcipher 
 	//in file cipher.c (mv_cesa)
