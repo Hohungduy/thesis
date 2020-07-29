@@ -80,6 +80,8 @@ void print_sg_content(struct scatterlist *sg ,size_t len)
             *((u32 *)(&sg_buffer[i + 12])), *((u32 *)(&sg_buffer[i + 8])), 
             *((u32 *)(&sg_buffer[i + 4])), *((u32 *)(&sg_buffer[i])));
     }
+	pr_err("                     %s, %d, %p", __func__, __LINE__,sg_buffer );
+
 	kfree(sg_buffer);
 }
 void print_sg_virt_content(struct scatterlist *sg)
@@ -88,8 +90,14 @@ void print_sg_virt_content(struct scatterlist *sg)
     unsigned int i;
     char *buf;
 
-    length = sg->length;
+	if (!sg){
+		pr_err("Print sg failed, sg NULL \n");
+		return;
+	}
+
+    length = sg_nents(sg);
     buf = sg_virt (sg);
+	pr_err("print sg buffer with length %d\n", length);
 
     for (i = 0; i < length; i += 16)
     {
@@ -98,7 +106,17 @@ void print_sg_virt_content(struct scatterlist *sg)
             *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
     }
 }
-
+// void print_processing_list_mycrypto(struct list_head *backlog)
+// {
+//     //struct xdma_crdev *crdev = g_xpdev->crdev;
+//     struct list_head *p;
+//     // int i = 0;
+// 	pr_err("%s: id = %d \n",__func__ ,__LINE__);
+//     list_for_each(p, backlog){
+//         struct crypto_async_request *req = list_entry(p, struct crypto_async_request, list);
+//         pr_err("%s: id = %p \n",__func__ ,req);
+//     }
+// }
 static struct mycrypto_alg_template *mycrypto_algs[] = {
 	&mycrypto_alg_authenc_hmac_sha256_cbc_aes,
 	&mycrypto_alg_authenc_hmac_sha256_ctr_aes,
@@ -162,21 +180,31 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	u32 i;
 	__le32 *key;
 	__le32 key_tmp[8];
+	u32 *tag_outbound;
 	
 	printk(KERN_INFO "Module mycrypto: dequeue request (after a period time by using workqueue)\n");
-	
 	spin_lock_bh(&mydevice->queue_lock);
+	pr_err("%d:%s\n",__LINE__,__func__);
 	if (!mydevice->req) {
+		pr_err("%d:%s\n",__LINE__,__func__);
 		req = mycrypto_dequeue_req_locked(mydevice, &backlog);
+			pr_err("%d:%s\n",__LINE__,__func__);
 		mydevice->req = req;
 	}
+
 	spin_unlock_bh(&mydevice->queue_lock);
-	pr_info("%d:%s",__LINE__,__func__);
-	if (!req)
+	if (!mydevice->req) {
+		pr_err("%d:%s\n",__LINE__,__func__);
+	}
+	pr_info("%d:%s\n",__LINE__,__func__);
+	if (!req){
 		return ;
+
+	}
+	pr_info("%d:%s\n",__LINE__,__func__);
 	if (backlog)
 		backlog->complete(backlog, -EINPROGRESS);
-	pr_info("%d:%s",__LINE__,__func__);
+	pr_info("%d:%s\n",__LINE__,__func__);
 	// Step 1: Allocate request for xfer_req (pcie layer)
 	
 	req_xfer = alloc_xfer_req ();
@@ -296,27 +324,47 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
             (testcase_in.crypto_dsc.iv.iv[1]), (testcase_in.crypto_dsc.iv.iv[0]));
     
 	//AAD
-	// for (i = 0; i < testcase_in.crypto_dsc.info.aadsize /4; i++)
-	// {
-	// 	testcase_in.crypto_dsc.aad[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.assoclen - 8 - i*4 );
-	// }
+		pr_err("%d:%s\n",__LINE__,__func__);
+
+	for (i = 0; i < testcase_in.crypto_dsc.info.aadsize /4; i++)
+	{
+		testcase_in.crypto_dsc.aad[i] = *(u32*)(buff + req_xfer->ctx.ctx_op.assoclen - 8 - i*4 );
+	}
+			pr_err("%d:%s\n",__LINE__,__func__);
+
 	memcpy(testcase_in.crypto_dsc.aad,buff,testcase_in.crypto_dsc.info.aadsize);
     // Set value for ctx (context) testcase)
     // INFO
+			pr_err("%d:%s\n",__LINE__,__func__);
+
     req_xfer->crypto_dsc.info = testcase_in.crypto_dsc.info;
     // ICV
+			pr_err("%d:%s\n",__LINE__,__func__);
+
     memcpy(req_xfer->crypto_dsc.icv, testcase_in.crypto_dsc.icv, ICV_SIZE); 
     // KEY
+			pr_err("%d:%s\n",__LINE__,__func__);
+
     memcpy(req_xfer->crypto_dsc.key, testcase_in.crypto_dsc.key, KEY_SIZE); 
-    // IV
+    //IV
+			pr_err("%d:%s\n",__LINE__,__func__);
+
     req_xfer->crypto_dsc.iv = testcase_in.crypto_dsc.iv;
     // AAD
+			pr_err("%d:%s\n",__LINE__,__func__);
+
     memcpy(req_xfer->crypto_dsc.aad, testcase_in.crypto_dsc.aad, AAD_SIZE); 
+		pr_err("%d:%s\n",__LINE__,__func__);
 
     //set_ctx(req_xfer, ctx);
     // Set outbound info -- testcase 1
-    set_tag(req_xfer, 16, 0x20 + 0x10 * (testcase_in.crypto_dsc.info.length/16 + 1), (u32 *)kmalloc(16, GFP_ATOMIC | GFP_KERNEL));
-        
+	tag_outbound = kmalloc(16, GFP_ATOMIC | GFP_KERNEL);
+	pr_err("%d, %s: %p %p %p\n",__LINE__,__func__, req_xfer, 
+		&testcase_in ,tag_outbound );
+	pr_err("%d, %s: %p %d %p\n",__LINE__,__func__, req_xfer, 
+		0x20 + (testcase_in.crypto_dsc.info.length/16 + 1) * 16,tag_outbound );
+    set_tag(req_xfer, 16, 0x20 + 0x10 * (testcase_in.crypto_dsc.info.length/16 + 1), tag_outbound);
+	pr_err("%d:%s\n",__LINE__,__func__);
     // Step 3: Submit to card	
 	res = xdma_xfer_submit_queue(req_xfer);
     if (res != -EINPROGRESS)
@@ -334,6 +382,7 @@ static void mycrypto_dequeue_work(struct work_struct *work)
 {
 	struct mycrypto_work_data *data =
 			container_of(work, struct mycrypto_work_data, work);
+	pr_err("%d:%s - Data pointer:%p; mydevice pointer:%p",__LINE__,__func__,data,data->mydevice);
 	mycrypto_dequeue_req(data->mydevice);
 }
 
@@ -367,9 +416,14 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		pr_err("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return res;
 	}
+	mydevice->req=NULL;
 	mycrypto_handle_result(req);
 	queue_work(mydevice->workqueue,
 		   &mydevice->work_data.work);
+	pr_err("                     %s, %d, %p", __func__, __LINE__,data->tag );
+	pr_err("                     %s, %d, %p", __func__, __LINE__,data);
+
+	kfree(data->tag);
 	free_xfer_req(data); // data is xfer_req
 	return res;
 }
@@ -454,7 +508,7 @@ static int mycrypto_probe(void){
 		return -EEXIST;
 	}
 	// Kernel allocate dymanic memory for new struct crypto device
-	mydevice = kzalloc(sizeof(*mydevice), GFP_KERNEL);
+	mydevice = kzalloc(sizeof(struct mycrypto_dev), GFP_KERNEL);
 	// Checking after allocate
 	if(!mydevice)
 	{
@@ -462,15 +516,17 @@ static int mycrypto_probe(void){
 		return -ENOMEM;
 	}
 	// Allocate dynamic memory for linear buffer ( for testing).
-	mydevice->buffer = kzalloc(BUFFER_SIZE, GFP_KERNEL);
+	//mydevice->buffer = kzalloc(BUFFER_SIZE, GFP_KERNEL);
 	// Configure parameters for this crypto device.
-	mycrypto_configure(mydevice);
-	mydevice->engine = kcalloc(mydevice->config.engines,sizeof(*mydevice->engine),GFP_KERNEL);
-	if (!mydevice->engine) {
-		printk(KERN_INFO "Module mycrypto: failed to allocate data structure for engine\n");
-		ret = -ENOMEM;
-		return ret;
-	}
+	// mycrypto_configure(mydevice);
+	// mydevice->engine = kcalloc(mydevice->config.engines,sizeof(*mydevice->engine),GFP_KERNEL);
+	// if (!mydevice->engine) {
+	// 	printk(KERN_INFO "Module mycrypto: failed to allocate data structure for engine\n");
+	// 	ret = -ENOMEM;
+	// 	return ret;
+	// }
+
+	
 	// Configure each engines
 	/*
 	- initiate the queue of result request (kcalloc to alloc dynamic memory for array)
@@ -503,6 +559,7 @@ static int mycrypto_probe(void){
 	}
 	// register the neccesary algorithms for handle requests.
 	ret = mycrypto_add_algs(mydevice);
+
 	if (ret){
 	printk(KERN_INFO "Failed to register algorithms\n");
 	}
@@ -531,11 +588,12 @@ static int __init FPGAcrypt_init(void)
 static void __exit FPGAcrypt_exit(void) 
 {
 	mycrypto_remove_algs(mydevice_glo);
-	kfree(mydevice_glo);
-	flush_workqueue(mydevice_glo->workqueue);
+	// flush_workqueue(mydevice_glo->workqueue);
     destroy_workqueue(mydevice_glo->workqueue);
 	//-----------delete timer------------------
 	del_timer_sync(&mydevice_glo->mycrypto_ktimer);
+	pr_err("                     %s, %d, %p", __func__, __LINE__, mydevice_glo);
+	kfree(mydevice_glo);
 	printk(KERN_INFO "Delete workqueue and unregister algorithms\n");
 	printk(KERN_INFO "Goodbye, World!\n");
 }

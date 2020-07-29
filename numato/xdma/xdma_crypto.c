@@ -225,23 +225,32 @@ int xmit_task(void *data)
 
 #ifdef BUFFER
 
+		pr_err("%d:%s\n",__LINE__,__func__);
 #else
+		pr_err("%d:%s\n",__LINE__,__func__);
             spin_lock(&g_xpdev->crdev->agent[0].agent_lock);
+		pr_err("%d:%s\n",__LINE__,__func__);
             status = g_xpdev->crdev->agent[0].status;
             if (status == BUSY){
                 spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
                 break;
+		pr_err("%d:%s\n",__LINE__,__func__);
             }
+		pr_err("%d:%s\n",__LINE__,__func__);
             g_xpdev->crdev->agent[0].status = BUSY;
+		pr_err("%d:%s\n",__LINE__,__func__);
             spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
 #endif
 
             // remove first req from backlog
+		pr_err("%d:%s\n",__LINE__,__func__);
             spin_lock_irqsave(lock, flags);
             req = list_first_entry(xmit_queue, 
                 struct xfer_req, list);
+		pr_err("%d:%s\n",__LINE__,__func__);
             list_del(&req->list);
             spin_unlock_irqrestore(lock, flags);
+		pr_err("%d:%s\n",__LINE__,__func__);
 
             ep_addr = req->data_ep_addr;
 
@@ -251,22 +260,30 @@ int xmit_task(void *data)
             pr_err("submit xmit to channel %d region %d", channel_idx, req->region_idx);
             res = xdma_xfer_submit(g_xpdev->crdev->xdev, channel_idx, 1, 
                 ep_addr, &req->sg_table, dma_mapped, timeout_ms);
+		pr_err("%d:%s\n",__LINE__,__func__);
 
             if (res < 0)
             {
                 pr_err("Send failed req_id = %d\n, res = %d", req->id, res);
                 // TODO: 
                 continue;
+		pr_err("%d:%s\n",__LINE__,__func__);
             }
             // TODO: Write crypto info (No need to lock)
+		pr_err("%d:%s\n",__LINE__,__func__);
             memcpy_toio(&req->in_region->crypto_dsc, 
                     &req->crypto_dsc, sizeof(struct crypto_dsc_in));
             // Write region dsc + see booking, modify head, tail
+		pr_err("%d:%s\n",__LINE__,__func__);
             spin_lock_irqsave(&agent->agent_lock, flags);
             // Write xfer_id
+		pr_err("%d:%s\n",__LINE__,__func__);
             memset32((void *)req->in_region, 0xABCDACBD, 1);
+		pr_err("%d:%s\n",__LINE__,__func__);
             memset32((void *)req->in_region + 4, req->id, 1);
+		pr_err("%d:%s\n",__LINE__,__func__);
             memset32((void *)req->in_region + 12, 0, 1);
+		pr_err("%d:%s\n",__LINE__,__func__);
             memset32((void *)req->in_region + 8, req->crypto_dsc.info.length, 1);
 
 
@@ -278,10 +295,13 @@ int xmit_task(void *data)
 
 #endif
             // add to tail of processing queue
+		pr_err("%d:%s\n",__LINE__,__func__);
             list_add_tail(&req->list, processing);
             spin_unlock_irqrestore(&agent->agent_lock, flags);
+		pr_err("%d:%s\n",__LINE__,__func__);
 
             trigger_engine(engine_idx);
+		pr_err("%d:%s\n",__LINE__,__func__);
         }
     }
     do_exit(0);
@@ -790,13 +810,20 @@ int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
     struct xdma_crdev *crdev = g_xpdev->crdev;
     spinlock_t *deliver_lock = 
         &crdev->agent[0].xmit.deliver_list_lock;
-    
+    	pr_err("%d:%s\n",__LINE__,__func__);
+
     xfer_req->sg_table.sgl = xfer_req->sg_in;
+    	pr_err("%d:%s\n",__LINE__,__func__);
+
     xfer_req->sg_table.nents = 1;//sg_nents(xfer_req->sg);
+    	pr_err("%d:%s\n",__LINE__,__func__);
+
     xfer_req->sg_table.orig_nents = 1;//sg_nents(xfer_req->sg);
     pr_err("%s %d", __func__, __LINE__);
 
     spin_lock_bh(deliver_lock);
+    	pr_err("%d:%s\n",__LINE__,__func__);
+
     list_add_tail(&xfer_req->list, &crdev->agent[0].xmit.deliver_list);
     spin_unlock_bh(deliver_lock);
     wake_up_interruptible(&crdev->agent[0].xmit.wq_xmit_event);

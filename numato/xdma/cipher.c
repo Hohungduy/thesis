@@ -53,10 +53,10 @@ int mycrypto_skcipher_handle_result(struct crypto_async_request *base, bool *sho
 	struct mycrypto_cipher_req *req_ctx = skcipher_request_ctx(req);
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	size_t len = (size_t)req->cryptlen;
-	printk(KERN_INFO "Module mycrypto: handle request (copy from buffer)\n");
-	len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
-				 mydevice->buffer,
-				 len, 0);
+	printk(KERN_INFO "Module mycrypto: handle result (copy from buffer)\n");
+	// len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
+	// 			 mydevice->buffer,
+	// 			 len, 0);
 	*should_complete = true;
 	return 0;
 }
@@ -154,6 +154,7 @@ static int my_crypto_skcipher_aes_setkey(struct crypto_skcipher *cipher, const u
 	//Beside, it is not necessary to fill aes.key_dec.
 	//If you wanna continue, just refer to setkey function for skcipher 
 	//in file cipher.c (mv_cesa)
+		pr_err("                     %s, %d, %p", __func__, __LINE__, &aes);
 	memzero_explicit(&aes, sizeof(aes));
 	//free memory
 	return 0;
@@ -306,10 +307,10 @@ int mycrypto_aead_handle_result(struct crypto_async_request *base, bool *should_
 	struct mycrypto_cipher_req *req_ctx = aead_request_ctx(req);
 	struct mycrypto_dev *mydevice = ctx->mydevice;
 	size_t len = (size_t)req->cryptlen;
-	printk(KERN_INFO "Module mycrypto: handle request (copy from buffer)\n");
-	len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
-				 mydevice->buffer,
-				 len, 0);
+	printk(KERN_INFO "Module mycrypto: handle result \n");
+	// len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
+	// 			 mydevice->buffer,
+	// 			 len, 0);
 	*should_complete = true;
 	return 0;
 }
@@ -437,6 +438,10 @@ static int my_crypto_aead_gcm_cra_init(struct crypto_tfm *tfm)
 static void my_crypto_aead_gcm_cra_exit(struct crypto_tfm *tfm)
 {
 	struct mycrypto_cipher_op *ctx = crypto_tfm_ctx(tfm);
+	pr_err("                     %s, %d, %p", __func__, __LINE__, ctx->hkaes);
+	pr_err("                     %s, %d, %p", __func__, __LINE__, ctx);
+
+
 	crypto_free_cipher(ctx->hkaes); // free cipher for hash key (optional)
 	memzero_explicit(ctx, tfm->__crt_alg->cra_ctxsize);
 }
@@ -487,7 +492,7 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 
 	for (i = 0; i < AES_BLOCK_SIZE / sizeof(u32); i++)
 		ctx->ipad[i] = cpu_to_be32(hashkey[i]);
-
+	pr_err("                     %s, %d, %p", __func__, __LINE__, &aes);
 	memzero_explicit(hashkey, AES_BLOCK_SIZE);
 	memzero_explicit(&aes, sizeof(aes));
 	//free memory
