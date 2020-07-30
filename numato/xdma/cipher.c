@@ -50,9 +50,9 @@ int mycrypto_skcipher_handle_result(struct crypto_async_request *base, bool *sho
 	
 	struct skcipher_request *req = skcipher_request_cast(base);
 	struct mycrypto_cipher_op *ctx = crypto_tfm_ctx(req->base.tfm);
-	struct mycrypto_cipher_req *req_ctx = skcipher_request_ctx(req);
-	struct mycrypto_dev *mydevice = ctx->mydevice;
-	size_t len = (size_t)req->cryptlen;
+	//struct mycrypto_cipher_req *req_ctx = skcipher_request_ctx(req);
+	//struct mycrypto_dev *mydevice = ctx->mydevice;
+	//size_t len = (size_t)req->cryptlen;
 	printk(KERN_INFO "Module mycrypto: handle result (copy from buffer)\n");
 	// len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
 	// 			 mydevice->buffer,
@@ -304,9 +304,9 @@ int mycrypto_aead_handle_result(struct crypto_async_request *base, bool *should_
 	
 	struct aead_request *req = aead_request_cast(base);
 	struct mycrypto_cipher_op *ctx = crypto_tfm_ctx(req->base.tfm);
-	struct mycrypto_cipher_req *req_ctx = aead_request_ctx(req);
-	struct mycrypto_dev *mydevice = ctx->mydevice;
-	size_t len = (size_t)req->cryptlen;
+	//struct mycrypto_cipher_req *req_ctx = aead_request_ctx(req);
+	//struct mycrypto_dev *mydevice = ctx->mydevice;
+	//size_t len = (size_t)req->cryptlen;
 	printk(KERN_INFO "Module mycrypto: handle result \n");
 	// len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
 	// 			 mydevice->buffer,
@@ -342,8 +342,14 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	ctx->dir =dir;
 	ctx->len = AES_BLOCK_SIZE;
 	ctx->iv = req->iv;
+	pr_err("Module mycrypto-cipher.c: Address of req->iv:%p - data =  %8.0x %8.0x \n",req->iv,  
+            *((u32 *)(&req->iv[4])), *((u32 *)(&req->iv[0])));
+	pr_err("Module mycrypto-cipher.c: Address of ctx->iv:%p - data =  %8.0x %8.0x \n",ctx->iv,  
+            *((u32 *)(&ctx->iv[4])), *((u32 *)(&ctx->iv[0])));
 	ctx->assoclen = req->assoclen;
 	ctx->cryptlen = req->cryptlen;
+	pr_err("Module mycrypto-cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",req,  
+            req->assoclen, req->cryptlen);
 	ctx->authsize = crypto_aead_authsize(tfm);
 
 	spin_lock_bh(&mydevice->queue_lock);

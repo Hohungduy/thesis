@@ -922,7 +922,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
     unsigned int keylen = 0;//key length
     unsigned int data_len = 0;// scratchpad length
     //char *ivdata_copy = NULL; // for printing
-    char *AAD_copy = NULL; //for printing
+    //char *AAD_copy = NULL; //for printing
     //char *scratchpad_copy = NULL;//for printing
     //char *sg_buffer =NULL; //for printing
     //char *sg_buffer_copy = NULL; //for printing
@@ -1054,6 +1054,8 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     /* AAD value (comprise of SPI and Sequence number)-64 bit 
        ( not with extended sequence number-96 bit) */
+    pr_info("assoclen:%d\n",assoclen);
+    pr_info("assoclen:%p\n",AAD);
     AAD = kzalloc(assoclen, GFP_KERNEL);
     if (!AAD) {
         pr_info("could not allocate scratchpad\n");
@@ -1223,10 +1225,11 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     pr_info("IV before encrypt (in esp->iv): \n");
 
-    pr_err("data = %8.0x %8.0x  \n", 
+    pr_err("Address of req->iv:%p - data = %8.0x %8.0x  \n",req->iv, 
             *((u32 *)(&req->iv[4])), *((u32 *)(&req->iv[0])));
-    
-    scatterwalk_map_and_copy(ivdata, req->dst, req->assoclen-ivlen, ivlen, 1);
+    pr_err("Module testcrypto: Address of req:%p - assoclen+Cryptlen =  %d %d \n",req,  
+            req->assoclen, req->cryptlen);
+    // scatterwalk_map_and_copy(ivdata, req->dst, req->assoclen-ivlen, ivlen, 1);
     init_completion(&ad.result.completion);
     /* for printint */
 
@@ -1247,7 +1250,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
     pr_info("IV after encrypt (in esp->iv): \n");
     // for(i_iv = 0; i_iv <= 8 ; i_iv+=16)
     // {
-    pr_err("data = %8.0x %8.0x  \n",
+    pr_err("Address of req->iv:%p - data = %8.0x %8.0x  \n",req->iv, 
             *((u32 *)(&req->iv[4])), *((u32 *)(&req->iv[0])));
     // }     
     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen+(size_t)authlen ;
@@ -1469,7 +1472,7 @@ static void __exit test_exit(void)
 module_init(test_init);
 module_exit(test_exit);
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Duy H.Ho");
 MODULE_DESCRIPTION("A prototype Linux module for TESTING crypto in FPGA-PCIE card");
 MODULE_VERSION("0.01");

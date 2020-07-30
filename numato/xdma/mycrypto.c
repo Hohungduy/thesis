@@ -320,6 +320,8 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	testcase_in.crypto_dsc.iv.iv[1] = *(u32 *)(req_xfer->ctx.ctx_op.iv + 4);
 	testcase_in.crypto_dsc.iv.tail = 0x00000001;
 
+	pr_err("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",req_xfer->ctx.ctx_op.iv,  
+            *((u32 *)(&req_xfer->ctx.ctx_op.iv[4])), *((u32 *)(&req_xfer->ctx.ctx_op.iv[0])));
     pr_err("Module mycrypto:testcase_in.crypto_dsc.iv.iv - data =  %8.0x %8.0x \n",  
             (testcase_in.crypto_dsc.iv.iv[1]), (testcase_in.crypto_dsc.iv.iv[0]));
     
@@ -611,7 +613,7 @@ static struct pci_driver my_pcie_crypto_driver = {
 */
 
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Duy H.Ho");
 MODULE_DESCRIPTION("A prototype Linux module for crypto in FPGA-PCIE card");
 MODULE_VERSION("0.01");
