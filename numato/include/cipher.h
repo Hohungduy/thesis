@@ -62,13 +62,13 @@ struct mycrypto_cipher_op{
 	unsigned int authsize; // another name: digestsize
 	
 	/* all the belows is using for AEAD specific*/
-	u32 hash_alg;
-	u32 state_sz;
-	__be32 ipad[SHA512_DIGEST_SIZE / sizeof(u32)];
-	__be32 opad[SHA512_DIGEST_SIZE / sizeof(u32)];
+	//u32 hash_alg;
+	//u32 state_sz;
+	//__be32 ipad[SHA512_DIGEST_SIZE / sizeof(u32)];
+	//__be32 opad[SHA512_DIGEST_SIZE / sizeof(u32)];
 
 	/* use for gcm */
-	struct crypto_cipher *hkaes;// transformation object
+	// struct crypto_cipher *hkaes;// transformation object
 };
 
 /*
