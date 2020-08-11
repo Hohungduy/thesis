@@ -30,6 +30,10 @@ static unsigned int req_num = 20;
 module_param(req_num, uint, 0000);
 MODULE_PARM_DESC(req_num, "request and number");
 
+static unsigned int loop_num = 20;
+module_param(loop_num, uint, 0000);
+MODULE_PARM_DESC(loop_num, "request and loop number");
+
 static unsigned int test_choice = 2;
 module_param(test_choice, uint, 0000);
 MODULE_PARM_DESC(test_choice, "Choose test case");
@@ -41,7 +45,7 @@ MODULE_PARM_DESC(cipher_choice, "Choose cipher type: 0 for cbc, 1 for gcm, 2 for
 static unsigned int endec = 1; // 1 for encrypt; 2 for decrypt
 module_param(endec, uint, 0000);
 MODULE_PARM_DESC(endec, "Choose mode: 1 for encrypt and 2 for decrypt");
-
+//gggg
 struct tcrypt_result {
     struct completion completion;
     int err;
@@ -969,6 +973,7 @@ char *packet_data = NULL;//plaintext
 char *packet_cipher = NULL;//ciphertext 
 char *packet_authen = NULL;
 size_t len;
+int i_loop;
 //------Test_esp_rfc4106------
 /* Initialize and trigger aead cipher operation */
 static int test_esp_rfc4106(int test_choice, int endec)
@@ -1369,7 +1374,9 @@ static int test_esp_rfc4106(int test_choice, int endec)
     pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , aead_req->base.data);
     pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , ad->req->base.data);
     /* encrypt data ( 1 for encryption)*/
-    ret = test_rfc4106_encdec(ad, endec);
+    for (i_loop=0; i_loop < loop_num; i_loop++)
+    {
+        ret = test_rfc4106_encdec(ad, endec);
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     
     if (ret){
@@ -1388,6 +1395,8 @@ static int test_esp_rfc4106(int test_choice, int endec)
     len = (size_t)ad->req->cryptlen + (size_t)ad->req->assoclen+(size_t)authlen ;
     pr_err("Module testcrypto:Data after test_rfc4106_encdec \n");
     print_sg_content(ad->req->src,len);
+    }
+    
     //print_sg_content(ad->req->src);
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
@@ -1503,7 +1512,7 @@ static int __init test_init(void)
     //int test_choice = 2;
     //int engine_type = 0; // 0 for software, 1 for instruction set,2 for hardware engine
     //int endec = MODE_DIR_ENCRYPT;
-    // pr_aaa(KERN_INFO "Module testcrypto: info: init test \n Pid: %d", current->pid);
+    pr_err(KERN_INFO "Module testcrypto: info: init test \n Pid: %d", current->pid);
     /* for gcm(aes) - test aead and rfc4106(gcm(aes)) - test gcm*/
     switch (test_choice)
     {
@@ -1677,7 +1686,7 @@ static int __init test_init(void)
         if (cipher_choice == 3)
             {
                 test_esp_rfc4106(test_choice,endec);
-                mdelay(300);
+                // mdelay(300);
                 pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
                 pr_err("------------------------Number of req-------------------: %d\n",i);
             }

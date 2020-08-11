@@ -408,8 +408,14 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
     set_tag(req_xfer, 16, 0x20 + 0x10 * (testcase_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
 	// 
     // Step 3: Submit to card
+	pr_err("--------- sg info --------\n");
+    
+    pr_err("nents = %d, addr = %p, lenth = %d\n", sg_nents( req_xfer->sg_in), sg_virt( req_xfer->sg_in),req_xfer->sg_in->length);
+    
+    pr_err("--------- sg info --------\n");
 	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
 	// buff =(u8 *)(cpu_to_be32((u32 *)buff));
+	mdelay(5000);
 	res = xdma_xfer_submit_queue(req_xfer);
 	// handle_crypto_xfer_callback(req_xfer, 0);
 	    if (res != -EINPROGRESS)
@@ -460,7 +466,11 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	pr_info("Module mycrypto: handle callback function from pcie layer \n");
 	
 	// Step 5: Do your things - Here we print the data out
-    
+    if (res == -1)
+	{
+		ret = res;
+		goto err_busy;
+	}
     buf = sg_virt (sg);
 	// test
 	// for (i = 0; i < 72 ; i += 16)
@@ -523,10 +533,21 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		ret = mycrypto_compare_icv(data->tag,data->crypto_dsc.icv);//1st: tag_out; 2nd: tag_in 
 		// ret = 0 (successfull); ret = -EBADMSG (authenction failed)
 	}
-
+err_busy:
 	mydevice->req=NULL;
 	mycrypto_handle_result(base , ret);
-	pr_err("%d:%s:Return value in callback function:%d",__LINE__ , __func__ ,ret);
+	switch (ret)
+	{
+		case 0:
+			pr_err("%d:%s:Return value in callback: Done Successfully",__LINE__ , __func__ );
+			break;
+		case -1:
+			pr_err("%d:%s:Return value in callback function: DMA Busy",__LINE__ , __func__ );
+			break;
+		case -74:
+			pr_err("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
+			break;
+	}
 	queue_work(mydevice->workqueue,&mydevice->work_data.work);
 		   	
 	//pr_aaa(" %s, %d, %p", __func__, __LINE__,data->tag );

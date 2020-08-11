@@ -207,9 +207,20 @@ int xmit_task(void *data)
     struct list_head *xmit_queue = &xmit->xmit_queue[channel_idx];
     struct list_head *processing = &agent->processing_queue;
     spinlock_t *lock = &xmit->xmit_queue_lock[channel_idx];
-
+/*
+[  291.529179] xdma:xdma_xfer_submit: xfer 0xec556850,96, s 0x1 timed out, ep 0xc0.
+[  291.540962] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1190100) = 0x1fc00106 (id).
+[  291.548727] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1190140) = 0x00000001 (status).
+[  291.556839] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1190104) = 0x00f83e1f (control)
+[  291.564951] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1194180) = 0x2bad0000 (first_desc_lo)
+[  291.573586] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1194184) = 0x00000000 (first_desc_hi)
+[  291.582220] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1194188) = 0x00000000 (first_desc_adjacent).
+[  291.591463] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1190148) = 0x00000000 (completed_desc_count).
+[  291.600794] xdma:engine_reg_dump: 0-H2C1-MM: ioread32(0xf1190190) = 0x00f83e1e (interrupt_enable_mask)
+[  291.610127] xdma:engine_status_dump: SG engine 0-H2C1-MM status: 0x00000001: BUSY
+*/
     // bool write = TRUE;
-    bool dma_mapped = 1;
+    bool dma_mapped = 0;
     int engine_idx = 0;
     int timeout_ms = 3;
     int res;
@@ -239,14 +250,14 @@ int xmit_task(void *data)
 #ifdef BUFFER
 
 		#else
-		            spin_lock(&g_xpdev->crdev->agent[0].agent_lock);
+		            spin_lock_irqsave(&g_xpdev->crdev->agent[0].agent_lock, flags);
 		            status = g_xpdev->crdev->agent[0].status;
             if (status == BUSY){
-                spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
+                spin_unlock_irqrestore(&g_xpdev->crdev->agent[0].agent_lock, flags);
                 break;
 		            }
 		            g_xpdev->crdev->agent[0].status = BUSY;
-		            spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
+		            spin_unlock_irqrestore(&g_xpdev->crdev->agent[0].agent_lock, flags);
 #endif
 
             // remove first req from backlog
@@ -264,24 +275,49 @@ int xmit_task(void *data)
             pr_err("submit xmit to channel %d region %d", channel_idx, req->region_idx);
             res = xdma_xfer_submit(g_xpdev->crdev->xdev, channel_idx, 1, 
                 ep_addr, &req->sg_table, dma_mapped, timeout_ms);
-		
+#define H2C_TARGET (0)
+#define STATUS_OFFSET (0x40)
+#define CONTROL_OFFSET (0x04)
             if (res < 0)
             {
-                pr_err("Send failed req_id = %d\n, res = %d", req->id, res);
+                pr_err("------------------  SEND FAILED HAHAHA ---------------\n");
+                req->res = -1;
+                pr_err("Send failed req_id = %d, res = %d \n", req->id, res);
                 // TODO: 
+                
+                int xfer_status, busy, xfer_control,running; 
+                
+                xfer_status = ioread32(g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
+                busy = xfer_status & 0x01;
+                xfer_control = ioread32(g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET);
+                running = xfer_control & 0x01;
+                pr_err("xfer_status addr:%p\n", g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
+                pr_err("xfer_control addr:%p \n",g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET );
+                pr_err("xfer_addr = %p, status = %x, busy = %d , control = %x running = %d \n", req, xfer_status, busy, xfer_control, running);
+                if (busy == 1) // BUSY ????
+                {
+                    // if (running){
+                        iowrite32(xfer_control & 0xfffffffe, g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET);
+                    // }
+                }
+                spin_lock_irqsave(&agent->agent_lock, flags);
+                list_add_tail(&req->list, &agent->rcv.rcv_callback_queue[channel_idx]);
+                spin_unlock_irqrestore(&agent->agent_lock, flags);
+                g_xpdev->crdev->agent[0].status = FREE;
+                wake_up_interruptible(&agent->rcv.wq_rcv_event);
+                pr_err("------------------  SEND FAILED HAHAHA ---------------\n");
                 continue;
-		            }
+            }
             // TODO: Write crypto info (No need to lock)
-		            memcpy_toio(&req->in_region->crypto_dsc, 
-                    &req->crypto_dsc, sizeof(struct crypto_dsc_in));
+            memcpy_toio(&req->in_region->crypto_dsc, 
+                &req->crypto_dsc, sizeof(struct crypto_dsc_in) );
             // Write region dsc + see booking, modify head, tail
-		            spin_lock_irqsave(&agent->agent_lock, flags);
+            spin_lock_irqsave(&agent->agent_lock, flags);
             // Write xfer_id
-		            memset32((void *)req->in_region, 0xABCDACBD, 1);
-		            memset32((void *)req->in_region + 4, req->id, 1);
-		            memset32((void *)req->in_region + 12, 0, 1);
-		            memset32((void *)req->in_region + 8, req->crypto_dsc.info.length, 1);
-
+            memset32((void *)req->in_region, 0xABCDACBD, 1);
+            memset32((void *)req->in_region + 4, req->id, 1);
+            memset32((void *)req->in_region + 12, 0, 1);
+            memset32((void *)req->in_region + 8, req->crypto_dsc.info.length, 1);
 
 #ifdef BUFFER
             active_inb_region(engine_idx, req->region_idx);
@@ -291,10 +327,10 @@ int xmit_task(void *data)
 
 #endif
             // add to tail of processing queue
-		            list_add_tail(&req->list, processing);
-                    spin_unlock_irqrestore(&agent->agent_lock, flags);
-		            trigger_engine(engine_idx);
-		        }
+            list_add_tail(&req->list, processing);
+            spin_unlock_irqrestore(&agent->agent_lock, flags);
+            trigger_engine(engine_idx);
+        }
     }
     do_exit(0);
 }
@@ -407,7 +443,7 @@ int rcv_task(void *data)
     int channel_idx = task_data->idx;
     int res;
     unsigned long flags;
-    u64 outbound_data_addr;
+    u64 outbound_data_addr = 0;
     struct xfer_req *req;
     enum agent_status status;
 
@@ -438,6 +474,7 @@ int rcv_task(void *data)
 #ifdef BUFFER
 
 #else  
+
         switch(req->crypto_dsc.info.aadsize)
         {
             case 8:
@@ -446,6 +483,7 @@ int rcv_task(void *data)
             case 12:
                 outbound_data_addr = 0x10020 - 20;
                 break;
+            
         } 
             	
 #endif      	
@@ -457,21 +495,21 @@ int rcv_task(void *data)
     	        res = xdma_xfer_submit(g_xpdev->crdev->xdev,
             channel_idx, FALSE, outbound_data_addr, 
             &req->sg_table, FALSE, 3);
-        
         if (res < 0)
         {
             pr_err("can not read!!!\n");
             continue;
         }
+        req->res = 0;
 
 
 #ifdef BUFFER
         active_outb_region(engine_idx, req->region_idx);
 #else 
         // TODO: Free region + lock ???
-        spin_lock(&g_xpdev->crdev->agent[0].agent_lock);
+        spin_lock_irqsave(&g_xpdev->crdev->agent[0].agent_lock, flags);
             	        g_xpdev->crdev->agent[0].status = FREE;
-        spin_unlock(&g_xpdev->crdev->agent[0].agent_lock);
+        spin_unlock_irqrestore(&g_xpdev->crdev->agent[0].agent_lock, flags);
             	
 #endif
 
@@ -529,7 +567,7 @@ int rcv_callback_task(void *data)
             local_bh_disable();
                 	
             if (req->crypto_complete)
-                    res = req->crypto_complete(req, req->id);
+                    res = req->crypto_complete(req, req->res);
 
             local_bh_enable();
                 	
@@ -837,6 +875,12 @@ int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
     struct xdma_crdev *crdev = g_xpdev->crdev;
     spinlock_t *deliver_lock = 
         &crdev->agent[0].xmit.deliver_list_lock;
+
+    pr_err("--------- sg info --------\n");
+    
+    pr_err("nents = %d, addr = %p, lenth = %d\n", sg_nents(xfer_req->sg_in), sg_virt(xfer_req->sg_in),xfer_req->sg_in->length);
+    
+    pr_err("--------- sg info --------\n");
     	
     xfer_req->sg_table.sgl = xfer_req->sg_in;
     	
