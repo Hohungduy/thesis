@@ -44,6 +44,9 @@ struct xfer_req{
     struct crypto_async_request *base;
     struct scatterlist *sg_in;
     struct scatterlist *sg_out;
+    struct scatterlist sg;// sg for transfering using dma
+    struct scatterlist sg_rcv;// sg for transfering using dma
+
     struct crypto_dsc_in crypto_dsc;
     int tag_offset;
     int tag_length;

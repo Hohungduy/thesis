@@ -39,6 +39,7 @@
  *  all of the bars
  */
 //#define XDMA_CONFIG_BAR_NUM	1
+#define __LIBXDMA_DEBUG__ 1
 
 /* Switch debug printing on/off */
 #define XDMA_DEBUG 0
@@ -66,7 +67,7 @@
 #define XDMA_OFS_CONFIG		(0x3000UL)
 
 /* maximum number of desc per transfer request */
-#define XDMA_TRANSFER_MAX_DESC (2048)
+#define XDMA_TRANSFER_MAX_DESC (512)
 
 /* maximum size of a single DMA transfer descriptor */
 #define XDMA_DESC_BLEN_BITS	28

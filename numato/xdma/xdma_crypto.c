@@ -4,6 +4,9 @@ struct xdma_pci_dev *g_xpdev;
 
 #define BAR_0_ADDR (g_xpdev->xdev->bar[0])
 
+bool rcv_on = FALSE;
+
+struct mutex xmit_mutex;;
 void print_req(struct xfer_req *req)
 {
     pr_err("print_req\n");
@@ -64,7 +67,7 @@ void blinky_timeout(struct timer_list *timer)
     default:
         break;
     }
-    dbg_desc("Timer blinky function\n");
+    // dbg_desc("Timer blinky function\n");
     mod_timer(&blinky->timer, jiffies + (unsigned int)(blinky->interval*HZ));
 }
 
@@ -163,16 +166,15 @@ int xmit_deliver_task(void *data)
                     req->data_ep_addr=0x60;
                     break;
                 case 12:
-                    	
                     req->data_ep_addr=0x5C;
                     break;               
                 default:
-                    pr_err("Wrong aadsize\n");
+                    pr_err("Wrong aadsize:%d\n",req->crypto_dsc.info.aadsize);
                     break;
                 }
                 
                 //req->data_ep_addr = 0x70;
-                pr_err("deliver task print before add to xmit_queue\n");
+                // pr_err("deliver task print before add to xmit_queue\n");
 #endif
 #ifdef BUFFER
                 pr_err("deliver task data_ep_addr %llx\n", req->data_ep_addr);
@@ -222,7 +224,7 @@ int xmit_task(void *data)
     // bool write = TRUE;
     bool dma_mapped = 0;
     int engine_idx = 0;
-    int timeout_ms = 3;
+    int timeout_ms = 1;
     int res;
     enum agent_status status;
 
@@ -236,7 +238,8 @@ int xmit_task(void *data)
                 ||  (agent->xmit.status == XMIT_STATUS_STOP)
             ) 
         );
-            	
+        mutex_lock(&xmit_mutex);
+        while(rcv_on == TRUE);
         pr_err("xmit_task running %d\n", channel_idx);
 
         if (unlikely(agent->xmit.status == XMIT_STATUS_STOP))
@@ -269,12 +272,16 @@ int xmit_task(void *data)
 		
             ep_addr = req->data_ep_addr;
 
-
-
             // submit req from req_queue to engine 
             pr_err("submit xmit to channel %d region %d", channel_idx, req->region_idx);
-            res = xdma_xfer_submit(g_xpdev->crdev->xdev, channel_idx, 1, 
-                ep_addr, &req->sg_table, dma_mapped, timeout_ms);
+            // res = xdma_xfer_submit(g_xpdev->crdev->xdev, channel_idx, 1, 
+                // ep_addr, &req->sg_table, dma_mapped, timeout_ms);
+            req->sg_table.orig_nents = 1;
+            req->sg_table.nents = 1;
+
+            res = xdma_xfer_submit(g_xpdev->crdev->xdev, 1, 1, 
+                ep_addr, &req->sg_table, FALSE, timeout_ms);
+            pr_err("Sent req_id = %d, res = %d \n", req->id, res);
 #define H2C_TARGET (0)
 #define STATUS_OFFSET (0x40)
 #define CONTROL_OFFSET (0x04)
@@ -282,22 +289,28 @@ int xmit_task(void *data)
             {
                 pr_err("------------------  SEND FAILED HAHAHA ---------------\n");
                 req->res = -1;
-                pr_err("Send failed req_id = %d, res = %d \n", req->id, res);
                 // TODO: 
                 
                 int xfer_status, busy, xfer_control,running; 
                 
-                xfer_status = ioread32(g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
-                busy = xfer_status & 0x01;
-                xfer_control = ioread32(g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET);
-                running = xfer_control & 0x01;
-                pr_err("xfer_status addr:%p\n", g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
-                pr_err("xfer_control addr:%p \n",g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET );
-                pr_err("xfer_addr = %p, status = %x, busy = %d , control = %x running = %d \n", req, xfer_status, busy, xfer_control, running);
+                // xfer_status = ioread32(g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
+                // busy = xfer_status & 0x01;
+                // xfer_control = ioread32(g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET);
+                // running = xfer_control & 0x01;
+                // pr_err("xfer_status addr:%p\n", g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
+                // pr_err("xfer_control addr:%p \n",g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET );
+                // pr_err("xfer_addr = %p, status = %x, busy = %d , control = %x running = %d \n", req, xfer_status, busy, xfer_control, running);
+                // pr_err("%p %p \n", g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET, 
+                    // g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
                 if (busy == 1) // BUSY ????
                 {
                     // if (running){
-                        iowrite32(xfer_control & 0xfffffffe, g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET);
+                        // iowrite32(xfer_control & 0xfffffffe, g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + CONTROL_OFFSET);
+                        int i;
+                        for (i = 0; i < 5; i++){
+                            // iowrite32(0x01, g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET);
+                            // pr_err("%x\n", ioread32(g_xpdev->xdev->bar[1] + (H2C_TARGET << 12) + (channel_idx << 8) + STATUS_OFFSET));
+                        }
                     // }
                 }
                 spin_lock_irqsave(&agent->agent_lock, flags);
@@ -305,6 +318,20 @@ int xmit_task(void *data)
                 spin_unlock_irqrestore(&agent->agent_lock, flags);
                 g_xpdev->crdev->agent[0].status = FREE;
                 wake_up_interruptible(&agent->rcv.wq_rcv_event);
+
+
+                pr_err("pag_link:%x ; ofset:%x ; length:%x ; dma_address: %x,",req->sg_in->page_link,req->sg_in->offset,req->sg_in->length,req->sg_in->dma_address);
+
+            {
+                int i;
+                u32 *p;
+                for (i = 0; i < (0x200 >> 3); i+= 8)
+                {
+                    p = (u32 *)req->in_region + i;
+                    pr_err("debug inbound addr %p: %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x\n", p,
+                        *(p + 7), *(p + 6), *(p + 5), *(p + 4), *(p + 3), *(p + 2),*(p + 1), *p); 
+                }
+            }
                 pr_err("------------------  SEND FAILED HAHAHA ---------------\n");
                 continue;
             }
@@ -327,9 +354,21 @@ int xmit_task(void *data)
 
 #endif
             // add to tail of processing queue
+            {
+                int i;
+                u32 *p;
+                for (i = 0; i < (0x300 >> 3); i+= 8)
+                {
+                    p = (u32 *)req->in_region + i;
+                    pr_err("debug inbound addr %p: %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x\n", p,
+                        *(p + 7), *(p + 6), *(p + 5), *(p + 4), *(p + 3), *(p + 2),*(p + 1), *p); 
+                }
+            }
             list_add_tail(&req->list, processing);
-            spin_unlock_irqrestore(&agent->agent_lock, flags);
             trigger_engine(engine_idx);
+            spin_unlock_irqrestore(&agent->agent_lock, flags);
+            rcv_on = TRUE;
+            mutex_unlock(&xmit_mutex);
         }
     }
     do_exit(0);
@@ -455,9 +494,11 @@ int rcv_task(void *data)
            (rcv->status == RCV_STATUS_STOP)
         )
         );
+        mutex_lock(&xmit_mutex);
+        while(rcv_on == FALSE);
             	
-        if (likely(rcv->status == RCV_STATUS_STOP))
-            break;
+        // if (likely(rcv->status == RCV_STATUS_STOP))
+        //     break;
         pr_err("rcv_task active %d\n", channel_idx);
 
         
@@ -475,26 +516,57 @@ int rcv_task(void *data)
 
 #else  
 
-        switch(req->crypto_dsc.info.aadsize)
-        {
-            case 8:
-                outbound_data_addr = 0x10020 - 16;
-                break;
-            case 12:
+        // switch(req->crypto_dsc.info.aadsize)
+        // {
+        //     case 8:
+        //         outbound_data_addr = 0x10020 - 16;
+        //         break;
+        //     case 12:
+        //         outbound_data_addr = 0x10020 - 20;
+        //         break;
+        // } 
+        if(req->crypto_dsc.info.aadsize == 8)
+            	outbound_data_addr = 0x10020 - 16;
+        else if(req->crypto_dsc.info.aadsize == 12)
                 outbound_data_addr = 0x10020 - 20;
-                break;
-            
-        } 
-            	
+        else {
+            outbound_data_addr = 0x10020 - 16;
+            pr_err("%s:%d: Wrong aadsize %d\n", __func__, __LINE__, req->crypto_dsc.info.aadsize);
+        }
 #endif      	
 #ifdef BUFFER
 
 #else
         memcpy_fromio(req->tag, BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
 #endif
-    	        res = xdma_xfer_submit(g_xpdev->crdev->xdev,
-            channel_idx, FALSE, outbound_data_addr, 
-            &req->sg_table, FALSE, 3);
+    	    //     res = xdma_xfer_submit(g_xpdev->crdev->xdev,
+            // channel_idx, FALSE, outbound_data_addr, 
+            // &req->sg_table, FALSE, 3);
+        req->sg_table.sgl = &req->sg_rcv;
+        req->sg_table.orig_nents = 1;
+        req->sg_table.nents = 1;
+        {
+            int i;
+            u32 *p;
+            for (i = 0; i < (0x300 >> 3); i+= 8)
+            {
+                p = (u32 *)((void *)(req->in_region) + 0x10000) + i;
+                pr_err("debug outbound addr %p: %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x\n", p,
+                    *(p + 7), *(p + 6), *(p + 5), *(p + 4), *(p + 3), *(p + 2),*(p + 1), *p); 
+            }
+        }
+    	res = xdma_xfer_submit(g_xpdev->crdev->xdev,
+            1, FALSE, outbound_data_addr, &req->sg_table, FALSE, 1);
+        // {
+        //     int i;
+        //     u32 *p;
+        //     for (i = 0; i < (0x200 >> 3); i+= 8)
+        //     {
+        //         p = (u32 *)req->out_region + i;
+        //         pr_err("debug outbound addr %p: %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x %8.0x\n", p,
+        //             *(p + 7), *(p + 6), *(p + 5), *(p + 4), *(p + 3), *(p + 2),*(p + 1), *p); 
+        //     }
+        // }
         if (res < 0)
         {
             pr_err("can not read!!!\n");
@@ -508,7 +580,7 @@ int rcv_task(void *data)
 #else 
         // TODO: Free region + lock ???
         spin_lock_irqsave(&g_xpdev->crdev->agent[0].agent_lock, flags);
-            	        g_xpdev->crdev->agent[0].status = FREE;
+        g_xpdev->crdev->agent[0].status = FREE;
         spin_unlock_irqrestore(&g_xpdev->crdev->agent[0].agent_lock, flags);
             	
 #endif
@@ -527,10 +599,12 @@ int rcv_task(void *data)
 #endif
         // Call callback
         spin_lock_irqsave(&rcv->rcv_callback_queue_lock[channel_idx], flags);
-            	        list_add_tail(&req->list, &rcv->rcv_callback_queue[channel_idx]);
-            	        spin_unlock_irqrestore(&rcv->rcv_callback_queue_lock[channel_idx], flags);
-            	        wake_up_interruptible(&rcv->wq_rcv_event);
-            	    }
+        list_add_tail(&req->list, &rcv->rcv_callback_queue[channel_idx]);
+        spin_unlock_irqrestore(&rcv->rcv_callback_queue_lock[channel_idx], flags);
+        wake_up_interruptible(&rcv->wq_rcv_event);
+        rcv_on = FALSE;
+        mutex_unlock(&xmit_mutex);
+    }
     do_exit(0);
 }
 
@@ -552,6 +626,8 @@ int rcv_callback_task(void *data)
 
         if (rcv->status == RCV_STATUS_STOP)
             break;
+        
+        pr_err("iv inbound %x %x \n", ioread32(g_xpdev->xdev->bar[0] + 0x54), ioread32(g_xpdev->xdev->bar[0] + 0x58));
                 	
         while(!list_empty(&rcv->rcv_callback_queue[channel_idx]))
         {
@@ -682,7 +758,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     struct rcv_handler *rcv;
     struct crypto_engine engine;
 
-
+    mutex_init(&xmit_mutex);
     crdev = (struct xdma_crdev *)kzalloc(sizeof(*crdev), GFP_KERNEL);
     if (!crdev)
     {

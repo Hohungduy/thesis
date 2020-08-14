@@ -316,14 +316,10 @@ int mycrypto_aead_handle_result(struct crypto_async_request *base, bool *should_
 	//struct mycrypto_cipher_req *req_ctx = aead_request_ctx(req);
 	//struct mycrypto_dev *mydevice = ctx->mydevice;
 	//size_t len = (size_t)req->cryptlen;
-		pr_err("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
 	printk(KERN_INFO "Module mycrypto: handle result \n");
 	// len = sg_pcopy_from_buffer(req->dst, req_ctx->dst_nents,
 	// 			 mydevice->buffer,
 	// 			 len, 0);
-	pr_err("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
 	*should_complete = true;
 	return 0;
 }
@@ -349,65 +345,49 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	int ret;
 
 	printk(KERN_INFO "Module mycrypto: enqueue request\n");
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
 	ctx = crypto_tfm_ctx(base->tfm);
 	mydevice = ctx->mydevice;
 
-		pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
 	aead_req = aead_request_cast(base);
-		pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
 	// pr_aaa("aead_req pointer: %p - Adsress of req_ctx: %p - Value of req_ctx pointer: %p - Offset:%x\n", aead_req ,&(req_ctx), req_ctx, offsetof(struct aead_request, __ctx));
-    pr_aaa("%d:Address of &(aead_req->iv):%p - data = %8.0x %8.0x - Offset:%x\n",__LINE__,&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-	tfm = crypto_aead_reqtfm(aead_req);
-    pr_aaa("%d:Address of &(aead_req->iv):%p - data = %8.0x %8.0x - Offset:%x\n",__LINE__,&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	// req_ctx->dir = 0xabcdef05;
-    pr_aaa("%d:Address of &(aead_req->iv):%p - data = %8.0x %8.0x - Offset:%x\n",__LINE__,&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	ctx->mode = mode;
-    pr_aaa("%d:Address of &(aead_req->iv):%p - data = %8.0x %8.0x - Offset:%x\n",__LINE__,&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-		pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	ctx->dir =dir;
-    pr_aaa("%d:Address of &(aead_req->iv):%p - data = %8.0x %8.0x - Offset:%x\n",__LINE__,&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-		pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	ctx->len = AES_BLOCK_SIZE;
-    pr_aaa("%d:Address of &(aead_req->iv):%p - data = %8.0x %8.0x - Offset:%x\n",__LINE__,&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-		pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	ctx->iv = aead_req->iv;
-    pr_aaa("%d:Address of aead_req->iv:%p - data = %8.0x %8.0x - Offset:%x\n",__LINE__,&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	pr_aaa("Module mycrypto-cipher.c: Address of ctx->iv:%p - data =  %8.0x %8.0x \n",ctx->iv,  
-            *((u32 *)(&ctx->iv[4])), *((u32 *)(&ctx->iv[0])));
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+    
+    tfm = crypto_aead_reqtfm(aead_req);
+    
+    // req_ctx->dir = 0xabcdef05;
+    
+    ctx->mode = mode;
+    
+    ctx->dir =dir;
+    
+    ctx->len = AES_BLOCK_SIZE;
+    
+    ctx->iv = aead_req->iv;
+
 	ctx->assoclen = aead_req->assoclen;
-		pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	ctx->cryptlen = aead_req->cryptlen;
+			
+	ctx->authsize = crypto_aead_authsize(tfm);
+	//test for the disparity between encrypt and decrypt
+	switch(ctx->dir){
+		case MYCRYPTO_DIR_DECRYPT:
+			ctx->cryptlen = aead_req->cryptlen -ctx->authsize;
+			break;
+		case MYCRYPTO_DIR_ENCRYPT:
+			ctx->cryptlen = aead_req->cryptlen;
+			break;
+	}
 	pr_aaa("Module mycrypto-cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
-			        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
-	ctx->authsize = crypto_aead_authsize(tfm);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+			        	
 	spin_lock_bh(&mydevice->queue_lock);
 	// enqueue request.
 	ret = crypto_enqueue_request(&mydevice->queue, base);
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+	
 	spin_unlock_bh(&mydevice->queue_lock);
 	
 	// dequeue using workqueue
 	queue_work(mydevice->workqueue,
 		   &mydevice->work_data.work);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+    
 	// dequeue without using workqueue (testing ...)
 	//mycrypto_dequeue_req(mydevice);
 	return ret;
@@ -446,18 +426,12 @@ static int my_crypto_aead_gcm_encrypt(struct aead_request *aead_req)
 	int ret;
 
 	printk(KERN_INFO "Module mycrypto: mycrypto_aead_gcm_encrypt \n");
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	/* checking the number of entries in scattergather list */
-    pr_aaa("Address of &(aead_req->iv):%p - data = %8.0x %8.0x - Offset:%x\n",&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-	
+		/* checking the number of entries in scattergather list */
+            	
 	ret = mycrypto_aead_req_init(aead_req);
-    pr_aaa("Address of aead_req->iv:%p - data = %8.0x %8.0x - Offset:%x\n",&(aead_req->iv), 
-            *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-	if (ret)
+    if (ret)
 		printk(KERN_INFO "ERROR SRC/DEST NUMBER OF ENTRY\n");
-	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-	//----------------------------------------------------
+		//----------------------------------------------------
 	// processing the queue of this request
 	return mycrypto_queue_aead_req(&aead_req->base,
 			MYCRYPTO_DIR_ENCRYPT, AES_MODE_GCM);

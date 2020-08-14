@@ -1343,8 +1343,17 @@ static int test_esp_rfc4106(int test_choice, int endec)
     sg_set_buf(&ad->sg[1],scratchpad,320);// for fall-back cases
     aead_request_set_ad(aead_req , assoclen+ivlen);// 12 means that there are 12 octects ( 96 bits) in AAD fields.
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
-    aead_request_set_crypt(aead_req , ad->sg, ad->sg, data_len-ivlen, ivdata);// 60 bytes (data for encryption or decryption)  + 8 byte iv
+    switch(endec)
+    {
+        case 0:
+        //decrypt
+            aead_request_set_crypt(aead_req , ad->sg, ad->sg, data_len - ivlen + authlen, ivdata);// 60 bytes (data for encryption or decryption)  + 8 byte iv
+            break;
+        case 1:
+        //encrypt
+            aead_request_set_crypt(aead_req , ad->sg, ad->sg, data_len - ivlen, ivdata);// 60 bytes (data for encryption or decryption)  + 8 byte iv
+            break;
+    }
         pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     pr_aaa("IV before encrypt (in esp->iv): \n");
     pr_aaa("Address of aead_req->iv:%p - data = %8.0x %8.0x - Offset:%x \n",&(aead_req->iv), 
@@ -1652,7 +1661,7 @@ static int __init test_init(void)
             {
                 authentag_const2[i]= authentag_test6[i];
             }
-            case 7:
+        case 7:
             for (i =0 ; i < test7_len.key_len;i++)
             {
                 key_const2[i]=key_test7[i];
@@ -1664,6 +1673,10 @@ static int __init test_init(void)
             for (i=0; i < test7_len.scratchpad_len; i++)
             {
                 scratchpad_const2[i]=scratchpad_test7[i];
+            }
+            for (i=0; i < test7_len.scratchpad_len; i++)
+            {
+                ciphertext_const2[i]=ciphertext_test7[i];
             }
             for (i=0; i< test7_len.ivdata_len; i++)
             {

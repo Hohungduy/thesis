@@ -3503,6 +3503,26 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		}
 	}
 
+	rv = engine_status_read(engine, 1, 1);
+	if (rv)
+		pr_err("read failed\n\n\n\n");
+	write_register(0, &engine->regs->control,
+			(unsigned long)(&engine->regs->control) -
+				(unsigned long)(&engine->regs));
+	write_register(0, &engine->sgdma_regs->first_desc_lo,
+			(unsigned long)(&engine->sgdma_regs->first_desc_lo) -
+				(unsigned long)(&engine->sgdma_regs));
+	write_register(0, &engine->sgdma_regs->first_desc_hi,
+			(unsigned long)(&engine->sgdma_regs->first_desc_hi) -
+				(unsigned long)(&engine->sgdma_regs));
+	write_register(0, &engine->sgdma_regs->first_desc_adjacent,
+			(unsigned long)(&engine->sgdma_regs->first_desc_adjacent) -
+				(unsigned long)(&engine->sgdma_regs));
+	rv = engine_status_read(engine, 1, 1);
+	if (rv)
+		pr_err("read failed\n\n\n\n");
+
+
 	req = xdma_init_request(sgt, ep_addr);
 	if (!req) {
 		rv = -ENOMEM;
@@ -3641,6 +3661,42 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		}
 
 		engine->desc_used -= xfer->desc_num;
+
+		// rv = xdma_engine_stop(engine);
+		// if (rv < 0)
+		// 	pr_err("Failed to stop engine\n");
+		rv = engine_status_read(engine, 1, 1);
+		if (rv)
+			pr_err("read failed\n\n\n\n");
+		write_register(0x01, &engine->regs->control,
+				(unsigned long)(&engine->regs->control) -
+					(unsigned long)(&engine->regs));
+		write_register(0, &engine->regs->control,
+				(unsigned long)(&engine->regs->control) -
+					(unsigned long)(&engine->regs));
+		write_register(0, &engine->sgdma_regs->first_desc_lo,
+				(unsigned long)(&engine->sgdma_regs->first_desc_lo) -
+					(unsigned long)(&engine->sgdma_regs));
+		write_register(0, &engine->sgdma_regs->first_desc_hi,
+				(unsigned long)(&engine->sgdma_regs->first_desc_hi) -
+					(unsigned long)(&engine->sgdma_regs));
+		write_register(0, &engine->sgdma_regs->first_desc_adjacent,
+				(unsigned long)(&engine->sgdma_regs->first_desc_adjacent) -
+					(unsigned long)(&engine->sgdma_regs));
+		rv = engine_status_read(engine, 1, 1);
+		if (rv)
+			pr_err("read failed\n\n\n\n");
+		// 	pr_err("read failed\n\n\n\n");
+		// write_register(0, &engine->regs->first_desc_lo,
+		// 		(unsigned long)(&engine->regs->first_desc_lo) -
+		// 			(unsigned long)(&engine->regs));
+		// write_register(0, &engine->regs->first_desc_hi,
+		// 		(unsigned long)(&engine->regs->first_desc_hi) -
+		// 			(unsigned long)(&engine->regs));
+
+		rv = engine_status_read(engine, 1, 1);
+		if (rv)
+			pr_err("read failed\n\n\n\n");
 		transfer_destroy(xdev, xfer);
 
 		/* use multiple transfers per request if we could not fit all data within
@@ -4196,7 +4252,7 @@ static int set_dma_mask(struct pci_dev *pdev)
 
 	dbg_init("sizeof(dma_addr_t) == %ld\n", sizeof(dma_addr_t));
 	/* 64-bit addressing capability for XDMA? */
-	if (!pci_set_dma_mask(pdev, DMA_BIT_MASK(64))) {
+	if (!pci_set_dma_mask(pdev, DMA_BIT_MASK(32))) {
 		/* query for DMA transfer */
 		/* @see Documentation/DMA-mapping.txt */
 		dbg_init("pci_set_dma_mask()\n");
