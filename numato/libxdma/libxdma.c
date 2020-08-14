@@ -2806,7 +2806,7 @@ static void engine_free_resource(struct xdma_engine *engine)
 	}
 
 	if (engine->desc) {
-		dbg_init("device %s, engine %s pre-alloc desc 0x%p,0x%llx.\n",
+		dbg_init("device %s, engine %s pre-alloc desc 0x%p,0x%x.\n",
 			 dev_name(&xdev->pdev->dev), engine->name, engine->desc,
 			 engine->desc_bus);
 		dma_free_coherent(&xdev->pdev->dev,
@@ -2944,7 +2944,7 @@ static int engine_writeback_setup(struct xdma_engine *engine)
 	writeback = (struct xdma_poll_wb *)engine->poll_mode_addr_virt;
 	writeback->completed_desc_count = 0;
 
-	dbg_init("Setting writeback location to 0x%llx for engine %p",
+	dbg_init("Setting writeback location to 0x%x for engine %p",
 		 engine->poll_mode_bus, engine);
 	w = cpu_to_le32(PCI_DMA_L(engine->poll_mode_bus));
 	write_register(w, &engine->regs->poll_mode_wb_lo,
@@ -3159,7 +3159,7 @@ static int transfer_build(struct xdma_engine *engine,
 	dma_addr_t bus = xfer->res_bus;
 
 	for (; i < desc_max; i++, j++, sdesc++) {
-		dbg_desc("sw desc %d/%u: 0x%llx, 0x%x, ep 0x%llx.\n",
+		dbg_desc("sw desc %d/%u: 0x%x, 0x%x, ep 0x%x.\n",
 			 i + req->sw_desc_idx, req->sw_desc_cnt, sdesc->addr,
 			 sdesc->len, req->ep_addr);
 
@@ -3324,7 +3324,7 @@ static void sgt_dump(struct sg_table *sgt)
 		sgt->orig_nents);
 
 	for (i = 0; i < sgt->orig_nents; i++, sg = sg_next(sg))
-		pr_err("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u.\n", i, sg,
+		pr_err("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%x,%u.\n", i, sg,
 			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
 			sg_dma_len(sg));
 }
@@ -3333,7 +3333,7 @@ static void xdma_request_cb_dump(struct xdma_request_cb *req)
 {
 	int i;
 
-	pr_err("request 0x%p, total %u, ep 0x%llx, sw_desc %u, sgt 0x%p.\n",
+	pr_err("request 0x%p, total %u, ep 0x%x, sw_desc %u, sgt 0x%p.\n",
 		req, req->total_len, req->ep_addr, req->sw_desc_cnt, req->sgt);
 	sgt_dump(req->sgt);
 	for (i = 0; i < req->sw_desc_cnt; i++)
@@ -3470,7 +3470,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	}
 
 	if (engine->magic != MAGIC_ENGINE) {
-		pr_err("%s has invalid magic number %lx\n", engine->name,
+		pr_err("%s has invalid magic number %x\n", engine->name,
 		       engine->magic);
 		return -EINVAL;
 	}
@@ -3662,15 +3662,12 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 
 		engine->desc_used -= xfer->desc_num;
 
-		// rv = xdma_engine_stop(engine);
-		// if (rv < 0)
-		// 	pr_err("Failed to stop engine\n");
 		rv = engine_status_read(engine, 1, 1);
 		if (rv)
 			pr_err("read failed\n\n\n\n");
-		write_register(0x01, &engine->regs->control,
-				(unsigned long)(&engine->regs->control) -
-					(unsigned long)(&engine->regs));
+		// write_register(0x01, &engine->regs->control,
+		// 		(unsigned long)(&engine->regs->control) -
+		// 			(unsigned long)(&engine->regs));
 		write_register(0, &engine->regs->control,
 				(unsigned long)(&engine->regs->control) -
 					(unsigned long)(&engine->regs));
@@ -3686,17 +3683,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		rv = engine_status_read(engine, 1, 1);
 		if (rv)
 			pr_err("read failed\n\n\n\n");
-		// 	pr_err("read failed\n\n\n\n");
-		// write_register(0, &engine->regs->first_desc_lo,
-		// 		(unsigned long)(&engine->regs->first_desc_lo) -
-		// 			(unsigned long)(&engine->regs));
-		// write_register(0, &engine->regs->first_desc_hi,
-		// 		(unsigned long)(&engine->regs->first_desc_hi) -
-		// 			(unsigned long)(&engine->regs));
 
-		rv = engine_status_read(engine, 1, 1);
-		if (rv)
-			pr_err("read failed\n\n\n\n");
 		transfer_destroy(xdev, xfer);
 
 		/* use multiple transfers per request if we could not fit all data within

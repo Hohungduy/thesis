@@ -151,7 +151,8 @@ struct base {
 
 void trigger_engine(int engine_idx);
 int clear_usr_irq(int irq_no);
-
+void *get_region_in(void);
+void *get_region_out(void);
 
 
 int set_engine_base(struct crypto_engine base, int engine_idx);
@@ -168,7 +169,6 @@ void *get_region_ep_addr_out(int engine_idx);
 u64 get_data_ep_addr_out(int engine_idx);
 void *get_region_ep_addr(int engine_idx, int region_idx);
 u64 get_region_data_ep_addr(int engine_idx, int region_idx);
-
 void *get_region_addr(int engine_idx);
 
 // void active_outb_region(int engine_idx, int region_idx);

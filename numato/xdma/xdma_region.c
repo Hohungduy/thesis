@@ -1,6 +1,6 @@
 #include "xdma_region.h"
 
-static struct base region_base;
+struct base region_base;
 
 void trigger_engine(int engine_idx)
 {
@@ -8,23 +8,24 @@ void trigger_engine(int engine_idx)
     iowrite32(trigger_val ^ 0x00000001, &region_base.engine.status->trigger);
 }
 
-void *get_base(void)
+struct base *get_base(void)
 {
     return &region_base;
 }
-EXPORT_SYMBOL_GPL(get_base);
+
+void *get_region_in(void)
+{
+    return region_base.engine.in;
+}
+void *get_region_out(void)
+{
+    return region_base.engine.out;
+}
 
 int set_engine_base(struct crypto_engine base, int engine_idx)
 {
-#ifdef BUFFER
-    if (engine_idx >= ENGINE_NUM)
-        return -1;
-    region_base.engine[engine_idx] = base;
-    return 0;
-#else 
     region_base.engine = base;
     return 0;
-#endif
 }
 
 int clear_usr_irq(int irq_no)

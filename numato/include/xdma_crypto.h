@@ -1,31 +1,41 @@
 #ifndef __xdma_crypto_h__
 #define __xdma_crypto_h__
 
-#include "xdma_mod.h"
 #include <linux/module.h>
-#include "xdma_region.h"
-#include "libxdma_api.h"
 #include "linux/atomic.h"
 #include "linux/workqueue.h"
 #include "linux/kthread.h"
 #include "linux/delay.h"
 #include "linux/list.h"
+#include "linux/kernel.h"
+
+#include "xdma_mod.h"
+#include "libxdma_api.h"
+#include "xdma_region.h"
 #include "stdbool.h"
-// #include "linux/types.h "
 
 #define BUFF_LENGTH (REGION_NUM)
 #define BACKLOG_MAX_LENGTH (50)
 #define AGENT_NUM (1)
-#define CORE_NUM (2)
+#define CORE_NUM (1)
 
 #ifndef TRUE
 #define TRUE (1)
 #endif
 
-
 #ifndef FALSE
 #define FALSE (0)
 #endif
+
+#define COMM_REGION_OFFSET (0x11000)
+#define IN_REGION_OFFSET   (0x00000)
+#define OUT_REGION_OFFSET  (0x10000)
+#define STATUS_REGION_OFFSET (0x20000)
+#define IRQ_REIGON_OFFSET  (0x40000)
+
+#define H2C_TARGET (0)
+#define STATUS_OFFSET (0x40)
+#define CONTROL_OFFSET (0x04)
 
 struct xdma_pci_dev;
 
@@ -148,8 +158,13 @@ struct xmit_handler {
 };
 
 enum agent_status {
-    FREE,
-    BUSY
+    AGENT_STATUS_FREE,
+    AGENT_STATUS_BUSY
+};
+enum XFER_STATUS {
+    XFER_STATUS_FREE,
+    XFER_STATUS_XMIT,
+    XFER_STATUS_RCV
 };
 
 struct crypto_agent {
@@ -173,7 +188,7 @@ struct xdma_crdev {
     int channel_load[CHANNEL_NUM];
 
     struct crypto_agent agent[AGENT_NUM];
-    
+    enum XFER_STATUS xfer_status;
 };
 
 int crdev_create(struct xdma_pci_dev *xpdev);

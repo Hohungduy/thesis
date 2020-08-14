@@ -182,7 +182,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	u32 *tag_outbound;
 	size_t len;
 	u32 i_icv = 0;
-	int i_submit;
+	// int i_submit;
 	printk(KERN_INFO "Module mycrypto: dequeue request (after a period time by using workqueue)\n");
 	
 	// Test resubmit when one packet has been dropped because of dma dump error.
@@ -212,7 +212,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	if (backlog)
 		backlog->complete(backlog, -EINPROGRESS);
 
-handle_req:
+// handle_req:
 	// Step 1: Allocate request for xfer_req (pcie layer)
 	
 	req_xfer = alloc_xfer_req();
@@ -403,7 +403,7 @@ handle_req:
 		*((u32 *)(aead_req->src)),*((u32 *)(aead_req->src) + 1), *((u32 *)(aead_req->src) + 2), *((u32 *)(aead_req->src) + 3),
 		*((u32 *)(aead_req->src) + 4), *((u32 *)(aead_req->src) + 5), *((u32 *)(aead_req->src) + 6), *((u32 *)(aead_req->src) + 7) );
 	
-	pr_err("check sg from pcie   : %x %x %x %x %x %x %x %x %x\n",
+	pr_err("check sg from pcie   : %x %x %x %x %x %x %x %x\n",
 		*((u32 *)(req_xfer->sg_in)),*((u32 *)(req_xfer->sg_in) + 1), *((u32 *)(req_xfer->sg_in) + 2), *((u32 *)(req_xfer->sg_in) + 3),
 		*((u32 *)(req_xfer->sg_in) + 4), *((u32 *)(req_xfer->sg_in) + 5), *((u32 *)(req_xfer->sg_in) + 6), *((u32 *)(req_xfer->sg_in) + 7) );
 		spin_lock_bh(&submit_lock);
@@ -558,10 +558,10 @@ static void handle_timer(struct timer_list *t)
 		   &mydevice->work_data.work);
 }
 
-static void mycrypto_configure(struct mycrypto_dev *mydevice)
-{
-	mydevice->config.engines = 2;
-}
+// static void mycrypto_configure(struct mycrypto_dev *mydevice)
+// {
+// 	mydevice->config.engines = 2;
+// }
 
 /* Adding or Registering algorithm instace of AEAD /SK cipher crypto*/
 static int mycrypto_add_algs(struct mycrypto_dev *mydevice)
