@@ -3503,9 +3503,9 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		}
 	}
 
-	rv = engine_status_read(engine, 1, 1);
-	if (rv)
-		pr_err("read failed\n\n\n\n");
+	// rv = engine_status_read(engine, 1, 1);
+	// if (rv)
+	// 	pr_err("read failed\n\n\n\n");
 	write_register(0, &engine->regs->control,
 			(unsigned long)(&engine->regs->control) -
 				(unsigned long)(&engine->regs));
@@ -3518,7 +3518,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	write_register(0, &engine->sgdma_regs->first_desc_adjacent,
 			(unsigned long)(&engine->sgdma_regs->first_desc_adjacent) -
 				(unsigned long)(&engine->sgdma_regs));
-	rv = engine_status_read(engine, 1, 1);
+	rv = engine_status_read(engine, 1, 0);
 	if (rv)
 		pr_err("read failed\n\n\n\n");
 
@@ -3662,7 +3662,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 
 		engine->desc_used -= xfer->desc_num;
 
-		rv = engine_status_read(engine, 1, 1);
+		rv = engine_status_read(engine, 1, 0);
 		if (rv)
 			pr_err("read failed\n\n\n\n");
 		// write_register(0x01, &engine->regs->control,
@@ -3680,7 +3680,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		write_register(0, &engine->sgdma_regs->first_desc_adjacent,
 				(unsigned long)(&engine->sgdma_regs->first_desc_adjacent) -
 					(unsigned long)(&engine->sgdma_regs));
-		rv = engine_status_read(engine, 1, 1);
+		rv = engine_status_read(engine, 1, 0);
 		if (rv)
 			pr_err("read failed\n\n\n\n");
 

@@ -10,6 +10,10 @@
  */
 
 #include "testcrypto.h"
+#include <linux/timer.h>
+/* get system time */
+#include <linux/jiffies.h> 
+
 
 #define AAAA
 //#define not_free
@@ -26,13 +30,16 @@
 #define  kfree_aaa kfree
 #endif
 
-static unsigned int req_num = 20;
-module_param(req_num, uint, 0000);
-MODULE_PARM_DESC(req_num, "request and number");
 
-static unsigned int loop_num = 20;
-module_param(loop_num, uint, 0000);
-MODULE_PARM_DESC(loop_num, "request and loop number");
+#define TIMEOUT 5000 //miliseconds
+
+// static unsigned int req_num = 20;
+// module_param(req_num, uint, 0000);
+// MODULE_PARM_DESC(req_num, "request and number");
+
+// static unsigned int loop_num = 20;
+// module_param(loop_num, uint, 0000);
+// MODULE_PARM_DESC(loop_num, "request and loop number");
 
 static unsigned int test_choice = 2;
 module_param(test_choice, uint, 0000);
@@ -45,7 +52,8 @@ MODULE_PARM_DESC(cipher_choice, "Choose cipher type: 0 for cbc, 1 for gcm, 2 for
 static unsigned int endec = 1; // 1 for encrypt; 2 for decrypt
 module_param(endec, uint, 0000);
 MODULE_PARM_DESC(endec, "Choose mode: 1 for encrypt and 2 for decrypt");
-//gggg
+// set timer
+static struct timer_list testcrypto_ktimer;
 struct tcrypt_result {
     struct completion completion;
     int err;
@@ -66,35 +74,58 @@ struct aead_def
     struct tcrypt_result result;
     u8 done;
 };
-void print_sg_content(struct scatterlist *sg ,size_t len)
-{
-	char *sg_buffer =NULL; //for printing
-	int i;
-	sg_buffer =kzalloc(len, GFP_KERNEL);
-	len =sg_pcopy_to_buffer(sg,1,sg_buffer,len,0);
-	//pr_aaa("%d: print sg in dequeue function",__LINE__);
-    for(i = 0; i < (len); i +=16)
-    {
-		pr_err("Print sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
-            *((u32 *)(&sg_buffer[i + 12])), *((u32 *)(&sg_buffer[i + 8])), 
-            *((u32 *)(&sg_buffer[i + 4])), *((u32 *)(&sg_buffer[i])));
-    }
-	kfree_aaa(sg_buffer);
-}
-// void print_sg_virt_content(struct scatterlist *sg)
-// {
-//     unsigned int length;
-//     unsigned int i;
-//     char *buf;
-//     buf = sg_virt (sg);
 
-//     for (i = 0; i < length; i += 16)
+u32 count;
+int done_flag = 0; //stop 
+//--------------timer handler---------------------------------------
+static void handle_timer(struct timer_list *t)
+{
+	// printk(KERN_INFO "Module mycrypto: HELLO timer\n\n\n");
+    done_flag = 1;
+    pr_err("Number of req after 5s:%d\n\n", count);
+    
+    // del_timer_sync(&testcrypto_ktimer);
+    // mod_timer(&testcrypto_ktimer, jiffies + msecs_to_jiffies(TIMEOUT));
+}
+
+
+// void print_sg_content(struct scatterlist *sg ,size_t len)
+// {
+// 	char *sg_buffer =NULL; //for printing
+// 	int i;
+// 	sg_buffer =kzalloc(len, GFP_KERNEL);
+// 	len =sg_pcopy_to_buffer(sg,1,sg_buffer,len,0);
+// 	//pr_aaa("%d: print sg in dequeue function",__LINE__);
+//     for(i = 0; i < (len); i +=16)
 //     {
-//         pr_aaa("Print virual sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
-//             *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
-//             *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
+// 		pr_err("Print sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+//             *((u32 *)(&sg_buffer[i + 12])), *((u32 *)(&sg_buffer[i + 8])), 
+//             *((u32 *)(&sg_buffer[i + 4])), *((u32 *)(&sg_buffer[i])));
 //     }
+// 	kfree_aaa(sg_buffer);
 // }
+void print_sg_content(struct scatterlist *sg)
+{
+    unsigned int length;
+    unsigned int i;
+    char *buf;
+
+	if (!sg){
+		pr_err("Print sg failed, sg NULL \n");
+		return;
+	}
+
+    length = sg->length;
+    buf = sg_virt (sg);
+	   pr_err("print sg buffer with length %d\n", length);
+
+    for (i = 0; i < length; i += 16)
+    {
+        pr_err("Print virual sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+            *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
+            *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
+    }
+}
 //--------------------------------------------------------------------------------
 /* Test CBC mode -Type skcipher */
 //-------------------------------------------------------------------------------
@@ -929,6 +960,7 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
 {
     struct tcrypt_result *result = req->data;
     // u8 *done=req->data;
+    // count ++;
     //struct aead_request *req = container_of(base, struct aead_request, base); // for test
     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_rfc4106_cb\n");
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
@@ -936,12 +968,13 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
         return;
     result->err = error;
     complete(&result->completion);
+    
     // pr_aaa("%d: %s - PID:%d - done:%d\n", __LINE__ , __func__ , current->pid , *done);
     // *done=true;
     // pr_aaa("%d: %s - PID:%d - pointer of data : %p\n",__LINE__ , __func__ ,  current->pid , req->data);
     // pr_aaa("%d: %s - PID:%d - done:%d\n", __LINE__ , __func__ , current->pid , *done);
     // pr_aaa("%d: %s - PID:%d - *(req->data):%d\n", __LINE__ , __func__ , current->pid , *(u8*)(req->data));
-    pr_err(KERN_INFO "Module testcrypto: Encryption finishes successfully\n");
+    // pr_err(KERN_INFO "Module testcrypto: Encryption finishes successfully\n");
 }
 
 struct crypto_aead *aead = NULL;
@@ -1180,8 +1213,8 @@ static int test_esp_rfc4106(int test_choice, int endec)
     }
 
     /* Input data will be random */
-    scratchpad = kzalloc(320, GFP_KERNEL | GFP_DMA );
-    memsize += 320;
+    scratchpad = kzalloc(DATA_LENGTH, GFP_KERNEL | GFP_DMA );
+    memsize += DATA_LENGTH;
     countermem +=1;
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     if (!scratchpad) {
@@ -1193,17 +1226,18 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     for (i_data = 0 ; i_data < data_len;i_data++)
     {
-        scratchpad[i_data]=scratchpad_const2[i_data];
+        scratchpad[i_data] = scratchpad_const2[i_data];
     }
 
     //scratchpad_copy = scratchpad; 
     pr_aaa(KERN_INFO "Data payload :\n");
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+    pr_aaa("datale:%d",data_len);
     // for(i_data = 0; i_data < data_len ; i_data +=16)
     // {
-    pr_aaa("data = %8.0x %8.0x %8.0x %8.0x \n",
-            *((u32 *)(&scratchpad[12])),*((u32 *)(&scratchpad[8])), 
-            *((u32 *)(&scratchpad[4])), *((u32 *)(&scratchpad[0])));
+    // pr_aaa("data = %8.0x %8.0x %8.0x %8.0x \n",
+    //         *((u32 *)(&scratchpad[i_data+12])),*((u32 *)(&scratchpad[i_data+8])), 
+    //         *((u32 *)(&scratchpad[i_data+4])), *((u32 *)(&scratchpad[i_data])));
     // }
 
     /*Input authentication tag*/
@@ -1231,8 +1265,8 @@ static int test_esp_rfc4106(int test_choice, int endec)
     // }
     /*Input cipher text content*/
 
-    ciphertext = kzalloc(320, GFP_KERNEL | GFP_DMA );
-    memsize += 320;
+    ciphertext = kzalloc(DATA_LENGTH, GFP_KERNEL | GFP_DMA );
+    memsize += DATA_LENGTH;
     countermem += 1;
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     if (!ciphertext) {
@@ -1255,8 +1289,8 @@ static int test_esp_rfc4106(int test_choice, int endec)
     }
 
     /*Input packet content*/
-    packet = kzalloc(1000,GFP_KERNEL | GFP_DMA);
-    memsize += 1000;
+    packet = kzalloc(PACKET_LENGTH,GFP_KERNEL | GFP_DMA);
+    memsize += PACKET_LENGTH;
     countermem += 1;
     
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
@@ -1337,10 +1371,10 @@ static int test_esp_rfc4106(int test_choice, int endec)
     sg_init_one(ad->sg,packet,assoclen + data_len + authlen);
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
 
-    sg_mark_end(ad->sg);
+    // sg_mark_end(ad->sg);
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
 
-    sg_set_buf(&ad->sg[1],scratchpad,320);// for fall-back cases
+    // sg_set_buf(&ad->sg[1],scratchpad,DATA_LENGTH);// for fall-back cases
     aead_request_set_ad(aead_req , assoclen+ivlen);// 12 means that there are 12 octects ( 96 bits) in AAD fields.
         	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     switch(endec)
@@ -1377,16 +1411,21 @@ static int test_esp_rfc4106(int test_choice, int endec)
     pr_aaa(KERN_INFO "length packets: %d \n", len);
     pr_aaa(KERN_INFO "%d packet - BEFORE function test encrypt:\n", __LINE__);
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    print_sg_content(ad->req->src,len);
-    //print_sg_content(ad->req->src);
+    // print_sg_content(ad->req->src);
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , aead_req->base.data);
     pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , ad->req->base.data);
     /* encrypt data ( 1 for encryption)*/
-    for (i_loop=0; i_loop < loop_num; i_loop++)
-    {
-        ret = test_rfc4106_encdec(ad, endec);
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+    // for (i_loop=0; i_loop < loop_num; i_loop++)
+    // {
+    // while (!done_flag)
+    // {
+    ret = test_rfc4106_encdec(ad, endec);
+    // count ++;
+    // }
+    // print_sg_content(ad->req->src);
+
+    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     
     if (ret){
         pr_aaa("Error encrypting data: %d\n", ret);
@@ -1402,11 +1441,9 @@ static int test_esp_rfc4106(int test_choice, int endec)
             *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
     // }     
     len = (size_t)ad->req->cryptlen + (size_t)ad->req->assoclen+(size_t)authlen ;
-    pr_err("Module testcrypto:Data after test_rfc4106_encdec \n");
-    print_sg_content(ad->req->src,len);
-    }
+    pr_aaa("Module testcrypto:Data after test_rfc4106_encdec \n");
+    // }
     
-    //print_sg_content(ad->req->src);
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
 
@@ -1461,7 +1498,7 @@ out:
         kfree_aaa(scratchpad);
     pr_aaa(KERN_INFO "Module Testcrypto: scratchpad -rfc 4106 after kfree_aaa:\n" );
     //memsize -= ksize(scratchpad);
-    memsize -= 320;
+    memsize -= DATA_LENGTH;
     countermem -= 1;
 
     // if(sg_buffer)
@@ -1499,7 +1536,7 @@ out:
         kfree_aaa(ciphertext);
     pr_aaa(KERN_INFO "Module Testcrypto: ciphertext -rfc4106 after kfree_aaa:\n");
     //memsize -= ksize(ciphertext);
-    memsize -= 320;
+    memsize -= DATA_LENGTH;
     countermem -= 1;
 
     if(ad)
@@ -1521,7 +1558,7 @@ static int __init test_init(void)
     //int test_choice = 2;
     //int engine_type = 0; // 0 for software, 1 for instruction set,2 for hardware engine
     //int endec = MODE_DIR_ENCRYPT;
-    pr_err(KERN_INFO "Module testcrypto: info: init test \n Pid: %d", current->pid);
+    // pr_err(KERN_INFO "Module testcrypto: info: init test \n Pid: %d", current->pid);
     /* for gcm(aes) - test aead and rfc4106(gcm(aes)) - test gcm*/
     switch (test_choice)
     {
@@ -1688,7 +1725,12 @@ static int __init test_init(void)
             }
             break;
     }
-    for (i = 0; i < req_num; i ++){
+    // Set up timer and callback handler (using for testing).
+	timer_setup(&testcrypto_ktimer,handle_timer,0);
+    // setup timer interval to based on TIMEOUT Macro
+    mod_timer(&testcrypto_ktimer, jiffies + 5*HZ);
+
+    // for (i = 0; i < req_num; i ++){
         // if (cipher_choice == 0)
         //     test_skcipher();
         // else if (cipher_choice == 1)
@@ -1696,21 +1738,24 @@ static int __init test_init(void)
         // else if (cipher_choice == 2)
         //     test_rfc4106(test_choice,endec); 
         // else 
-        if (cipher_choice == 3)
-            {
-                test_esp_rfc4106(test_choice,endec);
+    while(!done_flag)
+        {
+    if (cipher_choice == 3)
+    {
+        test_esp_rfc4106(test_choice,endec);
                 // mdelay(300);
-                pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-                pr_err("------------------------Number of req-------------------: %d\n",i);
-            }
-
+                // pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+                // pr_err("------------------------Number of req-------------------: %d\n",count);
+                count ++;
     }
+        }
     return 0;
 }
 
 static void __exit test_exit(void)
 {
     pr_aaa(KERN_INFO "Module testcrypto: info: exit test\n");
+    del_timer_sync(&testcrypto_ktimer);
 }
 
 module_init(test_init);

@@ -79,7 +79,7 @@ int mycrypto_compare_icv(u32 *tag_out, u32 *tag_in)
 	{
 		if((tag_out[i]) == (tag_in[i]))
 			success ++;
-		pr_err("Chunk:%d tag_in: %8.0x tag_out:%8.0x\n",i, tag_in[i],tag_out[i]);
+		// pr_err("Chunk:%d tag_in: %8.0x tag_out:%8.0x\n",i, tag_in[i],tag_out[i]);
 		// pr_err("tag in:%x - Chunk:%d",tag_in[i],i);
 		// pr_err("success value in loop:%d\n", success);
 	}
@@ -132,7 +132,7 @@ void set_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req
 	ctx = *(struct mycrypto_cipher_op *)crypto_tfm_ctx(req->base.tfm);
 	req_xfer->ctx.ctx_op = ctx;
 	req_xfer->base = base;
-	pr_info("%d : set_xfer_mycryptocontext",__LINE__);
+	// pr_info("%d : set_xfer_mycryptocontext",__LINE__);
 	
 }
 static inline void mycrypto_handle_result(struct crypto_async_request *base, int ret)
@@ -140,9 +140,9 @@ static inline void mycrypto_handle_result(struct crypto_async_request *base, int
 	struct mycrypto_req_operation *opr_ctx;
 	bool should_complete=true;
 	//req = mydevice->req;//prototype ( retrieve from complete queue)
-	printk(KERN_INFO "Module mycrypto: handle result\n");
+	// printk(KERN_INFO "Module mycrypto: handle result\n");
 	opr_ctx = crypto_tfm_ctx(base->tfm);
-	pr_aaa("%d:%s: size of mycrypto_req_operation:%d",__LINE__,__func__,sizeof(struct mycrypto_req_operation));
+	// pr_aaa("%d:%s: size of mycrypto_req_operation:%d",__LINE__,__func__,sizeof(struct mycrypto_req_operation));
 	// ret = opr_ctx->handle_result(base, &should_complete);
 
 	if (should_complete) 
@@ -152,7 +152,7 @@ static inline void mycrypto_handle_result(struct crypto_async_request *base, int
 			local_bh_enable();
 	}
 		
-	printk(KERN_INFO "Module mycrypto: callback successfully \n");
+	// printk(KERN_INFO "Module mycrypto: callback successfully \n");
 
 }
 
@@ -161,18 +161,22 @@ struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *my
 {
 	struct crypto_async_request *base;//asyn_req
 	*backlog = crypto_get_backlog(&mydevice->queue);
-	pr_err("Backlog pointer: %p",*backlog);
+	// pr_err("Backlog pointer: %p",*backlog);
 	base = crypto_dequeue_request(&mydevice->queue);
 	if (!base)
 		return NULL;
 	return base;
 }
 
+struct xfer_req req_xfer_;
+u32 tag_buff[16/4];
+
 void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 {
 	struct crypto_async_request *base = NULL, *backlog = NULL;
 	// struct mycrypto_req_operation *opr_ctx;
-	struct xfer_req *req_xfer = NULL;
+	struct xfer_req *req_xfer = &req_xfer_;
+	// struct xfer_req *req_xfer;
 	struct aead_request *aead_req ;
 	u8 *buff;
 	int res;
@@ -181,20 +185,6 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	__le32 key_tmp[8];
 	u32 *tag_outbound;
 	size_t len;
-	u32 i_icv = 0;
-	// int i_submit;
-	printk(KERN_INFO "Module mycrypto: dequeue request (after a period time by using workqueue)\n");
-	
-	// Test resubmit when one packet has been dropped because of dma dump error.
-	/* If a request wasn't properly dequeued because of a lack of resources,
-	 * proceeded it first,
-	 */
-	// base = mydevice->req;// get req from current request stored in struct device
-	// // backlog=mydevice->backlog;
-	// if (base)
-	// {
-	// 	goto handle_req;
-	// }
 
 	/*Get request from crypto queue*/
 	spin_lock_bh(&mydevice->queue_lock);
@@ -202,7 +192,6 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		{
 			base = mycrypto_dequeue_req_locked(mydevice, &backlog);
 			mydevice->req = base;
-			// mydevice->backlog=backlog;
 		}
 	spin_unlock_bh(&mydevice->queue_lock);
 
@@ -212,42 +201,19 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	if (backlog)
 		backlog->complete(backlog, -EINPROGRESS);
 
-// handle_req:
-	// Step 1: Allocate request for xfer_req (pcie layer)
-	
-	req_xfer = alloc_xfer_req();
-    if (!req_xfer)
+	// req_xfer = alloc_xfer_req();
+	if (!req_xfer)
 	{
 		return ;
 	}
-
 	aead_req = aead_request_cast(base);
-	//Step 2: Set value for req_xfer
-    
-	//Set sg_in, sg_out in struct req_xfer
-	
-	//Set callback function to process request from pcie layer
 	set_callback(req_xfer, &handle_crypto_xfer_callback);
-
-	//Set neccesary context data for transfer request(req_xfer)
 	set_xfer_mycryptocontext(base, req_xfer);
-
-	//Print content of scattergather-list
-	pr_err("%d :Module mycrypto:print sg content in dequeue function\n",__LINE__);
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
-	print_sg_content(aead_req->src);
-
-	// Get buf from list
 	buff = sg_virt (aead_req->src);
-	pr_info("%d : set buf",__LINE__);
 	sg_init_one(&req_xfer->sg, buff , aead_req->src->length);
 	sg_init_one(&req_xfer->sg_rcv, buff , aead_req->src->length);
 	set_sg(req_xfer, &req_xfer->sg);
-	/*Set value for struct region in*/
-	//Struct region is temporary variable
-
-	// INFO
-	pr_info("%d :Module mycrypto: set info\n",__LINE__);
 	for (i = 0; i <=2; i++)
 	{
 		region_in.crypto_dsc.info.free_space[i]=0x00000000;//16 Byte MSB 0
@@ -272,32 +238,6 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 
 	//ICV-AUTHENTAG
 	memcpy(region_in.crypto_dsc.icv , buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen , ICV_SIZE);
-	pr_info("%d :Module mycrypto: icv set\n",__LINE__);
-	//print icv (authetication tag in struct region_in) after being set
-	pr_err("region_in.crypto_dsc.icv = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i_icv ,
-			(region_in.crypto_dsc.icv[i_icv + 3]),(region_in.crypto_dsc.icv[i_icv + 2]), 
-            (region_in.crypto_dsc.icv[i_icv + 1]),(region_in.crypto_dsc.icv[i_icv]));
-	
-	//KEY
-	//print context for key
-	for (i = 0; i < KEYMEM/4 ; i+=4)
-    {
-        pr_aaa("req_xfer->ctx.ctx_op.key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
-			(req_xfer->ctx.ctx_op.key[i + 3]),(req_xfer->ctx.ctx_op.key[i + 2]), 
-            (req_xfer->ctx.ctx_op.key[i + 1]),(req_xfer->ctx.ctx_op.key[i]));
-    }
-	//copy key to key_tmp
-	/*
-		128 bit key:
-					16 Byte MSB: 0x00000000 00000000 00000000 00000000
-					16 Byte LSB: Key(16 Bytes) stored in context data of req_xfer
-		192 bit Key:
-					16 Byte MSB: 0x00000000 00000000 Key(8 Bytes MSB)
-					16 Byte LSB: Key(16 Bytes LSB) stored in context data of req_xfer
-		256 bit Key:
-					16 Byte MSB: Key (MSB)
-					16 Byte LSB: Key (LSB)
-	*/
 	switch (req_xfer->ctx.ctx_op.keylen)
 	{
 		case 16:
@@ -331,28 +271,10 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	key = key_tmp;
 
 	memcpy(region_in.crypto_dsc.key,key,KEY_SIZE);
-	pr_info("%d :Module mycrypto: key set\n",__LINE__);
-	//print key stored in region_in
-	for (i = 0; i < KEYMEM/4 ; i+=4)
-    {
-        pr_aaa("region_in.crypto_dsc.key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
-			(region_in.crypto_dsc.key[i + 3]), (region_in.crypto_dsc.key[i + 2]), 
-            (region_in.crypto_dsc.key[i + 1]), (region_in.crypto_dsc.key[i]));
-    }
-
-	//IV
 	region_in.crypto_dsc.iv.nonce = req_xfer->ctx.ctx_op.nonce;
-	// region_in.crypto_dsc.iv.iv[1] = cpu_to_be32(*(u32 *)(&req_xfer->ctx.ctx_op.iv[0]));// Little edian with ESP4
-	// region_in.crypto_dsc.iv.iv[0] = cpu_to_be32(*(u32 *)(&req_xfer->ctx.ctx_op.iv[4]));// Little edian with ESP4
 	region_in.crypto_dsc.iv.iv[1] = cpu_to_be32(*(u32 *)(buff + region_in.crypto_dsc.info.aadsize));// Little edian with ESP4
 	region_in.crypto_dsc.iv.iv[0] = cpu_to_be32(*(u32 *)(buff + region_in.crypto_dsc.info.aadsize + 4));// Little edian with ESP4
-	// memcpy(region_in.crypto_dsc.iv.iv , buff + region_in.crypto_dsc.info.aadsize , 8);
 	region_in.crypto_dsc.iv.tail = 0x00000001;
-	pr_err("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",req_xfer->ctx.ctx_op.iv,  
-            *((u32 *)(&req_xfer->ctx.ctx_op.iv[4])), *((u32 *)(&req_xfer->ctx.ctx_op.iv[0])));
-    pr_err("Module mycrypto:region_in.crypto_dsc.iv.iv - data =  %8.0x %8.0x \n",  
-            (region_in.crypto_dsc.iv.iv[1]), (region_in.crypto_dsc.iv.iv[0]));
-    
 	//AAD
 	for (i = 0; i < region_in.crypto_dsc.info.aadsize /4 ; i++)
 	{
@@ -363,25 +285,13 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	{
 		region_in.crypto_dsc.aad[i] = 0x00000000;// 4 or 8 Bytes MSB is 0x
 	}
-	pr_err("region_in.crypto_dsc.aad  , data =  %8.0x %8.0x %8.0x %8.0x \n",
-			(region_in.crypto_dsc.aad[3]), (region_in.crypto_dsc.aad[2]), 
-            (region_in.crypto_dsc.aad[1]), (region_in.crypto_dsc.aad[0]));
-	
-    // Set value for crypto descryption in request memory layout
-    // INFO
     req_xfer->crypto_dsc.info = region_in.crypto_dsc.info;
-    // ICV
     memcpy(req_xfer->crypto_dsc.icv, region_in.crypto_dsc.icv, ICV_SIZE); 
-    // KEY
     memcpy(req_xfer->crypto_dsc.key, region_in.crypto_dsc.key, KEY_SIZE); 
-    //IV
     req_xfer->crypto_dsc.iv = region_in.crypto_dsc.iv;
-    // AAD
     memcpy(req_xfer->crypto_dsc.aad, region_in.crypto_dsc.aad, AAD_SIZE); 
-
-    // Set outbound data - TAG
-	tag_outbound = kzalloc(16, GFP_ATOMIC | GFP_KERNEL);
-
+	tag_outbound = tag_buff;
+	// tag_outbound = kzalloc(16, GFP_ATOMIC | GFP_KERNEL);
 	if (region_in.crypto_dsc.info.length % 16 == 0)
 	    set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
 	else 
@@ -389,41 +299,16 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	
 
     // Step 3: Submit to card
-	pr_err("--------- sg info --------\n");
-    
-    pr_err("nents = %d, addr = %p, lenth = %d\n", sg_nents( req_xfer->sg_in), sg_virt( req_xfer->sg_in),req_xfer->sg_in->length);
-    
-    pr_err("--------- sg info --------\n");
-	
-	// for (i_submit = 0; i_submit < 5; i_submit++)
-	// {
-	pr_err("sizeof sg from network:%d \n",sizeof(*(aead_req->src)));
-	pr_err("sizeof sg from network:%d \n",sizeof(*(req_xfer->sg_in)));	
-	pr_err("check sg from network: %x %x %x %x %x %x %x %x\n", 
-		*((u32 *)(aead_req->src)),*((u32 *)(aead_req->src) + 1), *((u32 *)(aead_req->src) + 2), *((u32 *)(aead_req->src) + 3),
-		*((u32 *)(aead_req->src) + 4), *((u32 *)(aead_req->src) + 5), *((u32 *)(aead_req->src) + 6), *((u32 *)(aead_req->src) + 7) );
-	
-	pr_err("check sg from pcie   : %x %x %x %x %x %x %x %x\n",
-		*((u32 *)(req_xfer->sg_in)),*((u32 *)(req_xfer->sg_in) + 1), *((u32 *)(req_xfer->sg_in) + 2), *((u32 *)(req_xfer->sg_in) + 3),
-		*((u32 *)(req_xfer->sg_in) + 4), *((u32 *)(req_xfer->sg_in) + 5), *((u32 *)(req_xfer->sg_in) + 6), *((u32 *)(req_xfer->sg_in) + 7) );
-		spin_lock_bh(&submit_lock);
-		res = xdma_xfer_submit_queue(req_xfer);
-		spin_unlock_bh(&submit_lock);
-	
-	// }
-
+	res = xdma_xfer_submit_queue(req_xfer);
 	if (res != -EINPROGRESS)
         pr_err("Unusual result\n");
-	// Set req and backlog here........
-    pr_aaa("%d: Module mycrypto : submitted req %d \n",__LINE__,i);
-		
 }
 
 static void mycrypto_dequeue_work(struct work_struct *work)
 {
 	struct mycrypto_work_data *data =
 			container_of(work, struct mycrypto_work_data, work);
-	pr_aaa("%d:%s - Data pointer:%p; mydevice pointer:%p",__LINE__,__func__,data,data->mydevice);
+	// pr_aaa("%d:%s - Data pointer:%p; mydevice pointer:%p",__LINE__,__func__,data,data->mydevice);
 	mycrypto_dequeue_req(data->mydevice);
 }
 
@@ -449,10 +334,10 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		pr_aaa("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return res;
 	}
-	pr_err("Complete with res = %d ! This is callback function! \n", res);
-	pr_info("Module mycrypto: handle callback function from pcie layer \n");
-	pr_err("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",data->ctx.ctx_op.iv,  
-            *((u32 *)(&data->ctx.ctx_op.iv[4])), *((u32 *)(&data->ctx.ctx_op.iv[0])));
+	// pr_err("Complete with res = %d ! This is callback function! \n", res);
+	// pr_info("Module mycrypto: handle callback function from pcie layer \n");
+	// pr_err("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",data->ctx.ctx_op.iv,  
+    //         *((u32 *)(&data->ctx.ctx_op.iv[4])), *((u32 *)(&data->ctx.ctx_op.iv[0])));
 	
 	// Step 5: Do your things - Here we print the data out
     if (res == -1)
@@ -462,10 +347,9 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	}
     buf = sg_virt (sg);
 	
-	
 	// Set buffer for AAD to insert to the first 8/12 Bytes in sg_out
 	buf_aad = (u8 *)(&data->crypto_dsc.aad);
-	pr_info("buf_aad: %x %x %x %x %x %x %x %x %x %x %x %x\n", buf_aad[0],buf_aad[1],buf_aad[2],buf_aad[3],buf_aad[4],buf_aad[5],buf_aad[6],buf_aad[7],buf_aad[8],buf_aad[9],buf_aad[10],buf_aad[11]);
+	// pr_info("buf_aad: %x %x %x %x %x %x %x %x %x %x %x %x\n", buf_aad[0],buf_aad[1],buf_aad[2],buf_aad[3],buf_aad[4],buf_aad[5],buf_aad[6],buf_aad[7],buf_aad[8],buf_aad[9],buf_aad[10],buf_aad[11]);
 	//Invert the Byte order of AAD buffer
 	for (i = 0; i < (data->crypto_dsc.info.aadsize/2); i++)
 	{
@@ -473,12 +357,12 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_aad[i] = buf_aad[data->crypto_dsc.info.aadsize -1 - i];
 		buf_aad[data->crypto_dsc.info.aadsize -1 - i] = tmp;
 	}
-	pr_info("buf_aad: %x %x %x %x %x %x %x %x %x %x %x %x\n", buf_aad[0],buf_aad[1],buf_aad[2],buf_aad[3],buf_aad[4],buf_aad[5],buf_aad[6],buf_aad[7],buf_aad[8],buf_aad[9],buf_aad[10],buf_aad[11]);
-	
+	// pr_info("buf_aad: %x %x %x %x %x %x %x %x %x %x %x %x\n", buf_aad[0],buf_aad[1],buf_aad[2],buf_aad[3],buf_aad[4],buf_aad[5],buf_aad[6],buf_aad[7],buf_aad[8],buf_aad[9],buf_aad[10],buf_aad[11]);
 	
 	// Set buffer for iv to insert to the following 8 Bytes in sg_out
 	buf_iv = (u8 *)(&data->crypto_dsc.iv.iv);
-	pr_info("buf_iv: %x %x %x %x %x %x %x %x \n", buf_iv[0],buf_iv[1],buf_iv[2],buf_iv[3],buf_iv[4],buf_iv[5],buf_iv[6],buf_iv[7]);
+	// pr_info("buf_iv: %x %x %x %x %x %x %x %x \n", buf_iv[0],buf_iv[1],buf_iv[2],buf_iv[3],buf_iv[4],buf_iv[5],buf_iv[6],buf_iv[7]);
+	
 	//Inver tbyte order of iv Buffer
 	for(i = 0; i < 4; i++)
 	{
@@ -486,9 +370,8 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_iv[i] = buf_iv[7-i];
 		buf_iv[7-i] = tmp;
 	}
-	pr_info("buf_iv: %x %x %x %x %x %x %x %x \n", buf_iv[0],buf_iv[1],buf_iv[2],buf_iv[3],buf_iv[4],buf_iv[5],buf_iv[6],buf_iv[7]);
+	// pr_info("buf_iv: %x %x %x %x %x %x %x %x \n", buf_iv[0],buf_iv[1],buf_iv[2],buf_iv[3],buf_iv[4],buf_iv[5],buf_iv[6],buf_iv[7]);
 	
-
 	// Copy two buffer into buffer of sg list
 	memcpy(buf,buf_aad,data->crypto_dsc.info.aadsize);
 	memcpy(buf + data->crypto_dsc.info.aadsize,buf_iv,8);
@@ -499,9 +382,9 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 
 	// Copy authentication tag from buffer (sg_out)
 	memcpy(buf + data->ctx.ctx_op.cryptlen + data->ctx.ctx_op.assoclen, data->tag,ICV_SIZE);
-    pr_err("tag = %8.0x %8.0x %8.0x %8.0x \n", 
-            *(data->tag + 3), *(data->tag + 2),
-            *(data->tag + 1), *(data->tag));
+    // pr_err("tag = %8.0x %8.0x %8.0x %8.0x \n", 
+    //         *(data->tag + 3), *(data->tag + 2),
+    //         *(data->tag + 1), *(data->tag));
 	
 	// Compare two authentication tag
 	if(data->ctx.ctx_op.dir == 0)
@@ -517,27 +400,27 @@ err_busy:
 
 	// }
 
-	switch (ret)
-	{
-		case 0:
-			pr_err("%d:%s:Return value in callback: Done Successfully",__LINE__ , __func__ );
-			break;
-		case -1:
-			pr_err("%d:%s:Return value in callback function: DMA Busy",__LINE__ , __func__ );
-			break;
-		case -74:
-			pr_err("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
-			break;
-	}
+	// switch (ret)
+	// {
+	// 	case 0:
+	// 		pr_err("%d:%s:Return value in callback: Done Successfully",__LINE__ , __func__ );
+	// 		break;
+	// 	case -1:
+	// 		pr_err("%d:%s:Return value in callback function: DMA Busy",__LINE__ , __func__ );
+	// 		break;
+	// 	case -74:
+	// 		pr_err("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
+	// 		break;
+	// }
 	queue_work(mydevice->workqueue,&mydevice->work_data.work);
 		   	
-	if(data->tag)
-		kfree(data->tag);
+	// if(data->tag)
+	// 	kfree(data->tag);
 	// free_xfer_req(data); // data is xfer_req
-	kfree(data);
+	// if(data)
+	// 	kfree(data);
 	return res;
 }
-
 
 //--------------timer handler---------------------------------------
 static void handle_timer(struct timer_list *t)

@@ -39,10 +39,10 @@
  *  all of the bars
  */
 //#define XDMA_CONFIG_BAR_NUM	1
-#define __LIBXDMA_DEBUG__ 1
+// #define __LIBXDMA_DEBUG__ 1
 
 /* Switch debug printing on/off */
-#define XDMA_DEBUG 0
+// #define XDMA_DEBUG 0
 
 /* SECTION: Preprocessor macros/constants */
 #define XDMA_BAR_NUM (6)

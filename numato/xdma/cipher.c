@@ -344,7 +344,7 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	struct mycrypto_dev *mydevice;
 	int ret;
 
-	printk(KERN_INFO "Module mycrypto: enqueue request\n");
+	// printk(KERN_INFO "Module mycrypto: enqueue request\n");
 	ctx = crypto_tfm_ctx(base->tfm);
 	mydevice = ctx->mydevice;
 
@@ -387,7 +387,7 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	// dequeue using workqueue
 	queue_work(mydevice->workqueue,
 		   &mydevice->work_data.work);
-    
+    // ret = 0;
 	// dequeue without using workqueue (testing ...)
 	//mycrypto_dequeue_req(mydevice);
 	return ret;
@@ -425,7 +425,7 @@ static int my_crypto_aead_gcm_encrypt(struct aead_request *aead_req)
 {	
 	int ret;
 
-	printk(KERN_INFO "Module mycrypto: mycrypto_aead_gcm_encrypt \n");
+	// printk(KERN_INFO "Module mycrypto: mycrypto_aead_gcm_encrypt \n");
 		/* checking the number of entries in scattergather list */
             	
 	ret = mycrypto_aead_req_init(aead_req);
@@ -443,7 +443,7 @@ static int my_crypto_aead_gcm_decrypt(struct aead_request *aead_req)
 	//struct skcipher_request *req = skcipher_request_cast(base);
 	//struct mycrypto_cipher_req *req_ctx = skcipher_request_ctx(req);
 	ret = mycrypto_aead_req_init(aead_req);
-	printk(KERN_INFO "Module mycrypto: mycrypto_aead_gcm_decrypt \n");
+	// printk(KERN_INFO "Module mycrypto: mycrypto_aead_gcm_decrypt \n");
 	if (ret)
 		printk(KERN_INFO "ERROR SRC/DEST NUMBER OF ENTRY\n");
 	return mycrypto_queue_aead_req(&aead_req->base,
@@ -456,7 +456,7 @@ static int my_crypto_aead_gcm_cra_init(struct crypto_tfm *tfm)
 	struct mycrypto_alg_template *tmpl =
 		container_of(tfm->__crt_alg, struct mycrypto_alg_template,
 			     alg.aead.base);
-	printk(KERN_INFO "Module mycrypto: my_crypto_aead_cra_init \n");
+	// printk(KERN_INFO "Module mycrypto: my_crypto_aead_cra_init \n");
 	// it means that tfm->__crt_alg
 	crypto_skcipher_set_reqsize(__crypto_skcipher_cast(tfm),
 				    sizeof(struct mycrypto_cipher_req));
@@ -491,7 +491,7 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 	/* @aes: The location where the processing key (computed key) will be store*/
 	// u32 hashkey[AES_BLOCK_SIZE >> 2];
 	int ret,i;
-	printk(KERN_INFO "GCM_SETKEY");
+	// printk(KERN_INFO "GCM_SETKEY");
 	ret = crypto_aes_expand_key(&aes, key,len);
 	// get key and let it adapt standard criteria of aes, then store it into struct aes.
 	if (ret) {
@@ -501,22 +501,22 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 	}
 	// copy key stored in aes to ctx
 	//ctx->keylen = (aes.key_length-16)/4;
-	for (i = 0; i < 20 ; i+=4)
-    {
-        pr_err("file cipher.c:key = %3.3x , data =  %x %x %x %x \n", i ,
-			(key[i + 3]),(key[i + 2]), 
-            (key[i + 1]),(key[i]));
-    }
+	// for (i = 0; i < 20 ; i+=4)
+    // {
+    //     pr_err("file cipher.c:key = %3.3x , data =  %x %x %x %x \n", i ,
+	// 		(key[i + 3]),(key[i + 2]), 
+    //         (key[i + 1]),(key[i]));
+    // }
 	ctx->keylen=len;
 	for(i = 0; i < len/sizeof(u32); i++)
 		// ctx->key[i] = cpu_to_le32(aes.key_enc[i]);
 		ctx->key[i] = cpu_to_be32(aes.key_enc[i]);//Test
-	for (i = 0; i < 8 ; i+=4)
-    {
-        pr_err("file cipher.c:ctx->key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
-			(ctx->key[i + 3]),(ctx->key[i + 2]), 
-            (ctx->key[i + 1]),(ctx->key[i]));
-    }
+	// for (i = 0; i < 8 ; i+=4)
+    // {
+    //     pr_err("file cipher.c:ctx->key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
+	// 		(ctx->key[i + 3]),(ctx->key[i + 2]), 
+    //         (ctx->key[i + 1]),(ctx->key[i]));
+    // }
 	
 	//Beside, it is not necessary to fill aes.key_dec.
 	//If you wanna continue, just refer to setkey function for skcipher 
