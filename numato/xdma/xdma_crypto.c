@@ -367,8 +367,8 @@ int callback_task(void *data)
     int res;
     while (true) {
         wait_event_interruptible(crdev->cb_wq, 
-          ( req = list_first_entry(&crdev->cb_queue, struct xfer_req, list) ));
-
+          ( !list_empty(&crdev->cb_queue) ));
+        pr_err("callback_task  \n");
         spin_lock_bh(&crdev->agent_lock);
         req = list_first_entry(&crdev->cb_queue, 
             struct xfer_req, list);
@@ -377,6 +377,7 @@ int callback_task(void *data)
         spin_unlock_bh(&crdev->agent_lock);
 
         local_bh_disable();
+        pr_err("callback  \n");
         if (req->crypto_complete)
                 res = req->crypto_complete(req, req->res);
         local_bh_enable();
@@ -402,10 +403,12 @@ int crypto_task(void *data)
 
     while (true) {
         wait_event_interruptible(crdev->crypto_wq,
-            ( req = list_first_entry(&crdev->req_queue, struct xfer_req, list)));
+            ( !list_empty(&crdev->req_queue) ));
 
         // remove first req from backlog
         spin_lock_bh(&crdev->agent_lock);
+        req = list_first_entry(&crdev->req_queue, 
+            struct xfer_req, list);
         list_del(&req->list);
         spin_unlock_bh(&crdev->agent_lock);
     
@@ -429,12 +432,11 @@ int crypto_task(void *data)
         sgt.nents = 1;
 
         reinit_completion(&crdev->encrypt_done);
-
+        pr_err("%s:%d\n", __func__, __LINE__);
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
         if (req->res < 0)
         {
-
             goto xmit_failed;
         }
 
@@ -472,7 +474,7 @@ int crypto_task(void *data)
         sgt.sgl = req->sg_out;
         sgt.orig_nents = 1;
         sgt.nents = 1;
-
+        pr_err("%s:%d\n", __func__, __LINE__);
         switch (req->crypto_dsc.info.aadsize)
         {
             case 8:
@@ -487,18 +489,21 @@ int crypto_task(void *data)
         }
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
+        pr_err("%s:%d\n", __func__, __LINE__);
         if (req->res < 0)
         {
             goto rcv_failed;
         }
         // TAG
+        pr_err("%s:%d\n", __func__, __LINE__);
         memcpy_fromio(req->tag, 
             BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
-
+        pr_err("%s:%d\n", __func__, __LINE__);
         spin_lock_bh(&crdev->agent_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock_bh(&crdev->agent_lock);
-
+        pr_err("%s:%d\n", __func__, __LINE__);
+        wake_up(&crdev->cb_wq);
         continue;
 err_aadsize:
         pr_err("------------------  AAD_SIZE  ---------------\n");
@@ -508,7 +513,7 @@ err_aadsize:
         spin_unlock_bh(&crdev->agent_lock);
         debug_mem_in();
         debug_mem_out();
-        wake_up_interruptible(&crdev->cb_wq);
+        wake_up(&crdev->cb_wq);
         pr_err("------------------  AAD_SIZE ---------------\n");
         continue;
 
@@ -519,7 +524,7 @@ xmit_failed:
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock_bh(&crdev->agent_lock);
         debug_mem_in();
-        wake_up_interruptible(&crdev->cb_wq);
+        wake_up(&crdev->cb_wq);
         pr_err("------------------  XMIT FAILED ---------------\n");
         continue;
 
@@ -531,7 +536,7 @@ rcv_failed:
         spin_unlock_bh(&crdev->agent_lock);
         debug_mem_in();
         debug_mem_out();
-        wake_up_interruptible(&crdev->cb_wq);
+        wake_up(&crdev->cb_wq);
         pr_err("------------------  RCV FAILED ---------------\n");
         continue;
     }
@@ -584,21 +589,21 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     spin_lock_init(&crdev->agent_lock);
     INIT_LIST_HEAD(&crdev->req_queue);
     INIT_LIST_HEAD(&crdev->cb_queue);
-    // init_waitqueue_head(&crdev->crypto_wq);
-    // init_waitqueue_head(&crdev->cb_wq);
+    init_waitqueue_head(&crdev->crypto_wq);
+    init_waitqueue_head(&crdev->cb_wq);
 
-    // init_completion(&crdev->encrypt_done);
+    init_completion(&crdev->encrypt_done);
 
-    // crdev->crypto_task = kthread_create_on_node(crypto_task, crdev, 
-    //         cpu_to_node(DEFAULT_CORE), "crypto_task");
-    // crdev->callback_task = kthread_create_on_node(callback_task, crdev, 
-    //         cpu_to_node(DEFAULT_CORE), "cb_task");
+    crdev->crypto_task = kthread_create_on_node(crypto_task, crdev, 
+            cpu_to_node(DEFAULT_CORE), "crypto_task");
+    crdev->callback_task = kthread_create_on_node(callback_task, crdev, 
+            cpu_to_node(DEFAULT_CORE), "cb_task");
     // // Wake up routine
-    // wake_up_process(crdev->crypto_task);
-    // wake_up_process(crdev->callback_task);
+    wake_up_process(crdev->crypto_task);
+    wake_up_process(crdev->callback_task);
 
     // //init user_irq
-    // xdma_user_isr_enable(xpdev->xdev, 0x01);
+    xdma_user_isr_enable(xpdev->xdev, 0x01);
     // timer
     mod_timer(&crdev->blinky.timer, 
         jiffies + (unsigned int)(crdev->blinky.interval*HZ));
@@ -628,11 +633,11 @@ void crdev_cleanup(void)
         list_del(p);
         kfree(req);
     }
+    spin_unlock_irq(&crdev->agent_lock);
 
     kthread_stop(crdev->crypto_task);
     kthread_stop(crdev->callback_task);
 
-    spin_unlock_irq(&crdev->agent_lock);
 
 }
 
@@ -653,7 +658,7 @@ int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
     list_add_tail(&xfer_req->list, req_queue);
     spin_unlock_bh(&crdev->agent_lock);
     
-    wake_up_interruptible(&crdev->crypto_wq);
+    wake_up(&crdev->crypto_wq);
     return -EINPROGRESS;
 }
 
