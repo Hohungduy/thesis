@@ -77,7 +77,7 @@ int mycrypto_compare_icv(u32 *tag_out, u32 *tag_in)
 	int i;
 	for (i = 0; i < 4; i++)
 	{
-		if((tag_out[i]) == (tag_in[i]))
+		if(tag_out[i] == tag_in[i])
 			success ++;
 		// pr_err("Chunk:%d tag_in: %8.0x tag_out:%8.0x\n",i, tag_in[i],tag_out[i]);
 		// pr_err("tag in:%x - Chunk:%d",tag_in[i],i);
@@ -139,21 +139,13 @@ static inline void mycrypto_handle_result(struct crypto_async_request *base, int
 {
 	struct mycrypto_req_operation *opr_ctx;
 	bool should_complete=true;
-	//req = mydevice->req;//prototype ( retrieve from complete queue)
-	// printk(KERN_INFO "Module mycrypto: handle result\n");
 	opr_ctx = crypto_tfm_ctx(base->tfm);
-	// pr_aaa("%d:%s: size of mycrypto_req_operation:%d",__LINE__,__func__,sizeof(struct mycrypto_req_operation));
-	// ret = opr_ctx->handle_result(base, &should_complete);
-
 	if (should_complete) 
 	{
 			local_bh_disable();
 			base->complete(base, ret);
 			local_bh_enable();
 	}
-		
-	// printk(KERN_INFO "Module mycrypto: callback successfully \n");
-
 }
 
 struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *mydevice,
@@ -161,7 +153,6 @@ struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *my
 {
 	struct crypto_async_request *base;//asyn_req
 	*backlog = crypto_get_backlog(&mydevice->queue);
-	// pr_err("Backlog pointer: %p",*backlog);
 	base = crypto_dequeue_request(&mydevice->queue);
 	if (!base)
 		return NULL;
@@ -210,30 +201,30 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	set_callback(req_xfer, &handle_crypto_xfer_callback);
 	set_xfer_mycryptocontext(base, req_xfer);
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
-	buff = sg_virt (aead_req->src);
+	buff = sg_virt(aead_req->src);
 	sg_init_one(&req_xfer->sg, buff , aead_req->src->length);
-	sg_init_one(&req_xfer->sg_rcv, buff , aead_req->src->length);
-	set_sg(req_xfer, &req_xfer->sg);
+	set_sg_in(req_xfer, &req_xfer->sg);
+	set_sg_out(req_xfer, &req_xfer->sg);
 	for (i = 0; i <=2; i++)
 	{
 		region_in.crypto_dsc.info.free_space[i]=0x00000000;//16 Byte MSB 0
 	}
-		region_in.crypto_dsc.info.free_space_ = 0; // 1bit 0
-		region_in.crypto_dsc.info.direction = req_xfer->ctx.ctx_op.dir; //1 bit direction
-		region_in.crypto_dsc.info.length = req_xfer->ctx.ctx_op.cryptlen; //11 bit data len (maximum of data> 1500 byte)
-		region_in.crypto_dsc.info.aadsize = req_xfer->ctx.ctx_op.assoclen - 8;// substract iv len
+	region_in.crypto_dsc.info.free_space_ = 0; // 1bit 0
+	region_in.crypto_dsc.info.direction = req_xfer->ctx.ctx_op.dir; //1 bit direction
+	region_in.crypto_dsc.info.length = req_xfer->ctx.ctx_op.cryptlen; //11 bit data len (maximum of data> 1500 byte)
+	region_in.crypto_dsc.info.aadsize = req_xfer->ctx.ctx_op.assoclen - 8;// substract iv len
 	
 	switch(req_xfer->ctx.ctx_op.keylen)
 	{
 		case 16: 
-				region_in.crypto_dsc.info.keysize = 0;//key type for 128 bit key
-				break;
+			region_in.crypto_dsc.info.keysize = 0;//key type for 128 bit key
+			break;
 		case 24: 
-				region_in.crypto_dsc.info.keysize = 1;//key type for 192 bit key
-				break;
+			region_in.crypto_dsc.info.keysize = 1;//key type for 192 bit key
+			break;
 		case 32: 
-				region_in.crypto_dsc.info.keysize = 2;//key type for 256 bit key
-				break;
+			region_in.crypto_dsc.info.keysize = 2;//key type for 256 bit key
+			break;
 	}
 
 	//ICV-AUTHENTAG
@@ -349,7 +340,6 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	
 	// Set buffer for AAD to insert to the first 8/12 Bytes in sg_out
 	buf_aad = (u8 *)(&data->crypto_dsc.aad);
-	// pr_info("buf_aad: %x %x %x %x %x %x %x %x %x %x %x %x\n", buf_aad[0],buf_aad[1],buf_aad[2],buf_aad[3],buf_aad[4],buf_aad[5],buf_aad[6],buf_aad[7],buf_aad[8],buf_aad[9],buf_aad[10],buf_aad[11]);
 	//Invert the Byte order of AAD buffer
 	for (i = 0; i < (data->crypto_dsc.info.aadsize/2); i++)
 	{
@@ -357,11 +347,9 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_aad[i] = buf_aad[data->crypto_dsc.info.aadsize -1 - i];
 		buf_aad[data->crypto_dsc.info.aadsize -1 - i] = tmp;
 	}
-	// pr_info("buf_aad: %x %x %x %x %x %x %x %x %x %x %x %x\n", buf_aad[0],buf_aad[1],buf_aad[2],buf_aad[3],buf_aad[4],buf_aad[5],buf_aad[6],buf_aad[7],buf_aad[8],buf_aad[9],buf_aad[10],buf_aad[11]);
 	
 	// Set buffer for iv to insert to the following 8 Bytes in sg_out
 	buf_iv = (u8 *)(&data->crypto_dsc.iv.iv);
-	// pr_info("buf_iv: %x %x %x %x %x %x %x %x \n", buf_iv[0],buf_iv[1],buf_iv[2],buf_iv[3],buf_iv[4],buf_iv[5],buf_iv[6],buf_iv[7]);
 	
 	//Inver tbyte order of iv Buffer
 	for(i = 0; i < 4; i++)
@@ -370,7 +358,6 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_iv[i] = buf_iv[7-i];
 		buf_iv[7-i] = tmp;
 	}
-	// pr_info("buf_iv: %x %x %x %x %x %x %x %x \n", buf_iv[0],buf_iv[1],buf_iv[2],buf_iv[3],buf_iv[4],buf_iv[5],buf_iv[6],buf_iv[7]);
 	
 	// Copy two buffer into buffer of sg list
 	memcpy(buf,buf_aad,data->crypto_dsc.info.aadsize);
@@ -378,13 +365,9 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 
 	//Print sg content
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
-	// print_sg_content(sg);
 
 	// Copy authentication tag from buffer (sg_out)
 	memcpy(buf + data->ctx.ctx_op.cryptlen + data->ctx.ctx_op.assoclen, data->tag,ICV_SIZE);
-    // pr_err("tag = %8.0x %8.0x %8.0x %8.0x \n", 
-    //         *(data->tag + 3), *(data->tag + 2),
-    //         *(data->tag + 1), *(data->tag));
 	
 	// Compare two authentication tag
 	if(data->ctx.ctx_op.dir == 0)
@@ -393,7 +376,6 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		// ret = 0 (successfull); ret = -EBADMSG (authenction failed)
 	}
 err_busy:
-	// if(ret != -1)
 	// {
 		mydevice->req = NULL; // No dma busy
 		mycrypto_handle_result(base ,ret);

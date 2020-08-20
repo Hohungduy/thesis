@@ -126,7 +126,8 @@ static int __init test_init(void)
             sg_init_one(&sg[i], buff[i], TESTCASE_1_LENGTH*4 );
             sg_mark_end(&sg[i]);
             // Step 2: Set value for req
-            set_sg(req[i], &sg[i]);
+            set_sg_in(req[i], &sg[i]);
+            set_sg_out(req[i], &sg[i]);
             set_callback(req[i], &crypto_complete);
                 // Set value for ctx (testcase_1)
                     // INFO
