@@ -369,12 +369,12 @@ int callback_task(void *data)
         wait_event(crdev->cb_wq, 
           ( !list_empty(&crdev->cb_queue) ));
         pr_err("callback_task  \n");
-        // spin_lock_bh(&crdev->agent_lock);
-        // req = list_first_entry(&crdev->cb_queue, 
-        //     struct xfer_req, list);
-        // list_del(&req->list);
-        // crdev->req_num--;
-        // spin_unlock_bh(&crdev->agent_lock);
+        spin_lock_bh(&crdev->agent_lock);
+        req = list_first_entry(&crdev->cb_queue, 
+            struct xfer_req, list);
+        list_del(&req->list);
+        crdev->req_num--;
+        spin_unlock_bh(&crdev->agent_lock);
 
         // local_bh_disable();
         pr_err("callback  \n");
@@ -464,7 +464,6 @@ int crypto_task(void *data)
         
         // add to tail of processing queue
         spin_lock_bh(&crdev->agent_lock);
-        list_add_tail(&req->list, &crdev->cb_queue);
         trigger_engine(DEFAULT_ENGINE);
         spin_unlock_bh(&crdev->agent_lock);
 
