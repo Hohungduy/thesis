@@ -362,25 +362,25 @@ void blinky_timeout(struct timer_list *timer)
 
 int callback_task(void *data)
 {
-    struct xdma_crdev* crdev = (struct xdma_crdev *)data;
+    struct xdma_crdev* crdev = get_crdev();
     struct xfer_req *req;
     int res;
     while (true) {
-        wait_event_interruptible(crdev->cb_wq, 
+        wait_event(crdev->cb_wq, 
           ( !list_empty(&crdev->cb_queue) ));
         pr_err("callback_task  \n");
-        spin_lock_bh(&crdev->agent_lock);
-        req = list_first_entry(&crdev->cb_queue, 
-            struct xfer_req, list);
-        list_del(&req->list);
-        crdev->req_num--;
-        spin_unlock_bh(&crdev->agent_lock);
+        // spin_lock_bh(&crdev->agent_lock);
+        // req = list_first_entry(&crdev->cb_queue, 
+        //     struct xfer_req, list);
+        // list_del(&req->list);
+        // crdev->req_num--;
+        // spin_unlock_bh(&crdev->agent_lock);
 
-        local_bh_disable();
+        // local_bh_disable();
         pr_err("callback  \n");
-        if (req->crypto_complete)
-                res = req->crypto_complete(req, req->res);
-        local_bh_enable();
+        // if (req->crypto_complete)
+        //         res = req->crypto_complete(req, req->res);
+        // local_bh_enable();
     }
     do_exit(0);
 }
@@ -388,7 +388,7 @@ int callback_task(void *data)
 
 int crypto_task(void *data)
 {
-    struct xdma_crdev* crdev = (struct xdma_crdev *)data;
+    struct xdma_crdev* crdev = get_crdev();
     struct xfer_req *req;
     struct sg_table sgt;
     int timeout_ms;
@@ -402,7 +402,7 @@ int crypto_task(void *data)
     out_region = get_region_out();
 
     while (true) {
-        wait_event_interruptible(crdev->crypto_wq,
+        wait_event(crdev->crypto_wq,
             ( !list_empty(&crdev->req_queue) ));
 
         // remove first req from backlog
@@ -421,7 +421,8 @@ int crypto_task(void *data)
                 ep_addr = 0x5C;
                 break;               
             default:
-                pr_err("Wrong aadsize:%d\n", req->crypto_dsc.info.aadsize);
+                pr_err("Wrong aadsize:%d\n", 
+                    req->crypto_dsc.info.aadsize);
                 goto err_aadsize;
                 break;
         }
