@@ -1411,7 +1411,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
     pr_aaa(KERN_INFO "length packets: %d \n", len);
     pr_aaa(KERN_INFO "%d packet - BEFORE function test encrypt:\n", __LINE__);
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    // print_sg_content(ad->req->src);
+    print_sg_content(ad->req->src);
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , aead_req->base.data);
     pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , ad->req->base.data);
@@ -1423,7 +1423,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
     ret = test_rfc4106_encdec(ad, endec);
     // count ++;
     // }
-    // print_sg_content(ad->req->src);
+    print_sg_content(ad->req->src);
 
     pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     
@@ -1698,6 +1698,7 @@ static int __init test_init(void)
             {
                 authentag_const2[i]= authentag_test6[i];
             }
+            break;
         case 7:
             for (i =0 ; i < test7_len.key_len;i++)
             {
@@ -1738,8 +1739,8 @@ static int __init test_init(void)
         // else if (cipher_choice == 2)
         //     test_rfc4106(test_choice,endec); 
         // else 
-    while(!done_flag)
-        {
+    // while(!done_flag)
+    //     {
     if (cipher_choice == 3)
     {
         test_esp_rfc4106(test_choice,endec);
@@ -1748,7 +1749,7 @@ static int __init test_init(void)
                 // pr_err("------------------------Number of req-------------------: %d\n",count);
                 count ++;
     }
-        }
+        // }
     return 0;
 }
 

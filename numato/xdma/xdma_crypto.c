@@ -68,11 +68,11 @@ void blinky_timeout(struct timer_list *timer)
     mod_timer(&blinky->timer, jiffies + (unsigned int)(blinky->interval*HZ));
 }
 
-irqreturn_t err_handler(int irq_no, void *dev)
-{
-    // pr_err("%s:%d: err_handler\n", __func__, __LINE__);
-    return IRQ_HANDLED;
-}
+// irqreturn_t err_handler(int irq_no, void *dev)
+// {
+//     // pr_err("%s:%d: err_handler\n", __func__, __LINE__);
+//     return IRQ_HANDLED;
+// }
 
 // int min_channel_load(int *channel)
 // {
@@ -564,10 +564,6 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     crdev->xpdev = xpdev;
     crdev->xdev = xpdev->xdev;
 
-    // Timer
-    crdev->blinky.interval = 1;
-    timer_setup(&crdev->blinky.timer, blinky_timeout, 0);
-    crdev->blinky.led = RED;
     // Config region base
     engine.comm   = BAR_0_ADDR + COMM_REGION_OFFSET;
     engine.in     = BAR_0_ADDR + IN_REGION_OFFSET;
@@ -576,30 +572,33 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     engine.irq    = BAR_0_ADDR + IRQ_REIGON_OFFSET;
     set_engine_base(engine, 0);
     set_led_base(BAR_0_ADDR);
+    // Timer
+    crdev->blinky.interval = 1;
+    timer_setup(&crdev->blinky.timer, blinky_timeout, 0);
+    crdev->blinky.led = RED;
     
     xdma_user_isr_register(xpdev->xdev, 0x01, xfer_rcv, crdev);
-    xdma_user_isr_register(xpdev->xdev, 0x02, err_handler, crdev);
 
     crdev->channel_idx = DEFAULT_CHANNEL_IDX;
     crdev->xfer_idex = 0;
     spin_lock_init(&crdev->agent_lock);
     INIT_LIST_HEAD(&crdev->req_queue);
     INIT_LIST_HEAD(&crdev->cb_queue);
-    init_waitqueue_head(&crdev->crypto_wq);
-    init_waitqueue_head(&crdev->cb_wq);
+    // init_waitqueue_head(&crdev->crypto_wq);
+    // init_waitqueue_head(&crdev->cb_wq);
 
-    init_completion(&crdev->encrypt_done);
+    // init_completion(&crdev->encrypt_done);
 
-    crdev->crypto_task = kthread_create_on_node(crypto_task, crdev, 
-            cpu_to_node(DEFAULT_CORE), "crypto_task");
-    crdev->callback_task = kthread_create_on_node(callback_task, crdev, 
-            cpu_to_node(DEFAULT_CORE), "cb_task");
-    // Wake up routine
-    wake_up_process(crdev->crypto_task);
-    wake_up_process(crdev->callback_task);
+    // crdev->crypto_task = kthread_create_on_node(crypto_task, crdev, 
+    //         cpu_to_node(DEFAULT_CORE), "crypto_task");
+    // crdev->callback_task = kthread_create_on_node(callback_task, crdev, 
+    //         cpu_to_node(DEFAULT_CORE), "cb_task");
+    // // Wake up routine
+    // wake_up_process(crdev->crypto_task);
+    // wake_up_process(crdev->callback_task);
 
-    //init user_irq
-    xdma_user_isr_enable(xpdev->xdev, 0x01);
+    // //init user_irq
+    // xdma_user_isr_enable(xpdev->xdev, 0x01);
     // timer
     mod_timer(&crdev->blinky.timer, 
         jiffies + (unsigned int)(crdev->blinky.interval*HZ));
