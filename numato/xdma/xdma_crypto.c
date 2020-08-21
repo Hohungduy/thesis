@@ -376,11 +376,11 @@ int callback_task(void *data)
         crdev->req_num--;
         spin_unlock_bh(&crdev->agent_lock);
 
-        // local_bh_disable();
+        local_bh_disable();
         pr_err("callback  \n");
-        // if (req->crypto_complete)
-        //         res = req->crypto_complete(req, req->res);
-        // local_bh_enable();
+        if (req->crypto_complete)
+                res = req->crypto_complete(req, req->res);
+        local_bh_enable();
     }
     do_exit(0);
 }
@@ -761,7 +761,6 @@ void free_xfer_req(struct xfer_req *req)
     else{
         pr_err("%s:%d: req NULL\n", __func__, __LINE__);
     }
-    
 }
 EXPORT_SYMBOL_GPL(free_xfer_req);
 
