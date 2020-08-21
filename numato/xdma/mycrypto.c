@@ -293,12 +293,11 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	else 
     	set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
 	
-
     // Step 3: Submit to card
 	res = xdma_xfer_submit_queue(req_xfer);
 	if (res != -EINPROGRESS)
         pr_err("Unusual result\n");
-	return 0;
+	return res;
 }
 
 static void mycrypto_dequeue_work(struct work_struct *work)
@@ -327,7 +326,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	struct aead_request *aead_req ;
 	int ret=0;
 	aead_req = aead_request_cast(base);
-	
+
 	if (!base){ 
 		pr_aaa("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return res;
@@ -344,7 +343,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		goto err_busy;
 	}
     buf = sg_virt (sg);
-	
+
 	// Set buffer for AAD to insert to the first 8/12 Bytes in sg_out
 	buf_aad = (u8 *)(&data->crypto_dsc.aad);
 	//Invert the Byte order of AAD buffer
@@ -354,7 +353,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_aad[i] = buf_aad[data->crypto_dsc.info.aadsize -1 - i];
 		buf_aad[data->crypto_dsc.info.aadsize -1 - i] = tmp;
 	}
-	
+
 	// Set buffer for iv to insert to the following 8 Bytes in sg_out
 	buf_iv = (u8 *)(&data->crypto_dsc.iv.iv);
 	
@@ -365,7 +364,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_iv[i] = buf_iv[7-i];
 		buf_iv[7-i] = tmp;
 	}
-	
+
 	// Copy two buffer into buffer of sg list
 	memcpy(buf,buf_aad,data->crypto_dsc.info.aadsize);
 	memcpy(buf + data->crypto_dsc.info.aadsize,buf_iv,8);
@@ -405,11 +404,11 @@ err_busy:
 	// queue_work(mydevice->workqueue,&mydevice->work_data.work);
 		   	
 
-	// if(data->tag)
-	// 	kfree(data->tag);
+	if(data->tag)
+		kfree(data->tag);
 	// free_xfer_req(data); // data is xfer_req
-	// if(data)
-	// 	kfree(data);
+	if(data)
+		kfree(data);
 	return res;
 }
 

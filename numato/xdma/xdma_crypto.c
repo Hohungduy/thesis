@@ -377,11 +377,9 @@ start:
         crdev->req_num--;
         spin_unlock_bh(&crdev->cb_lock);
 
-        local_bh_disable();
         // pr_err("callback  \n");
         if (req->crypto_complete)
                 res = req->crypto_complete(req, req->res);
-        local_bh_enable();
         if (!list_empty(&crdev->cb_queue))
             goto start;
     }
@@ -403,7 +401,7 @@ int crypto_task(void *data)
     timeout_ms = 3;
     in_region = get_region_in();
     out_region = get_region_out();
-
+    
     while (true) {
         wait_event(crdev->crypto_wq,
             ( !list_empty(&crdev->req_queue) ));
@@ -412,9 +410,10 @@ start:
         spin_lock_bh(&crdev->agent_lock);
         req = list_first_entry(&crdev->req_queue, 
             struct xfer_req, list);
+            	
         list_del(&req->list);
         spin_unlock_bh(&crdev->agent_lock);
-    
+        	
         switch (req->crypto_dsc.info.aadsize)
         {
             case 8:
@@ -434,11 +433,12 @@ start:
         sgt.sgl = req->sg_in;
         sgt.orig_nents = 1;
         sgt.nents = 1;
-
+        	
         reinit_completion(&crdev->encrypt_done);
         // pr_err("%s:%d\n", __func__, __LINE__);
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
+            	
         if (req->res < 0)
         {
             goto xmit_failed;
@@ -464,14 +464,14 @@ start:
             0, 1);
         memset32(in_region + offsetof(struct region_in, data_len),
             req->crypto_dsc.info.length, 1);
-        
+        	
         // add to tail of processing queue
         spin_lock_bh(&crdev->agent_lock);
         trigger_engine(DEFAULT_ENGINE);
         spin_unlock_bh(&crdev->agent_lock);
 
         wait_for_completion(&crdev->encrypt_done);
-
+	
         // Encrypt Done!
 
         sgt.sgl = req->sg_out;
@@ -492,7 +492,7 @@ start:
         }
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
-        // pr_err("%s:%d\n", __func__, __LINE__);
+            
         if (req->res < 0)
         {
             goto rcv_failed;
@@ -501,6 +501,7 @@ start:
         // pr_err("%s:%d\n", __func__, __LINE__);
         memcpy_fromio(req->tag, 
             BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
+            	
         // pr_err("%s:%d\n", __func__, __LINE__);
         spin_lock_bh(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
@@ -511,6 +512,7 @@ err_aadsize:
         pr_err("------------------  AAD_SIZE  ---------------\n");
         req->res = -1;
         spin_lock_bh(&crdev->cb_lock);
+        	
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock_bh(&crdev->cb_lock);
         debug_mem_in();
@@ -523,6 +525,7 @@ xmit_failed:
         pr_err("------------------  XMIT FAILED ---------------\n");
         req->res = -1;
         spin_lock_bh(&crdev->cb_lock);
+        	
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock_bh(&crdev->cb_lock);
         debug_mem_in();
@@ -655,14 +658,14 @@ int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
         pr_err("CRYPTO REACHES MAX_SIZE\n");
         return -1;
     }
-
+    	
     spin_lock_bh(&crdev->agent_lock);
     xfer_req->id = crdev->xfer_idex;
     crdev->xfer_idex = crdev->xfer_idex % 1024;
     crdev->req_num++;
-    list_add_tail(&xfer_req->list, req_queue);
+    	    list_add_tail(&xfer_req->list, req_queue);
     spin_unlock_bh(&crdev->agent_lock);
-    
+    	    
     wake_up(&crdev->crypto_wq);
     return -EINPROGRESS;
 }

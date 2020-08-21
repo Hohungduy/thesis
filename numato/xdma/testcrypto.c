@@ -88,7 +88,7 @@ static void handle_timer(struct timer_list *t)
 {
 	// printk(KERN_INFO "Module mycrypto: HELLO timer\n\n\n");
     done_flag = 1;
-    pr_err("Number of req after 5s:%d\n\n", count);
+    pr_err("Number of req after 60s:%d\n\n", count);
     
     // del_timer_sync(&testcrypto_ktimer);
     // mod_timer(&testcrypto_ktimer, jiffies + msecs_to_jiffies(TIMEOUT));
@@ -624,8 +624,9 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
     else
         rc = crypto_aead_decrypt(ad->req);
     pr_aaa(KERN_INFO "AFTER crypto_aead_encrypt\n");
-    pr_aaa("%d:%s: ad pointer:%p",__LINE__,__func__,ad);
+    // pr_err("%d:%s: ad pointer:%p",__LINE__,__func__,ad);
     ad->done = false;
+
     switch (rc) 
     {
     case 0:
@@ -635,26 +636,21 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
     case -EINPROGRESS:
     case -EBUSY:
         pr_aaa("Module testcrypto: Case einprogress + ebusy \n");
-                rc = wait_for_completion_interruptible(
-            &ad->result.completion);
-        pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , ad->req->base.data);
+        rc = wait_for_completion_interruptible(&ad->result.completion);
         // while(!ad->done)
         // {
         //     pr_err("%d: %s - PID:%d -ad->done:%d \n",__LINE__ , __func__ ,  current->pid , ad->done);
         // };
         // rc=0;
-                if ((!rc) && (!ad->result.err)) {
+        if ((!rc) && (!ad->result.err)) {
             reinit_completion(&ad->result.completion);
                     }
         break;
     default:
-        pr_aaa("Module testcrypto: aead encrypt returned with %d result %d\n",
-            rc, ad->result.err);
         break;
     }
     init_completion(&ad->result.completion);
     //pr_aaa("Module testcrypto:%p\n",&ad->result.completion);
-    pr_aaa(KERN_INFO "Module testcrypto: aead encrypt returned with result %d\n", rc);
         return rc;
 }
 
@@ -960,23 +956,29 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
 {
     // struct tcrypt_result *result = req->data;
     struct aead_def *ad = req->data;
-    struct tcrypt_result *result = &(ad->result);
-    struct scatterlist *sg = ad->sg;
-    struct crypto_aead *aead =ad->tfm;
-    struct aead_request *aead_req = ad->req;
-    char *scratchpad = ad->scratchpad;
-    char *AAD =ad->AAD;
-    char *ivdata =ad->ivdata;
-    char *authentag =ad->authentag;
-    char *ciphertext =ad->ciphertext;
-    char *packet =ad->packet; 
+    struct tcrypt_result *result = &ad->result;
+    
+    // struct scatterlist *sg = ad->sg;
+    // struct crypto_aead *aead =ad->tfm;
+    // struct aead_request *aead_req = ad->req;
+    // char *scratchpad = ad->scratchpad;
+    // char *AAD =ad->AAD;
+    // char *ivdata =ad->ivdata;
+    // char *authentag =ad->authentag;
+    // char *ciphertext =ad->ciphertext;
+    // char *packet =ad->packet; 
     // u8 *done=req->data;
-    count ++;
+    // count ++;
+    
     //struct aead_request *req = container_of(base, struct aead_request, base); // for test
     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_rfc4106_cb\n");
-        if(error == -EINPROGRESS)
+    if(error == -EINPROGRESS)
+    {
         return;
+
+    }
     result->err = error;
+    
     complete(&result->completion);
     
     // pr_aaa("%d: %s - PID:%d - done:%d\n", __LINE__ , __func__ , current->pid , *done);
@@ -985,27 +987,30 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
     // pr_aaa("%d: %s - PID:%d - done:%d\n", __LINE__ , __func__ , current->pid , *done);
     // pr_aaa("%d: %s - PID:%d - *(req->data):%d\n", __LINE__ , __func__ , current->pid , *(u8*)(req->data));
 
-     // pr_err(KERN_INFO "Module testcrypto: Encryption finishes successfully\n");
-    if (aead)
-        crypto_free_aead(aead);
-    if (aead_req)
-        aead_request_free(aead_req);
-    if (ivdata)
-        kfree_aaa(ivdata);
-    if (AAD)
-        kfree_aaa(AAD);
-    if (scratchpad)
-        kfree_aaa(scratchpad);
-    if(sg)
-        kfree_aaa(sg);
-    if(packet)
-        kfree_aaa(packet);
-    if(authentag)
-        kfree_aaa(authentag);
-    if(ciphertext)
-        kfree_aaa(ciphertext);
-    if(ad)
-        kfree_aaa(ad);
+     
+    // pr_err(KERN_INFO "Module testcrypto: Encryption finishes successfully\n");
+
+
+    // if (aead)
+    //     crypto_free_aead(aead);
+    // if (aead_req)
+    //     aead_request_free(aead_req);
+    // if (ivdata)
+    //     kfree_aaa(ivdata);
+    // if (AAD)
+    //     kfree_aaa(AAD);
+    // if (scratchpad)
+    //     kfree_aaa(scratchpad);
+    // if(sg)
+    //     kfree_aaa(sg);
+    // if(packet)
+    //     kfree_aaa(packet);
+    // if(authentag)
+    //     kfree_aaa(authentag);
+    // if(ciphertext)
+    //     kfree_aaa(ciphertext);
+    // if(ad)
+    //     kfree_aaa(ad);
 
 }
 
@@ -1136,8 +1141,8 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     aead_request_set_callback(aead_req, CRYPTO_TFM_REQ_MAY_BACKLOG,
                             test_rfc4106_cb,
-                            &ad); // for instruction set and hardware
-                            //&ad->result.completion
+                            ad); // for instruction set and hardware
+                            //&ad->result
         /* AES 128 with random key */
     //get_random_bytes(&key, 16);
 
@@ -1383,7 +1388,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
             *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
     pr_aaa("Module testcrypto: Address of aead_req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
-                
+    
     init_completion(&ad->result.completion);
     /* for printing */
 
@@ -1410,7 +1415,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
         pr_aaa("Error encrypting data: %d\n", ret);
                 goto out;
     } 
-        //ivdata_copy = req->iv; // copy pointer
+    //ivdata_copy = req->iv; // copy pointer
     pr_aaa("IV after encrypt (in esp->iv): \n");
 
     pr_aaa("Address of aead_req->iv:%p - data = %8.0x %8.0x - Offset:%x\n",&(aead_req->iv), 
@@ -1420,53 +1425,51 @@ static int test_esp_rfc4106(int test_choice, int endec)
     pr_aaa("Module testcrypto:Data after test_rfc4106_encdec \n");
 
     
-        pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
+    pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
 
 out:
 
-    // if (aead)
-    //     crypto_free_aead(aead);
-    // pr_aaa(KERN_INFO "Module Testcrypto: aead -rfc 4106 after kfree_aaa:\n" );
+    if (aead)
+        crypto_free_aead(aead);
+    pr_aaa(KERN_INFO "Module Testcrypto: aead -rfc 4106 after kfree_aaa:\n" );
 
-    // if (aead_req)
-    //     aead_request_free(aead_req);
-    // pr_aaa(KERN_INFO "Module Testcrypto: aead_req -rfc 4106 after kfree_aaa:\n" );
+    if (aead_req)
+        aead_request_free(aead_req);
+    pr_aaa(KERN_INFO "Module Testcrypto: aead_req -rfc 4106 after kfree_aaa:\n" );
 
-    // if (ivdata)
-    //     kfree_aaa(ivdata);
-    // pr_aaa(KERN_INFO "Module Testcrypto: ivdata -rfc 4106 after kfree_aaa:\n" );
+    if (ivdata)
+        kfree_aaa(ivdata);
+    pr_aaa(KERN_INFO "Module Testcrypto: ivdata -rfc 4106 after kfree_aaa:\n" );
 
-    // if (AAD)
-    //     kfree_aaa(AAD);
-    // pr_aaa(KERN_INFO "Module Testcrypto: AAD -rfc 4106 after kfree_aaa:\n" );
-
-    // pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, scratchpad);
+    if (AAD)
+        kfree_aaa(AAD);
+    pr_aaa(KERN_INFO "Module Testcrypto: AAD -rfc 4106 after kfree_aaa:\n" );
   
-    // if (scratchpad)
-    //     kfree_aaa(scratchpad);
-    // pr_aaa(KERN_INFO "Module Testcrypto: scratchpad -rfc 4106 after kfree_aaa:\n" );
+    if (scratchpad)
+        kfree_aaa(scratchpad);
+    pr_aaa(KERN_INFO "Module Testcrypto: scratchpad -rfc 4106 after kfree_aaa:\n" );
 
-    // if(ad->sg)
-    //     kfree_aaa(ad->sg);
-    // pr_aaa(KERN_INFO "Module Testcrypto: ad->sg -rfc 4106 after kfree_aaa:\n" );
+    if(ad->sg)
+        kfree_aaa(ad->sg);
+    pr_aaa(KERN_INFO "Module Testcrypto: ad->sg -rfc 4106 after kfree_aaa:\n" );
 
-    // if(packet)
-    //     kfree_aaa(packet);
-    // pr_aaa(KERN_INFO "Module Testcrypto: authentag -rfc4106 after kfree_aaa:\n");
+    if(packet)
+        kfree_aaa(packet);
+    pr_aaa(KERN_INFO "Module Testcrypto: authentag -rfc4106 after kfree_aaa:\n");
 
 
-    // if(authentag)
-    //     kfree_aaa(authentag);
-    // pr_aaa(KERN_INFO "Module Testcrypto: packet -rfc4106 after kfree_aaa:\n");
+    if(authentag)
+        kfree_aaa(authentag);
+    pr_aaa(KERN_INFO "Module Testcrypto: packet -rfc4106 after kfree_aaa:\n");
 
  
-    // if(ciphertext)
-    //     kfree_aaa(ciphertext);
-    // pr_aaa(KERN_INFO "Module Testcrypto: ciphertext -rfc4106 after kfree_aaa:\n");
+    if(ciphertext)
+        kfree_aaa(ciphertext);
+    pr_aaa(KERN_INFO "Module Testcrypto: ciphertext -rfc4106 after kfree_aaa:\n");
 
-    // if(ad)
-    //     kfree_aaa(ad);
-    // pr_aaa(KERN_INFO "Module Testcrypto: ad -rfc4106 after kfree_aaa:\n");
+    if(ad)
+        kfree_aaa(ad);
+    pr_aaa(KERN_INFO "Module Testcrypto: ad -rfc4106 after kfree_aaa:\n");
  
     return ret;
 }
@@ -1650,7 +1653,7 @@ static int __init test_init(void)
     // Set up timer and callback handler (using for testing).
 	timer_setup(&testcrypto_ktimer,handle_timer,0);
     // setup timer interval to based on TIMEOUT Macro
-    mod_timer(&testcrypto_ktimer, jiffies + 5*HZ);
+    mod_timer(&testcrypto_ktimer, jiffies + 60*HZ);
 
     // for (i = 0; i < req_num; i ++){
         // if (cipher_choice == 0)
@@ -1668,10 +1671,10 @@ static int __init test_init(void)
                 // mdelay(300);
                 // pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
                 // pr_err("------------------------Number of req-------------------: %d\n",count);
-                // count ++;
+        count ++;
     }
     }
-    mdelay(5000);
+    // mdelay(1000);
     return 0;
 }
 
