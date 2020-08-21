@@ -159,15 +159,15 @@ struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *my
 	return base;
 }
 
-struct xfer_req req_xfer_;
-u32 tag_buff[16/4];
+// struct xfer_req req_xfer_;
+// u32 tag_buff[16/4];
 
-void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
+int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 {
 	struct crypto_async_request *base = NULL, *backlog = NULL;
 	// struct mycrypto_req_operation *opr_ctx;
-	struct xfer_req *req_xfer = &req_xfer_;
-	// struct xfer_req *req_xfer;
+	// struct xfer_req *req_xfer = &req_xfer_;
+	struct xfer_req *req_xfer;
 	struct aead_request *aead_req ;
 	u8 *buff;
 	int res;
@@ -177,30 +177,35 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	u32 *tag_outbound;
 	size_t len;
 
+	base = mydevice->req;
 	/*Get request from crypto queue*/
-	spin_lock_bh(&mydevice->queue_lock);
-	if (!mydevice->req) 
-		{
-			base = mycrypto_dequeue_req_locked(mydevice, &backlog);
-			mydevice->req = base;
-		}
-	spin_unlock_bh(&mydevice->queue_lock);
+	
+	// spin_lock_bh(&mydevice->queue_lock);
+	// if (!mydevice->req) 
+	// 	{
+	// 		base = mycrypto_dequeue_req_locked(mydevice, &backlog);
+	// 		mydevice->req = base;
+	// 	}
+	// spin_unlock_bh(&mydevice->queue_lock);
 
 	if (!base){
-		return ;
+		pr_err("no current req\n");
 	}
-	if (backlog)
-		backlog->complete(backlog, -EINPROGRESS);
 
-	// req_xfer = alloc_xfer_req();
+	// if (backlog)
+	// 	backlog->complete(backlog, -EINPROGRESS);
+
+	req_xfer = alloc_xfer_req();
 	if (!req_xfer)
 	{
-		return ;
+		return -ENOMEM;
 	}
 	aead_req = aead_request_cast(base);
 	set_callback(req_xfer, &handle_crypto_xfer_callback);
 	set_xfer_mycryptocontext(base, req_xfer);
+
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
+
 	buff = sg_virt(aead_req->src);
 	sg_init_one(&req_xfer->sg, buff , aead_req->src->length);
 	set_sg_in(req_xfer, &req_xfer->sg);
@@ -281,8 +286,8 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
     memcpy(req_xfer->crypto_dsc.key, region_in.crypto_dsc.key, KEY_SIZE); 
     req_xfer->crypto_dsc.iv = region_in.crypto_dsc.iv;
     memcpy(req_xfer->crypto_dsc.aad, region_in.crypto_dsc.aad, AAD_SIZE); 
-	tag_outbound = tag_buff;
-	// tag_outbound = kzalloc(16, GFP_ATOMIC | GFP_KERNEL);
+	// tag_outbound = tag_buff;
+	tag_outbound = kzalloc(16, GFP_ATOMIC | GFP_KERNEL);
 	if (region_in.crypto_dsc.info.length % 16 == 0)
 	    set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
 	else 
@@ -293,6 +298,7 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	res = xdma_xfer_submit_queue(req_xfer);
 	if (res != -EINPROGRESS)
         pr_err("Unusual result\n");
+	return 0;
 }
 
 static void mycrypto_dequeue_work(struct work_struct *work)
@@ -321,6 +327,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	struct aead_request *aead_req ;
 	int ret=0;
 	aead_req = aead_request_cast(base);
+	
 	if (!base){ 
 		pr_aaa("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return res;
@@ -394,8 +401,10 @@ err_busy:
 	// 		pr_err("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
 	// 		break;
 	// }
-	queue_work(mydevice->workqueue,&mydevice->work_data.work);
+
+	// queue_work(mydevice->workqueue,&mydevice->work_data.work);
 		   	
+
 	// if(data->tag)
 	// 	kfree(data->tag);
 	// free_xfer_req(data); // data is xfer_req

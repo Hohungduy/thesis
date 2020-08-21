@@ -177,7 +177,7 @@ struct mycrypto_req_operation {
 	int (*handle_result)(struct crypto_async_request *req,bool *should_complete);
 	
 };
-void mycrypto_dequeue_req(struct mycrypto_dev *mydevice);
+int mycrypto_dequeue_req(struct mycrypto_dev *mydevice);
 
 /* available algorithms */
 // extern struct aead_alg my_crypto_gcm_aes_alg;

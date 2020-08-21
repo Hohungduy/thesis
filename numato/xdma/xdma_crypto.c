@@ -368,19 +368,22 @@ int callback_task(void *data)
     while (true) {
         wait_event(crdev->cb_wq, 
           ( !list_empty(&crdev->cb_queue) ));
-        pr_err("callback_task  \n");
-        spin_lock_bh(&crdev->agent_lock);
+        // pr_err("callback_task  \n");
+start:
+        spin_lock_bh(&crdev->cb_lock);
         req = list_first_entry(&crdev->cb_queue, 
             struct xfer_req, list);
         list_del(&req->list);
         crdev->req_num--;
-        spin_unlock_bh(&crdev->agent_lock);
+        spin_unlock_bh(&crdev->cb_lock);
 
         local_bh_disable();
-        pr_err("callback  \n");
+        // pr_err("callback  \n");
         if (req->crypto_complete)
                 res = req->crypto_complete(req, req->res);
         local_bh_enable();
+        if (!list_empty(&crdev->cb_queue))
+            goto start;
     }
     do_exit(0);
 }
@@ -404,7 +407,7 @@ int crypto_task(void *data)
     while (true) {
         wait_event(crdev->crypto_wq,
             ( !list_empty(&crdev->req_queue) ));
-
+start:
         // remove first req from backlog
         spin_lock_bh(&crdev->agent_lock);
         req = list_first_entry(&crdev->req_queue, 
@@ -433,7 +436,7 @@ int crypto_task(void *data)
         sgt.nents = 1;
 
         reinit_completion(&crdev->encrypt_done);
-        pr_err("%s:%d\n", __func__, __LINE__);
+        // pr_err("%s:%d\n", __func__, __LINE__);
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
         if (req->res < 0)
@@ -474,7 +477,7 @@ int crypto_task(void *data)
         sgt.sgl = req->sg_out;
         sgt.orig_nents = 1;
         sgt.nents = 1;
-        pr_err("%s:%d\n", __func__, __LINE__);
+        // pr_err("%s:%d\n", __func__, __LINE__);
         switch (req->crypto_dsc.info.aadsize)
         {
             case 8:
@@ -489,56 +492,57 @@ int crypto_task(void *data)
         }
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
-        pr_err("%s:%d\n", __func__, __LINE__);
+        // pr_err("%s:%d\n", __func__, __LINE__);
         if (req->res < 0)
         {
             goto rcv_failed;
         }
         // TAG
-        pr_err("%s:%d\n", __func__, __LINE__);
+        // pr_err("%s:%d\n", __func__, __LINE__);
         memcpy_fromio(req->tag, 
             BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
-        pr_err("%s:%d\n", __func__, __LINE__);
-        spin_lock_bh(&crdev->agent_lock);
+        // pr_err("%s:%d\n", __func__, __LINE__);
+        spin_lock_bh(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
-        spin_unlock_bh(&crdev->agent_lock);
-        pr_err("%s:%d\n", __func__, __LINE__);
-        wake_up(&crdev->cb_wq);
-        continue;
+        spin_unlock_bh(&crdev->cb_lock);
+        // pr_err("%s:%d\n", __func__, __LINE__);
+        goto go_back;
 err_aadsize:
         pr_err("------------------  AAD_SIZE  ---------------\n");
         req->res = -1;
-        spin_lock_bh(&crdev->agent_lock);
+        spin_lock_bh(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
-        spin_unlock_bh(&crdev->agent_lock);
+        spin_unlock_bh(&crdev->cb_lock);
         debug_mem_in();
         debug_mem_out();
-        wake_up(&crdev->cb_wq);
         pr_err("------------------  AAD_SIZE ---------------\n");
-        continue;
+        goto go_back;
+
 
 xmit_failed:
         pr_err("------------------  XMIT FAILED ---------------\n");
         req->res = -1;
-        spin_lock_bh(&crdev->agent_lock);
+        spin_lock_bh(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
-        spin_unlock_bh(&crdev->agent_lock);
+        spin_unlock_bh(&crdev->cb_lock);
         debug_mem_in();
-        wake_up(&crdev->cb_wq);
         pr_err("------------------  XMIT FAILED ---------------\n");
-        continue;
+        goto go_back;
 
 rcv_failed:
         pr_err("------------------  RCV FAILED ---------------\n");
         req->res = -1;
-        spin_lock_bh(&crdev->agent_lock);
+        spin_lock_bh(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
-        spin_unlock_bh(&crdev->agent_lock);
+        spin_unlock_bh(&crdev->cb_lock);
         debug_mem_in();
         debug_mem_out();
-        wake_up(&crdev->cb_wq);
         pr_err("------------------  RCV FAILED ---------------\n");
-        continue;
+        goto go_back;
+go_back:
+        wake_up(&crdev->cb_wq);
+        if (!list_empty(&crdev->req_queue))
+            goto start;
     }
     do_exit(0);
 }
@@ -587,6 +591,7 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     crdev->channel_idx = DEFAULT_CHANNEL_IDX;
     crdev->xfer_idex = 0;
     spin_lock_init(&crdev->agent_lock);
+    spin_lock_init(&crdev->cb_lock);
     INIT_LIST_HEAD(&crdev->req_queue);
     INIT_LIST_HEAD(&crdev->cb_queue);
     init_waitqueue_head(&crdev->crypto_wq);

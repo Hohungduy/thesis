@@ -39,7 +39,7 @@
 
 #define DEFAULT_CHANNEL_IDX (0)
 #define DEFAULT_CORE (1)
-#define MAX_REQ_NUM (512)
+#define MAX_REQ_NUM (512000)
 #define CRYTO_DONE_IRQ (0)
 #define XFER_WRITE (1)
 #define XFER_READ (0)
@@ -193,6 +193,7 @@ struct xdma_crdev {
 
     struct list_head req_queue;
     struct list_head cb_queue;
+    spinlock_t cb_lock;
 
     int req_num;
 

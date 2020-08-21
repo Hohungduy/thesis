@@ -342,7 +342,7 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	// Get skcipher request from its asysc request.
 	struct crypto_aead *tfm ;
 	struct mycrypto_dev *mydevice;
-	int ret;
+	// int ret;
 
 	// printk(KERN_INFO "Module mycrypto: enqueue request\n");
 	ctx = crypto_tfm_ctx(base->tfm);
@@ -378,19 +378,21 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	pr_aaa("Module mycrypto-cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
 			        	
-	spin_lock_bh(&mydevice->queue_lock);
-	// enqueue request.
-	ret = crypto_enqueue_request(&mydevice->queue, base);
+	// spin_lock_bh(&mydevice->queue_lock);
+	/* enqueue request. */
+	// ret = crypto_enqueue_request(&mydevice->queue, base);
 	
-	spin_unlock_bh(&mydevice->queue_lock);
+	// spin_unlock_bh(&mydevice->queue_lock);
 	
-	// dequeue using workqueue
-	queue_work(mydevice->workqueue,
-		   &mydevice->work_data.work);
-    // ret = 0;
+	/* dequeue using workqueue */
+	// queue_work(mydevice->workqueue,
+	// 	   &mydevice->work_data.work);
+
+	mydevice->req = base;
+
 	// dequeue without using workqueue (testing ...)
-	//mycrypto_dequeue_req(mydevice);
-	return ret;
+	// mycrypto_dequeue_req(mydevice);
+	return mycrypto_dequeue_req(mydevice);
 }
 /* Using for checking:
    -  whether or not the length of request and block size accommodate the critetia.

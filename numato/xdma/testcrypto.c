@@ -72,6 +72,12 @@ struct aead_def
     struct crypto_aead *tfm;
     struct aead_request *req;
     struct tcrypt_result result;
+    char *scratchpad ;
+    char *AAD ;
+    char *ivdata ;
+    char *authentag ;
+    char *ciphertext;
+    char *packet ; 
     u8 done;
 };
 
@@ -611,8 +617,7 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
 {
     int rc;
     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_rfc4106_encdec\n");
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("Module mycrypto-cipher.c: Address of req->iv:%p - data =  %8.0x %8.0x \n",ad->req->iv,  
+        pr_aaa("Module mycrypto-cipher.c: Address of req->iv:%p - data =  %8.0x %8.0x \n",ad->req->iv,  
             *((u32 *)(&ad->req->iv[4])), *((u32 *)(&ad->req->iv[0])));
     if (enc)
         rc = crypto_aead_encrypt(ad->req);
@@ -625,14 +630,12 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
     {
     case 0:
         pr_aaa("Module testcrypto: Case 0 \n");
-        pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+        
         break;
     case -EINPROGRESS:
     case -EBUSY:
         pr_aaa("Module testcrypto: Case einprogress + ebusy \n");
-        pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-        rc = wait_for_completion_interruptible(
+                rc = wait_for_completion_interruptible(
             &ad->result.completion);
         pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , ad->req->base.data);
         // while(!ad->done)
@@ -640,11 +643,9 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
         //     pr_err("%d: %s - PID:%d -ad->done:%d \n",__LINE__ , __func__ ,  current->pid , ad->done);
         // };
         // rc=0;
-        pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-        if ((!rc) && (!ad->result.err)) {
+                if ((!rc) && (!ad->result.err)) {
             reinit_completion(&ad->result.completion);
-            pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-        }
+                    }
         break;
     default:
         pr_aaa("Module testcrypto: aead encrypt returned with %d result %d\n",
@@ -654,8 +655,7 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
     init_completion(&ad->result.completion);
     //pr_aaa("Module testcrypto:%p\n",&ad->result.completion);
     pr_aaa(KERN_INFO "Module testcrypto: aead encrypt returned with result %d\n", rc);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    return rc;
+        return rc;
 }
 
 // /* Initialize and trigger aead cipher operation */
@@ -958,13 +958,23 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
 
 static void test_rfc4106_cb(struct crypto_async_request *req, int error)
 {
-    struct tcrypt_result *result = req->data;
+    // struct tcrypt_result *result = req->data;
+    struct aead_def *ad = req->data;
+    struct tcrypt_result *result = &(ad->result);
+    struct scatterlist *sg = ad->sg;
+    struct crypto_aead *aead =ad->tfm;
+    struct aead_request *aead_req = ad->req;
+    char *scratchpad = ad->scratchpad;
+    char *AAD =ad->AAD;
+    char *ivdata =ad->ivdata;
+    char *authentag =ad->authentag;
+    char *ciphertext =ad->ciphertext;
+    char *packet =ad->packet; 
     // u8 *done=req->data;
-    // count ++;
+    count ++;
     //struct aead_request *req = container_of(base, struct aead_request, base); // for test
     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_rfc4106_cb\n");
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if(error == -EINPROGRESS)
+        if(error == -EINPROGRESS)
         return;
     result->err = error;
     complete(&result->completion);
@@ -974,48 +984,65 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
     // pr_aaa("%d: %s - PID:%d - pointer of data : %p\n",__LINE__ , __func__ ,  current->pid , req->data);
     // pr_aaa("%d: %s - PID:%d - done:%d\n", __LINE__ , __func__ , current->pid , *done);
     // pr_aaa("%d: %s - PID:%d - *(req->data):%d\n", __LINE__ , __func__ , current->pid , *(u8*)(req->data));
-    // pr_err(KERN_INFO "Module testcrypto: Encryption finishes successfully\n");
+
+     // pr_err(KERN_INFO "Module testcrypto: Encryption finishes successfully\n");
+    if (aead)
+        crypto_free_aead(aead);
+    if (aead_req)
+        aead_request_free(aead_req);
+    if (ivdata)
+        kfree_aaa(ivdata);
+    if (AAD)
+        kfree_aaa(AAD);
+    if (scratchpad)
+        kfree_aaa(scratchpad);
+    if(sg)
+        kfree_aaa(sg);
+    if(packet)
+        kfree_aaa(packet);
+    if(authentag)
+        kfree_aaa(authentag);
+    if(ciphertext)
+        kfree_aaa(ciphertext);
+    if(ad)
+        kfree_aaa(ad);
+
 }
 
-struct crypto_aead *aead = NULL;
-struct aead_request *aead_req = NULL;
-char *scratchpad = NULL;
-//char scratchpad[60];
-char *AAD = NULL;
-//char AAD[8]; 
-char *ivdata = NULL;
-//char ivdata[12];
-unsigned char key[20];
-int ret = -EFAULT;
-unsigned int assoclen = 0;// AAD_length
-unsigned int authlen;// Tag_length
-unsigned int ivlen;//iv length
-unsigned int keylen = 0;//key length
-unsigned int data_len = 0;// scratchpad length
-//char *ivdata_copy = NULL; // for printing
-//char *AAD_copy = NULL; //for printing
-//char *scratchpad_copy = NULL;//for printing
-//char *sg_buffer =NULL; //for printing
-//char *sg_buffer_copy = NULL; //for printing
-int i_iv,i_AAD,i_data,i_key,i_authen;// index for assign value into iv,AAD,data,key in loop
-unsigned int sg_buffer_len;
-char *authentag =NULL;
-char *ciphertext=NULL;
-char *packet = NULL; 
-char *packet_data = NULL;//plaintext
-char *packet_cipher = NULL;//ciphertext 
-char *packet_authen = NULL;
-size_t len;
-int i_loop;
+
+
+
+
 //------Test_esp_rfc4106------
 /* Initialize and trigger aead cipher operation */
 static int test_esp_rfc4106(int test_choice, int endec)
 {
+    struct crypto_aead *aead = NULL;
+    struct aead_request *aead_req = NULL;
+    
+    char *scratchpad = NULL;
+    char *AAD = NULL;
+    char *ivdata = NULL;
+    char *authentag =NULL;
+    char *ciphertext=NULL;
+    char *packet = NULL; 
+    char *packet_data = NULL;//plaintext
+    char *packet_cipher = NULL;//ciphertext 
+    char *packet_authen = NULL;
+    unsigned char key[20];
+
+    int ret = -EFAULT;
+    unsigned int assoclen = 0;// AAD_length
+    unsigned int authlen;// Tag_length
+    unsigned int ivlen;//iv length
+    unsigned int keylen = 0;//key length
+    unsigned int data_len = 0;// scratchpad length
+    int i_iv,i_AAD,i_data,i_key,i_authen;// index for assign value into iv,AAD,data,key in loop
+    unsigned int sg_buffer_len;
+
+    size_t len;
     struct aead_def *ad;
-    u32 memsize;
-    u32 countermem; 
-    memsize = 0;
-    countermem = 0;
+
     ad = kzalloc(sizeof(struct aead_def) , GFP_KERNEL | GFP_DMA);
 
     pr_aaa(KERN_INFO "Module testcrypto: starting test_esp_rfc4106\n");
@@ -1081,15 +1108,13 @@ static int test_esp_rfc4106(int test_choice, int endec)
      */
     
     aead = crypto_alloc_aead("rfc4106(gcm(aes))", 0, 0);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (IS_ERR(aead)) {
+        if (IS_ERR(aead)) {
         pr_aaa("could not allocate aead handle (rfc 4106)\n");
         return PTR_ERR(aead);
     }
     /* Allocate a request object */
     aead_req = aead_request_alloc(aead, GFP_KERNEL | GFP_DMA);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (!aead_req) {
+        if (!aead_req) {
         pr_aaa("could not allocate aead request (rfc 4106)\n");
         ret = -ENOMEM;
         goto out;
@@ -1102,60 +1127,49 @@ static int test_esp_rfc4106(int test_choice, int endec)
     offsetof(struct aead_request,cryptlen),offsetof(struct aead_request,iv),
     offsetof(struct aead_request,src),offsetof(struct aead_request,dst),offsetof(struct aead_request,__ctx),sizeof(void *));
     
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    /*Check the size of iv and authentication data (Tag for authentication)  */
+        /*Check the size of iv and authentication data (Tag for authentication)  */
     authlen = crypto_aead_authsize(aead);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    ivlen = crypto_aead_ivsize(aead);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa(KERN_INFO "authentication size: %d\n", authlen);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa(KERN_INFO "iv size:%d \n", ivlen);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+        ivlen = crypto_aead_ivsize(aead);
+        pr_aaa(KERN_INFO "authentication size: %d\n", authlen);
+        pr_aaa(KERN_INFO "iv size:%d \n", ivlen);
+    
 
     aead_request_set_callback(aead_req, CRYPTO_TFM_REQ_MAY_BACKLOG,
                             test_rfc4106_cb,
-                            &ad->result.completion); // for instruction set and hardware
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    /* AES 128 with random key */
+                            &ad); // for instruction set and hardware
+                            //&ad->result.completion
+        /* AES 128 with random key */
     //get_random_bytes(&key, 16);
 
     for (i_key =0 ; i_key < keylen;i_key++)
     {
         key[i_key]=key_const2[i_key];
     }
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (crypto_aead_setkey(aead, key, 20)) {
+        if (crypto_aead_setkey(aead, key, 20)) {
         pr_aaa("key could not be set\n");
         ret = -EAGAIN;
         goto out;
     }
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa(KERN_INFO "Key value :\n");
+        pr_aaa(KERN_INFO "Key value :\n");
     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
     pr_aaa(KERN_INFO "Salt in Nonce: %x\t%x\t%x\t%x \n",key[16],key[17],key[18],key[19]);
+    
     /* IV will be random */
     ivdata = kzalloc(ivlen, GFP_KERNEL | GFP_DMA);
-    memsize += (u32)ivlen;
-    countermem += 1;
 
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     if (!ivdata) {
         pr_aaa("could not allocate ivdata\n");
         goto out;
     }
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     //get_random_bytes(ivdata, 12);
     for (i_iv =0 ; i_iv < ivlen;i_iv++)
     {
         ivdata[i_iv]=ivdata_const2[i_iv];
     }
     //ivdata_copy = ivdata; // copy pointer
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     pr_aaa(KERN_INFO "IV: \n");
     for(i_iv = 0; i_iv < ivlen ; i_iv+=16)
     {
@@ -1165,14 +1179,10 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     /* AAD value (comprise of SPI and Sequence number)-64 bit 
        ( not with extended sequence number-96 bit) */
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("assoclen:%d\n",assoclen);
+        pr_aaa("assoclen:%d\n",assoclen);
     pr_aaa("assoclen:%p\n",AAD);
-    AAD = kzalloc(assoclen, GFP_KERNEL | GFP_DMA);
-    memsize += (u32)assoclen;
-    countermem += 1;
 
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+    AAD = kzalloc(assoclen, GFP_KERNEL | GFP_DMA);
     if (!AAD) {
         pr_aaa("could not allocate scratchpad\n");
         goto out;
@@ -1180,8 +1190,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
     //get_random_bytes(AAD,8);
     // 8 bytes
     //AAD_copy =AAD_const2;
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
+        pr_aaa(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
     
     for (i_AAD = 0; i_AAD < assoclen; i_AAD ++)
     {
@@ -1189,24 +1198,21 @@ static int test_esp_rfc4106(int test_choice, int endec)
     }
 
     //AAD_copy =AAD;
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
+        pr_aaa(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
     switch(assoclen)
     {
         case 8:
             // for(i_AAD = 0; i_AAD < assoclen ; i_AAD +=16)
             // {
     
-            pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-            pr_aaa("data = %8.0x %8.0x  \n", 
+                        pr_aaa("data = %8.0x %8.0x  \n", 
                 *((u32 *)(&AAD[4])), *((u32 *)(&AAD[0])));
             // }
         break;
         case 12:
             // for(i_AAD = 0; i_AAD < assoclen ; i_AAD +=16)
             // {
-                pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-                pr_aaa("data = %8.0x %8.0x %8.0x \n",
+                                pr_aaa("data = %8.0x %8.0x %8.0x \n",
                 *((u32 *)(&AAD[8])), *((u32 *)(&AAD[4])), *((u32 *)(&AAD[0])));
             // }
         break;
@@ -1214,9 +1220,6 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     /* Input data will be random */
     scratchpad = kzalloc(DATA_LENGTH, GFP_KERNEL | GFP_DMA );
-    memsize += DATA_LENGTH;
-    countermem +=1;
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     if (!scratchpad) {
         pr_aaa("could not allocate scratchpad\n");
         goto out;
@@ -1231,8 +1234,8 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     //scratchpad_copy = scratchpad; 
     pr_aaa(KERN_INFO "Data payload :\n");
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("datale:%d",data_len);
+        	    pr_aaa("datale:%d",data_len);
+    
     // for(i_data = 0; i_data < data_len ; i_data +=16)
     // {
     // pr_aaa("data = %8.0x %8.0x %8.0x %8.0x \n",
@@ -1242,9 +1245,6 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     /*Input authentication tag*/
     authentag = kzalloc(16,GFP_KERNEL | GFP_DMA );
-    memsize += 16;
-    countermem += 1;
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     if (!authentag) {
         pr_aaa("could not allocate packet\n");
         goto out;
@@ -1258,17 +1258,13 @@ static int test_esp_rfc4106(int test_choice, int endec)
     pr_aaa(KERN_INFO "Authentag :\n");
     // for(i_authen = 0; i_authen < 16 ; i_authen +=16)
     // {
-            	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("data = %8.0x %8.0x %8.0x %8.0x \n",
+            	    pr_aaa("data = %8.0x %8.0x %8.0x %8.0x \n",
             *((u32 *)(&authentag[12])),*((u32 *)(&authentag[8])), 
             *((u32 *)(&authentag[4])), *((u32 *)(&authentag[0])));
     // }
     /*Input cipher text content*/
 
     ciphertext = kzalloc(DATA_LENGTH, GFP_KERNEL | GFP_DMA );
-    memsize += DATA_LENGTH;
-    countermem += 1;
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     if (!ciphertext) {
         pr_aaa("could not allocate ciphertext\n");
         goto out;
@@ -1280,8 +1276,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
     }
  
     pr_aaa(KERN_INFO "Data cipher payload :\n");
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    for(i_data = 0; i_data < data_len ; i_data +=16)
+        	    for(i_data = 0; i_data < data_len ; i_data +=16)
     {
     pr_aaa("address of ciphertext = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i_data ,
             *((u32 *)(&ciphertext[i_data + 12])),*((u32 *)(&ciphertext[i_data + 8])), 
@@ -1290,26 +1285,21 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     /*Input packet content*/
     packet = kzalloc(PACKET_LENGTH,GFP_KERNEL | GFP_DMA);
-    memsize += PACKET_LENGTH;
-    countermem += 1;
-    
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     if (!packet) {
         pr_aaa("could not allocate packet\n");
         goto out;
     }
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+    
     for (i_AAD = 0; i_AAD < assoclen; i_AAD ++)
     {
         packet[i_AAD] = AAD[i_AAD];
     }
-    	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+    
     switch(endec)
     {
         case 0:
         // mode decrypt: input needs tag
-            	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+            	
             packet_cipher = packet + assoclen;
             for (i_data = 0; i_data < data_len ;i_data++)
             {
@@ -1323,8 +1313,7 @@ static int test_esp_rfc4106(int test_choice, int endec)
             break;
         case 1:
         // mode encrypt: input dont need tag
-            	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+            	
             packet_data = packet + assoclen;
             for (i_data = 0; i_data < data_len ;i_data++)
             {
@@ -1334,10 +1323,13 @@ static int test_esp_rfc4106(int test_choice, int endec)
     }
    
     ad->tfm = aead;
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
     ad->req = aead_req;
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+    ad->ciphertext = ciphertext;
+    ad->packet=packet;
+    ad->authentag=authentag;
+    ad->AAD = AAD;
+    ad->scratchpad = scratchpad;
+    ad->ivdata = ivdata;
 
     pr_aaa(KERN_INFO "BEFORE allocate data and AAD into sg list of request\n");
     /*
@@ -1356,28 +1348,21 @@ static int test_esp_rfc4106(int test_choice, int endec)
 
     //ad->sg = kmalloc_array(2,sizeof(struct scatterlist),GFP_KERNEL | GFP_DMA);// 2 entries
     ad->sg = kzalloc(sizeof(struct scatterlist),GFP_KERNEL | GFP_DMA);
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+        	
     if(!ad->sg){
         ret = -ENOMEM;
         goto out;
     }
     sg_buffer_len = assoclen + data_len + authlen;
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+        	
 
-    //sg_buffer =kzalloc(sg_buffer_len, GFP_KERNEL);// 92 = 8 byte (AAD -1st entry) + +8 byte iv + 60 bytes data(2nd entry)+16 bytes (2nd entry)
-    // sg_init_table(ad->sg, 1 ); // 1 entries
-    // sg_set_buf(ad->sg, packet, assoclen + data_len + authlen);
     sg_init_one(ad->sg,packet,assoclen + data_len + authlen);
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+        	
     // sg_mark_end(ad->sg);
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-
+        	
     // sg_set_buf(&ad->sg[1],scratchpad,DATA_LENGTH);// for fall-back cases
     aead_request_set_ad(aead_req , assoclen+ivlen);// 12 means that there are 12 octects ( 96 bits) in AAD fields.
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    switch(endec)
+        	    switch(endec)
     {
         case 0:
         //decrypt
@@ -1388,32 +1373,26 @@ static int test_esp_rfc4106(int test_choice, int endec)
             aead_request_set_crypt(aead_req , ad->sg, ad->sg, data_len - ivlen, ivdata);// 60 bytes (data for encryption or decryption)  + 8 byte iv
             break;
     }
-        pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("IV before encrypt (in esp->iv): \n");
+            pr_aaa("IV before encrypt (in esp->iv): \n");
     pr_aaa("Address of aead_req->iv:%p - data = %8.0x %8.0x - Offset:%x \n",&(aead_req->iv), 
             *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
     scatterwalk_map_and_copy(ivdata, aead_req->dst, aead_req->assoclen-ivlen, ivlen, 1);
 
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("IV before encrypt (in esp->iv): \n");
+        pr_aaa("IV before encrypt (in esp->iv): \n");
     pr_aaa("Address of aead_req->iv:%p - data = %8.0x %8.0x - Offset:%x\n",&(aead_req->iv), 
             *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
     pr_aaa("Module testcrypto: Address of aead_req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
-            pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    
+                
     init_completion(&ad->result.completion);
     /* for printing */
 
     len = (size_t)ad->req->cryptlen + (size_t)ad->req->assoclen + (size_t)authlen + ivlen;
-        	pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    
+        	    
     pr_aaa(KERN_INFO "length packets: %d \n", len);
     pr_aaa(KERN_INFO "%d packet - BEFORE function test encrypt:\n", __LINE__);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    print_sg_content(ad->req->src);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , aead_req->base.data);
+        // print_sg_content(ad->req->src);
+        pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , aead_req->base.data);
     pr_aaa("%d: %s - PID:%d - pointer of req.data:%p\n",__LINE__ , __func__ ,  current->pid , ad->req->base.data);
     /* encrypt data ( 1 for encryption)*/
     // for (i_loop=0; i_loop < loop_num; i_loop++)
@@ -1422,131 +1401,73 @@ static int test_esp_rfc4106(int test_choice, int endec)
     // {
     ret = test_rfc4106_encdec(ad, endec);
     // count ++;
-    // }
-    print_sg_content(ad->req->src);
-
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
     
+    // }
+    // print_sg_content(ad->req->src);
+    // mdelay(10000);
+        
     if (ret){
         pr_aaa("Error encrypting data: %d\n", ret);
-        pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-        goto out;
+                goto out;
     } 
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    //ivdata_copy = req->iv; // copy pointer
+        //ivdata_copy = req->iv; // copy pointer
     pr_aaa("IV after encrypt (in esp->iv): \n");
-    // for(i_iv = 0; i_iv <= 8 ; i_iv+=16)
-    // {
+
     pr_aaa("Address of aead_req->iv:%p - data = %8.0x %8.0x - Offset:%x\n",&(aead_req->iv), 
             *((u32 *)(&aead_req->iv[4])), *((u32 *)(&aead_req->iv[0])),offsetof(struct aead_request,iv));
-    // }     
+     
     len = (size_t)ad->req->cryptlen + (size_t)ad->req->assoclen+(size_t)authlen ;
     pr_aaa("Module testcrypto:Data after test_rfc4106_encdec \n");
-    // }
-    
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
 
-    memsize += (u32)ksize(ad);
-    countermem += 1;
-    pr_aaa("--------------------ksize of ad:%d--------------\n",ksize(ad));
-    pr_aaa("--------------------sizeof of ad:%d-------------\n",sizeof(struct aead_def));
-    memsize += (u32)ksize(ad->sg);
-    pr_aaa("--------------------ksize of ad->sg:%d--------------\n",ksize(ad->sg));
-    pr_aaa("--------------------sizeof of ad->sg:%d-------------\n",sizeof(struct scatterlist));
-    countermem += 1;
-    pr_aaa("--------------------ksize of ivdata:%d--------------\n",ksize(ivdata));
-    pr_aaa("--------------------ksize of AAD:%d--------------\n",ksize(AAD));
-    pr_aaa("--------------------ksize of scratchpad:%d--------------\n",ksize(scratchpad));
-    pr_aaa("--------------------ksize of ciphertext:%d--------------\n",ksize(ciphertext));
-    pr_aaa("--------------------ksize of packet:%d--------------\n",ksize(packet));
-    pr_aaa("--------------------ksize of authentag:%d--------------\n",ksize(authentag));
+    
+        pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
 
 out:
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, aead);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (aead)
-        crypto_free_aead(aead);
-    pr_aaa(KERN_INFO "Module Testcrypto: aead -rfc 4106 after kfree_aaa:\n" );
+
+    // if (aead)
+    //     crypto_free_aead(aead);
+    // pr_aaa(KERN_INFO "Module Testcrypto: aead -rfc 4106 after kfree_aaa:\n" );
+
+    // if (aead_req)
+    //     aead_request_free(aead_req);
+    // pr_aaa(KERN_INFO "Module Testcrypto: aead_req -rfc 4106 after kfree_aaa:\n" );
+
+    // if (ivdata)
+    //     kfree_aaa(ivdata);
+    // pr_aaa(KERN_INFO "Module Testcrypto: ivdata -rfc 4106 after kfree_aaa:\n" );
+
+    // if (AAD)
+    //     kfree_aaa(AAD);
+    // pr_aaa(KERN_INFO "Module Testcrypto: AAD -rfc 4106 after kfree_aaa:\n" );
+
+    // pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, scratchpad);
+  
+    // if (scratchpad)
+    //     kfree_aaa(scratchpad);
+    // pr_aaa(KERN_INFO "Module Testcrypto: scratchpad -rfc 4106 after kfree_aaa:\n" );
+
+    // if(ad->sg)
+    //     kfree_aaa(ad->sg);
+    // pr_aaa(KERN_INFO "Module Testcrypto: ad->sg -rfc 4106 after kfree_aaa:\n" );
+
+    // if(packet)
+    //     kfree_aaa(packet);
+    // pr_aaa(KERN_INFO "Module Testcrypto: authentag -rfc4106 after kfree_aaa:\n");
 
 
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, req);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (aead_req)
-        aead_request_free(aead_req);
-    pr_aaa(KERN_INFO "Module Testcrypto: aead_req -rfc 4106 after kfree_aaa:\n" );
+    // if(authentag)
+    //     kfree_aaa(authentag);
+    // pr_aaa(KERN_INFO "Module Testcrypto: packet -rfc4106 after kfree_aaa:\n");
 
+ 
+    // if(ciphertext)
+    //     kfree_aaa(ciphertext);
+    // pr_aaa(KERN_INFO "Module Testcrypto: ciphertext -rfc4106 after kfree_aaa:\n");
 
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, ivdata);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (ivdata)
-        kfree_aaa(ivdata);
-    pr_aaa(KERN_INFO "Module Testcrypto: ivdata -rfc 4106 after kfree_aaa:\n" );
-    memsize -= (u32)ivlen;
-    countermem -=1;
-
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, AAD);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (AAD)
-        kfree_aaa(AAD);
-    pr_aaa(KERN_INFO "Module Testcrypto: AAD -rfc 4106 after kfree_aaa:\n" );
-    memsize -= (u32)assoclen;
-    countermem -= 1;
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, scratchpad);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if (scratchpad)
-        kfree_aaa(scratchpad);
-    pr_aaa(KERN_INFO "Module Testcrypto: scratchpad -rfc 4106 after kfree_aaa:\n" );
-    //memsize -= ksize(scratchpad);
-    memsize -= DATA_LENGTH;
-    countermem -= 1;
-
-    // if(sg_buffer)
-    //     kfree_aaa(sg_buffer);
-    // pr_aaa(KERN_INFO "Module Testcrypto: sg_buffer -rfc 4106 after kfree_aaa:\n" );
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, ad->sg);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if(ad->sg)
-        kfree_aaa(ad->sg);
-    pr_aaa(KERN_INFO "Module Testcrypto: ad->sg -rfc 4106 after kfree_aaa:\n" );
-    memsize -= ksize(ad->sg);
-    countermem -= 1;
-
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, packet);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if(packet)
-        kfree_aaa(packet);
-    pr_aaa(KERN_INFO "Module Testcrypto: authentag -rfc4106 after kfree_aaa:\n");
-    // memsize -= ksize(packet);
-    memsize -= 1000;
-    countermem -= 1;
-
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, authentag);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if(authentag)
-        kfree_aaa(authentag);
-    pr_aaa(KERN_INFO "Module Testcrypto: packet -rfc4106 after kfree_aaa:\n");
-    //memsize -= ksize(authentag);
-    memsize -= 16;
-    countermem -= 1;
-
-    pr_aaa("                     %s, %d, %p\n", __func__, __LINE__, ciphertext);
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    if(ciphertext)
-        kfree_aaa(ciphertext);
-    pr_aaa(KERN_INFO "Module Testcrypto: ciphertext -rfc4106 after kfree_aaa:\n");
-    //memsize -= ksize(ciphertext);
-    memsize -= DATA_LENGTH;
-    countermem -= 1;
-
-    if(ad)
-        kfree_aaa(ad);
-    pr_aaa(KERN_INFO "Module Testcrypto: ad -rfc4106 after kfree_aaa:\n");
-    memsize -= ksize(ad);
-    countermem -= 1;
-    pr_aaa("%d: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-    pr_aaa("---------------------Mem size:%d---------------\n",memsize);
-    pr_aaa("---------------------Counter mem:%d------------\n",countermem);
+    // if(ad)
+    //     kfree_aaa(ad);
+    // pr_aaa(KERN_INFO "Module Testcrypto: ad -rfc4106 after kfree_aaa:\n");
+ 
     return ret;
 }
 
@@ -1739,17 +1660,18 @@ static int __init test_init(void)
         // else if (cipher_choice == 2)
         //     test_rfc4106(test_choice,endec); 
         // else 
-    // while(!done_flag)
-    //     {
+    while(!done_flag)
+    {
     if (cipher_choice == 3)
     {
         test_esp_rfc4106(test_choice,endec);
                 // mdelay(300);
                 // pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
                 // pr_err("------------------------Number of req-------------------: %d\n",count);
-                count ++;
+                // count ++;
     }
-        // }
+    }
+    mdelay(5000);
     return 0;
 }
 
