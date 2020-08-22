@@ -967,9 +967,9 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
     // char *authentag =ad->authentag;
     // char *ciphertext =ad->ciphertext;
     // char *packet =ad->packet; 
-    // u8 *done=req->data;
     // count ++;
     
+    // u8 *done=req->data;
     //struct aead_request *req = container_of(base, struct aead_request, base); // for test
     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_rfc4106_cb\n");
     if(error == -EINPROGRESS)
@@ -1653,7 +1653,7 @@ static int __init test_init(void)
     // Set up timer and callback handler (using for testing).
 	timer_setup(&testcrypto_ktimer,handle_timer,0);
     // setup timer interval to based on TIMEOUT Macro
-    mod_timer(&testcrypto_ktimer, jiffies + 60*HZ);
+    mod_timer(&testcrypto_ktimer, jiffies + 10*HZ);
 
     // for (i = 0; i < req_num; i ++){
         // if (cipher_choice == 0)
