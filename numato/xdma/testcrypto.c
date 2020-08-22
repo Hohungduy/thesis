@@ -81,11 +81,12 @@ struct aead_def
     u8 done;
 };
 
-u32 count = 0;
+u32 count;
 int done_flag = 0; //stop 
 //--------------timer handler---------------------------------------
 static void handle_timer(struct timer_list *t)
 {
+	// printk(KERN_INFO "Module mycrypto: HELLO timer\n\n\n");
     done_flag = 1;
     pr_err("Number of req after 60s:%d\n\n", count);
     
@@ -94,6 +95,21 @@ static void handle_timer(struct timer_list *t)
 }
 
 
+// void print_sg_content(struct scatterlist *sg ,size_t len)
+// {
+// 	char *sg_buffer =NULL; //for printing
+// 	int i;
+// 	sg_buffer =kzalloc(len, GFP_KERNEL);
+// 	len =sg_pcopy_to_buffer(sg,1,sg_buffer,len,0);
+// 	//pr_aaa("%d: print sg in dequeue function",__LINE__);
+//     for(i = 0; i < (len); i +=16)
+//     {
+// 		pr_err("Print sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+//             *((u32 *)(&sg_buffer[i + 12])), *((u32 *)(&sg_buffer[i + 8])), 
+//             *((u32 *)(&sg_buffer[i + 4])), *((u32 *)(&sg_buffer[i])));
+//     }
+// 	kfree_aaa(sg_buffer);
+// }
 void print_sg_content(struct scatterlist *sg)
 {
     unsigned int length;
@@ -116,6 +132,478 @@ void print_sg_content(struct scatterlist *sg)
             *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
     }
 }
+//--------------------------------------------------------------------------------
+/* Test CBC mode -Type skcipher */
+//-------------------------------------------------------------------------------
+/* Callback function for skcipher type*/
+// static void test_skcipher_cb(struct crypto_async_request *req, int error)
+// {
+//     struct tcrypt_result *result = req->data;
+//     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_skcipher_cb\n");
+//     if (error == -EINPROGRESS)
+//         return;
+//     result->err = error;
+//     complete(&result->completion);
+//     pr_aaa(KERN_INFO "Module testcrypto:Encryption finished successfully\n");
+// }
+
+// /* Perform skcipher cipher operation */
+// static unsigned int test_skcipher_encdec(struct skcipher_def *sk, int enc)
+// {
+//     int rc;
+//     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_skcipher_encdec\n");
+
+//     if (enc)
+//         rc = crypto_skcipher_encrypt(sk->req);
+//     else
+//         rc = crypto_skcipher_decrypt(sk->req);
+
+//     switch (rc) 
+//     {
+//     case 0:
+//         break;
+//     case -EINPROGRESS:
+//     case -EBUSY:
+//         rc = wait_for_completion_interruptible(
+//             &sk->result.completion);
+//         if (!rc && !sk->result.err) {
+//             reinit_completion(&sk->result.completion);
+//             break;
+//         }
+//     default:
+//         pr_aaa("Module testcrypto: skcipher encrypt returned with %d result %d\n", rc, sk->result.err);
+//         break;
+//     }
+//     init_completion(&sk->result.completion);
+
+//     pr_aaa(KERN_INFO "Module testcrypto: skcipher encrypt returned with result %d\n", rc);
+//     return rc;
+// }
+
+// /* Initialize and trigger cipher operation */
+// static int test_skcipher(void)
+// {
+//     struct skcipher_def sk;
+//     struct crypto_skcipher *skcipher = NULL;
+//     struct skcipher_request *req = NULL;
+//     //struct crypto_async_request * async_req = NULL;
+//     char *scratchpad = NULL;
+//     char *ivdata = NULL;
+//     unsigned char key[16];
+//     char *scratchpad_copy,*ivdata_copy;
+//     int i_data,i_iv;
+//     //int assoclen;
+//     int ivlen;
+//     int ret = -EFAULT;
+//     size_t len;
+//     /*
+//     * Allocate a tfm (a transformation object) and set the key.
+//     *
+//     * In real-world use, a tfm and key are typically used for many
+//     * encryption/decryption operations.  But in this example, we'll just do a
+//     * single encryption operation with it (which is not very efficient).
+//      */
+//     pr_aaa(KERN_INFO "Module testcrypto: starting test_skcipher1\n");
+//     skcipher = crypto_alloc_skcipher("cbc(aes)", 0, 0);
+//     if (IS_ERR(skcipher)) {
+//         pr_aaa("could not allocate skcipher handle\n");
+//         return PTR_ERR(skcipher);
+//     }
+//     /* Allocate a request object */
+//     req = skcipher_request_alloc(skcipher, GFP_KERNEL);
+//     if (!req) {
+//         pr_aaa("could not allocate skcipher request\n");
+//         ret = -ENOMEM;
+//         goto out;
+//     }
+
+//     skcipher_request_set_callback(req, CRYPTO_TFM_REQ_MAY_BACKLOG,
+//                       test_skcipher_cb,
+//                       &sk.result);
+
+//     /* AES 128 with random key - 16 octetcs */
+//     get_random_bytes(&key, 16);
+    
+//     if (crypto_skcipher_setkey(skcipher, key, 16)) {
+//         pr_aaa("key could not be set\n");
+//         ret = -EAGAIN;
+//         goto out;
+//     }
+//     pr_aaa(KERN_INFO "Key value - after setkey:\n");
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
+//     /* IV will be random */
+//     ivlen =16;
+//     ivdata = kmalloc(ivlen, GFP_KERNEL);
+//     if (!ivdata) {
+//         pr_aaa("could not allocate ivdata\n");
+//         goto out;
+//     }
+//     get_random_bytes(ivdata, ivlen);
+//     ivdata_copy = ivdata; // copy pointer
+//     pr_aaa(KERN_INFO "IV: \n");
+//     for(i_iv = 1; i_iv <= ivlen; i_iv++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*ivdata_copy));
+//         ivdata_copy ++;
+//         if ((i_iv % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+//     /* Input data will be random */
+//     scratchpad = kmalloc(16, GFP_KERNEL);
+
+//     if (!scratchpad) {
+//         pr_aaa("could not allocate scratchpad\n");
+//         goto out;
+//     }
+
+//     get_random_bytes(scratchpad, 16);
+//     scratchpad_copy = scratchpad; 
+//     pr_aaa(KERN_INFO "Data payload :\n");
+//     for(i_data = 1; i_data <= 16; i_data ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*scratchpad_copy));
+//         scratchpad_copy ++;
+//         if ((i_data % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+//     sk.tfm = skcipher;
+//     sk.req = req;
+//     /*
+//      * Encrypt the data in-place.
+//      *
+//      * For simplicity, in this example we wait for the request to complete
+//      * before proceeding, even if the underlying implementation is asynchronous.
+//      *
+//      * To decrypt instead of encrypt, just change crypto_skcipher_encrypt() to
+//      * crypto_skcipher_decrypt().ccc
+//      */
+
+//     /* We encrypt one block */
+//     sg_init_one(&sk.sg, scratchpad, 16);
+//     skcipher_request_set_crypt(req, &sk.sg, &sk.sg, 16, ivdata);
+//     // crypto_init_wait(&sk.wait);
+//     init_completion(&sk.result.completion);
+
+//     /* encrypt data ( 1 for encryption)*/
+//     ret = test_skcipher_encdec(&sk, 1);
+//     if (ret){
+//         pr_aaa("Error encrypting data: %d\n", ret);
+//         goto out;
+    
+//     }
+//     pr_aaa(KERN_INFO "Data payload-after function test encrypt:\n");
+//     len = (size_t)sk.req->cryptlen;
+//     len = sg_pcopy_to_buffer(sk.req->src,1,scratchpad_copy,len,0);
+//     for(i_data = 1; i_data <= 16; i_data ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*scratchpad_copy));
+//         scratchpad_copy ++;
+//         if ((i_data % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+//     pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
+
+// out:
+//     if (skcipher)
+//         crypto_free_skcipher(skcipher);
+//     if (req)
+//         skcipher_request_free(req);
+//     if (ivdata)
+//         kfree_aaa(ivdata);
+//     if (scratchpad)
+//         kfree_aaa(scratchpad);
+//     return ret;
+// }
+
+// //---------------------------------------------------------------------------------------------
+// /* Test GCM-AES in normal mode - Type: AEAD cipher */
+// //---------------------------------------------------------------------------------------------
+// /* Callback function for aead type */
+// static void test_aead_cb(struct crypto_async_request *req, int error)
+// {
+//     struct tcrypt_result *result = req->data;
+//     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_AEAD_cb\n");
+//     if(error == -EINPROGRESS)
+//         return;
+//     result->err = error;
+//     complete(&result->completion);
+//     pr_aaa(KERN_INFO "Module testcrypto: Encryption finishes successfully\n");
+// }
+
+// /* Perform aead cipher operation */
+// static unsigned int test_aead_encdec(struct aead_def *ad, int enc)
+// {
+//     int rc;
+//     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_aead_encdec\n");
+//     if (enc)
+//         rc = crypto_aead_encrypt(ad->req);
+//     else
+//         rc = crypto_aead_decrypt(ad->req);
+//     pr_aaa(KERN_INFO "AFTER crypto_aead_encrypt\n");
+//     switch (rc) 
+//     {
+//     case 0:
+//         break;
+//     case -EINPROGRESS:
+//     case -EBUSY:
+//         rc = wait_for_completion_interruptible(
+//             &ad->result.completion);
+//         if ((!rc) && (!ad->result.err)) {
+//             reinit_completion(&ad->result.completion);
+//         }
+//         break;
+//     default:
+//         pr_aaa("Module testcrypto: aead encrypt returned with %d result %d\n",
+//             rc, ad->result.err);
+//         break;
+//     }
+//     init_completion(&ad->result.completion);
+//     pr_aaa(KERN_INFO "Module testcrypto: aead encrypt returned with result %d\n", rc);
+//     return rc;
+// }
+
+// /* Initialize and trigger aead cipher operation */
+// static int test_aead(void)
+// {
+//     struct aead_def ad;
+//     struct crypto_aead *aead = NULL;
+//     struct aead_request *req = NULL;
+//     char *scratchpad = NULL;
+//     //char scratchpad[60];
+//     char *AAD = NULL;
+//     //char AAD[8]; 
+//     char *ivdata = NULL;
+//     //char ivdata[12];
+//     unsigned char key[16];
+//     int ret = -EFAULT;
+//     int assoclen;
+//     int authlen, ivlen;
+//     char *ivdata_copy = NULL; // for printing
+//     char *AAD_copy = NULL; //for printing
+//     char *scratchpad_copy = NULL;//for printing
+//     char *sg_buffer =NULL; //for printing
+//     char *sg_buffer_copy = NULL; //for printing
+//     int i_iv,i_AAD,i_data,i_sg,i_key;
+//     size_t len;
+ 
+//     /*
+//     * Allocate a tfm (a transformation object) and set the key.
+//     *
+//     * In real-world use, a tfm and key are typically used for many
+//     * encryption/decryption operations.  But in this example, we'll just do a
+//     * single encryption operation with it (which is not very efficient).
+//      */
+//     pr_aaa(KERN_INFO "Module testcrypto: starting test_aead\n");
+//     aead = crypto_alloc_aead("gcm(aes)", 0, 0);
+//     if (IS_ERR(aead)) {
+//         pr_aaa("could not allocate aead handle\n");
+//         return PTR_ERR(aead);
+//     }
+//     /* Allocate a request object */
+//     req = aead_request_alloc(aead, GFP_KERNEL);
+//     if (!req) {
+//         pr_aaa("could not allocate aead request\n");
+//         ret = -ENOMEM;
+//         goto out;
+//     }
+
+//     /*Check the size of iv and authentication data (Tag for authentication)  */
+//     authlen = crypto_aead_authsize(aead);
+//     ivlen = crypto_aead_ivsize(aead);
+//     pr_aaa(KERN_INFO "authentication size: %d\n", authlen);
+//     pr_aaa(KERN_INFO "iv size:%d \n", ivlen);
+//     aead_request_set_callback(req, CRYPTO_TFM_REQ_MAY_BACKLOG,
+//                       test_aead_cb,
+//                       &ad.result);
+
+//     /* AES 128 with random key */
+//     //get_random_bytes(&key, 16);
+//     for (i_key =0 ; i_key < 16;i_key++)
+//     {
+//         key[i_key]=key_const[i_key];
+//     }
+//     pr_aaa(KERN_INFO "Key value - before setkey: \n");
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
+//     if (crypto_aead_setkey(aead, key, 16)) {
+//         pr_aaa("key could not be set\n");
+//         ret = -EAGAIN;
+//         goto out;
+//     }
+//     pr_aaa(KERN_INFO "Key value - after setkey:\n");
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
+//     /* IV will be random */
+//     ivdata = kzalloc(ivlen, GFP_KERNEL);
+//     if (!ivdata) {
+//         pr_aaa("could not allocate ivdata\n");
+//         goto out;
+//     }
+//     //get_random_bytes(ivdata, 12);
+//     for (i_iv =0 ; i_iv < 12;i_iv++)
+//     {
+//         ivdata[i_iv]=ivdata_const[i_iv];
+//     }
+//     ivdata_copy = ivdata; // copy pointer
+//     pr_aaa(KERN_INFO "IV: \n");
+//     for(i_iv = 1; i_iv <= ivlen; i_iv++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*ivdata_copy));
+//         ivdata_copy ++;
+//         if ((i_iv % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+//     /* AAD value (comprise of SPI and Sequence number) */
+//     AAD = kzalloc(8, GFP_KERNEL);
+//     if (!AAD) {
+//         pr_aaa("could not allocate scratchpad\n");
+//         goto out;
+//     }
+//     //get_random_bytes(AAD,8);
+//     // 8 bytes
+//     //AAD[8] = {0xfe,0xed,0xfa,0xce,0xde,0xad,0xbe,0xef};
+//     for (i_AAD = 0; i_AAD <8; i_AAD ++)
+//     {
+//         AAD[i_AAD] = AAD_const[i_AAD];
+//     }
+//     assoclen = 8;
+//     AAD_copy =AAD;
+//     pr_aaa(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
+    
+//     for(i_AAD = 1; i_AAD <= 8; i_AAD ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*AAD_copy));
+//         AAD_copy ++;
+//         if ((i_AAD % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+    
+//     /* Input data will be random */
+//     scratchpad = kzalloc(320, GFP_KERNEL);
+//     if (!scratchpad) {
+//         pr_aaa("could not allocate scratchpad\n");
+//         goto out;
+//     }
+//     //get_random_bytes(scratchpad, 16);
+//     // 60 bytes
+//     for (i_data =0 ; i_data < 60;i_data++)
+//     {
+//         scratchpad[i_data]=scratchpad_const[i_data];
+//     }
+
+//     scratchpad_copy = scratchpad; 
+//     pr_aaa(KERN_INFO "Data payload :\n");
+    
+//     for(i_data = 1; i_data <= 60; i_data ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*scratchpad_copy));
+//         scratchpad_copy ++;
+//         if ((i_data % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+
+//     ad.tfm = aead;
+//     ad.req = req;
+//     pr_aaa(KERN_INFO "BEFORE allocate data and AAD into sg list of request\n");
+//     /*
+//      * Encrypt the data in-place.
+//      *
+//      * For simplicity, in this example we wait for the request to complete
+//      * before proceeding, even if the underlying implementation is asynchronous.
+//      *
+//      * To decrypt instead of encrypt, just change crypto_aead_encrypt() to
+//      * crypto_aead_decrypt() by using parameter enc.
+//      *  if enc = 1 , we do encrypt
+//      *  while enc = 0, we do decrypt.
+//      */
+//     // inituate one sgtable list
+
+//     ad.sg = kmalloc_array(2,sizeof(struct scatterlist),GFP_KERNEL);// 2 entries
+//     if(!ad.sg){
+//         ret = -ENOMEM;
+//         goto out;
+//     }
+//     sg_buffer =kzalloc(84, GFP_KERNEL);// 84 = 8 byte (AAD -1st entry) + 60 bytes data(2nd entry)+16 bytes (2nd entry)
+//     sg_init_table(ad.sg, 2 ); // 2 entries
+//     sg_set_buf(&ad.sg[0], AAD, 8);
+//     sg_set_buf(&ad.sg[1],scratchpad,320);
+//     aead_request_set_ad(req,assoclen);// 12 means that there are 12 octects ( 96 bits) in AAD fields.
+//     aead_request_set_crypt(req, ad.sg, ad.sg, 60, ivdata);// 60 bytes (data for encryption or decryption) 
+//     init_completion(&ad.result.completion);
+//     /* for printing */
+//     pr_aaa(KERN_INFO "ASSOCLEN:%d\n", req->assoclen);
+//     pr_aaa(KERN_INFO "CRYPTLEN:%d\n", req->cryptlen);
+//     pr_aaa(KERN_INFO "LENGTH OF SCATTERLIST : %d \n", ad.sg->length);
+//     pr_aaa(KERN_INFO "LENGTH OF SCATTERLIST 0: %d \n", ad.sg[0].length);
+//     pr_aaa(KERN_INFO "LENGTH OF SCATTERLIST 1: %d \n", ad.sg[1].length);
+//     // pr_aaa(KERN_INFO "length of scatterlist 2: %d \n", ad.sg[2].length);
+//     pr_aaa(KERN_INFO "lenght of scatterlist(src 0): %d\n",req->src[0].length);
+//     pr_aaa(KERN_INFO "length of scatterlist(src 1): %d \n",req->src[1].length);
+//     //pr_aaa(KERN_INFO "length of scatterlist(src 2): %d \n",req->src[2].length);
+//     pr_aaa(KERN_INFO "length of scatterlist(src):%d \n",req->src->length);
+//     pr_aaa(KERN_INFO "length of scatterlist(dst 0): %d \n",req->dst[0].length);
+//     pr_aaa(KERN_INFO "length of scatterlist(dst 1): %d \n",req->dst[1].length);
+//     // pr_aaa(KERN_INFO "length of scatterlist(dst 2): %d \n",req->dst[2].length);
+//     pr_aaa(KERN_INFO "length of scatterlist (dst):%d \n",req->dst->length);
+//     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen + (size_t)authlen;
+//     pr_aaa(KERN_INFO "LENGHTH FOR ASSOC+ CRYPT: %d \n", len);
+//     pr_aaa(KERN_INFO "Data payload-before function test encrypt:\n");
+//     len =sg_pcopy_to_buffer(ad.req->src,2,sg_buffer,len,0);
+//     sg_buffer_copy =sg_buffer;
+//     for(i_sg = 1; i_sg <= (req->assoclen +req->cryptlen+authlen); i_sg ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*sg_buffer_copy));
+//         sg_buffer_copy ++;
+//         if ((i_sg % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+
+//     /* encrypt data ( 1 for encryption)*/
+//     ret = test_aead_encdec(&ad, 1);
+//     if (ret){
+//         pr_aaa("Error encrypting data: %d\n", ret);
+//         goto out;
+//     }
+//     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen+(size_t)authlen;
+//     len =sg_pcopy_to_buffer(ad.req->src,2,sg_buffer,len,0);
+//     pr_aaa(KERN_INFO "Data payload-after function test encrypt:\n");
+//     sg_buffer_copy =sg_buffer;
+//     for(i_sg = 1; i_sg <= (req->assoclen +req->cryptlen+authlen); i_sg ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*sg_buffer_copy));
+//         sg_buffer_copy ++;
+//         if ((i_sg % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+//     pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
+// out:
+//     if (aead)
+//         crypto_free_aead(aead);
+//     pr_aaa(KERN_INFO "aead after kfree_aaa:\n" );
+//     if (req)
+//         aead_request_free(req);
+//     pr_aaa(KERN_INFO "req after kfree_aaa:\n" );
+//     if (ivdata)
+//         kfree_aaa(ivdata);
+//     pr_aaa(KERN_INFO "ivdata after kfree_aaa:\n" );
+//     if (AAD)
+//         kfree_aaa(AAD);
+//     pr_aaa(KERN_INFO "AAD after kfree_aaa:\n" );
+//     if (scratchpad)
+//         kfree_aaa(scratchpad);
+//     pr_aaa(KERN_INFO "scratchpad after kfree_aaa:\n" );
+//     if(sg_buffer)
+//         kfree_aaa(sg_buffer);
+//     pr_aaa(KERN_INFO "sg_buffer after kfree_aaa:\n" );
+//     return ret;
+// }
 
 
 // //---------------------------------------------------------------------------------------------
@@ -166,7 +654,303 @@ static unsigned int test_rfc4106_encdec(struct aead_def *ad, int enc)
         return rc;
 }
 
+// /* Initialize and trigger aead cipher operation */
+// static int test_rfc4106(int test_choice, int endec)
+// {
+//     struct aead_def ad;
+//     struct crypto_aead *aead = NULL;
+//     struct aead_request *req = NULL;
+//     char *scratchpad = NULL;
+//     //char scratchpad[60];
+//     char *AAD = NULL;
+//     //char AAD[8]; 
+//     char *ivdata = NULL;
+//     //char ivdata[12];
+//     unsigned char key[20];
+//     int ret = -EFAULT;
+//     unsigned int assoclen = 0;// AAD_length
+//     unsigned int authlen;// Tag_length
+//     unsigned int ivlen;//iv length
+//     unsigned int keylen = 0;//key length
+//     unsigned int data_len = 0;// scratchpad length
+//     char *ivdata_copy = NULL; // for printing
+//     char *AAD_copy = NULL; //for printing
+//     char *scratchpad_copy = NULL;//for printing
+//     char *sg_buffer =NULL; //for printing
+//     char *sg_buffer_copy = NULL; //for printing
+//     int i_iv,i_AAD,i_data,i_sg,i_key;// index for assign value into iv,AAD,data,key in loop
+//     unsigned int sg_buffer_len;
+//     size_t len;
+    
+//     pr_aaa(KERN_INFO "Module testcrypto: starting test_rfc4106\n");
+//     switch(test_choice)
+//     {
+//         case 1:
+//             pr_aaa("This is test case 1\n");
+//             assoclen = test1_len.AAD_len;
+//             keylen = test1_len.key_len;
+//             data_len = test1_len.scratchpad_len;
+//             break;
+//             // do not need ivlen
+//         case 2:
+//             pr_aaa("This is test case 2\n");
+//             assoclen = test2_len.AAD_len;
+//             keylen = test2_len.key_len;
+//             data_len = test2_len.scratchpad_len;
+//             // do not need ivlen
+//             break;
+//         case 3:
+//             pr_aaa("This is test case 3\n");
+//             assoclen = test3_len.AAD_len;
+//             keylen = test3_len.key_len;
+//             data_len = test3_len.scratchpad_len;
+//             // do not need ivlen
+//             break;
+//         case 4:
+//             pr_aaa("This is test case 4\n");
+//             assoclen = test4_len.AAD_len;
+//             keylen = test4_len.key_len;
+//             data_len = test4_len.scratchpad_len;
+//             // do not need ivlen
+//             break;
+//         case 5:
+//             pr_aaa("This is test case 5\n");
+//             assoclen = test5_len.AAD_len;
+//             keylen = test5_len.key_len;
+//             data_len = test5_len.scratchpad_len;
+//             // do not need ivlen
+//             break;   
+//     }
 
+//     /*
+//     * Allocate a tfm (a transformation object) and set the key.
+//     *
+//     * In real-world use, a tfm and key are typically used for many
+//     * encryption/decryption operations.  But in this example, we'll just do a
+//     * single encryption operation with it (which is not very efficient).
+//      */
+    
+//     aead = crypto_alloc_aead("rfc4106(gcm(aes))", 0, 0);
+//     if (IS_ERR(aead)) {
+//         pr_aaa("could not allocate aead handle (rfc 4106)\n");
+//         return PTR_ERR(aead);
+//     }
+//     /* Allocate a request object */
+//     req = aead_request_alloc(aead, GFP_KERNEL);
+//     if (!req) {
+//         pr_aaa("could not allocate aead request (rfc 4106)\n");
+//         ret = -ENOMEM;
+//         goto out;
+//     }
+
+//     /*Check the size of iv and authentication data (Tag for authentication)  */
+//     authlen = crypto_aead_authsize(aead);
+//     ivlen = crypto_aead_ivsize(aead);
+//     pr_aaa(KERN_INFO "authentication size: %d\n", authlen);
+//     pr_aaa(KERN_INFO "iv size:%d \n", ivlen);
+
+//     aead_request_set_callback(req, CRYPTO_TFM_REQ_MAY_BACKLOG,
+//                             test_rfc4106_cb,
+//                             &ad.result); // for instruction set and hardware
+    
+//     /* AES 128 with random key */
+//     //get_random_bytes(&key, 16);
+
+//     for (i_key =0 ; i_key < keylen;i_key++)
+//     {
+
+//         key[i_key]=key_const2[i_key];
+//     }
+    
+//     if (crypto_aead_setkey(aead, key, 20)) {
+//         pr_aaa("key could not be set\n");
+//         ret = -EAGAIN;
+//         goto out;
+//     }
+//     pr_aaa(KERN_INFO "Key value - after setkey:\n");
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[0],key[1],key[2],key[3]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[4],key[5],key[6],key[7]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[8],key[9],key[10],key[11]);
+//     pr_aaa(KERN_INFO "%x\t%x\t%x\t%x \n",key[12],key[13],key[14],key[15]);
+//     pr_aaa(KERN_INFO "Salt in Nonce: %x\t%x\t%x\t%x \n",key[16],key[17],key[18],key[19]);
+//     /* IV will be random */
+//     ivdata = kzalloc(ivlen, GFP_KERNEL);
+//     if (!ivdata) {
+//         pr_aaa("could not allocate ivdata\n");
+//         goto out;
+//     }
+//     //get_random_bytes(ivdata, 12);
+//     for (i_iv =0 ; i_iv < ivlen;i_iv++)
+//     {
+//         ivdata[i_iv]=ivdata_const2[i_iv];
+//     }
+//     ivdata_copy = ivdata; // copy pointer
+//     pr_aaa(KERN_INFO "IV: \n");
+//     for(i_iv = 1; i_iv <= ivlen + 10; i_iv++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*ivdata_copy));
+//         ivdata_copy ++;
+//         if ((i_iv % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+
+//     /* AAD value (comprise of SPI and Sequence number)-64 bit 
+//        ( not with extended sequence number-96 bit) */
+//     AAD = kzalloc(assoclen, GFP_KERNEL);
+//     if (!AAD) {
+//         pr_aaa("could not allocate scratchpad\n");
+//         goto out;
+//     }
+//     //get_random_bytes(AAD,8);
+//     // 8 bytes
+//     AAD_copy =AAD_const2;
+//     pr_aaa(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
+    
+//     for(i_AAD = 1; i_AAD <= assoclen + 10; i_AAD ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*AAD_copy));
+//         AAD_copy ++;
+//         if ((i_AAD % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+//     for (i_AAD = 0; i_AAD < assoclen; i_AAD ++)
+//     {
+//         AAD[i_AAD] = AAD_const2[i_AAD];
+//     }
+//     AAD_copy =AAD;
+//     pr_aaa(KERN_INFO "Ascociated Authenctication Data (SPI+Sequence number): \n");
+    
+//     for(i_AAD = 1; i_AAD <= assoclen +10; i_AAD ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*AAD_copy));
+//         AAD_copy ++;
+//         if ((i_AAD % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+    
+//     /* Input data will be random */
+//     scratchpad = kzalloc(320, GFP_KERNEL);
+//     if (!scratchpad) {
+//         pr_aaa("could not allocate scratchpad\n");
+//         goto out;
+//     }
+//     //get_random_bytes(scratchpad, 16);
+//     // 60 bytes
+
+//     for (i_data = 0 ; i_data < data_len;i_data++)
+//     {
+//         scratchpad[i_data]=scratchpad_const2[i_data];
+//     }
+
+//     scratchpad_copy = scratchpad; 
+//     pr_aaa(KERN_INFO "Data payload :\n");
+    
+//     for(i_data = 1; i_data <= data_len ; i_data ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*scratchpad_copy));
+//         scratchpad_copy ++;
+//         if ((i_data % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+
+//     ad.tfm = aead;
+//     ad.req = req;
+//     pr_aaa(KERN_INFO "BEFORE allocate data and AAD into sg list of request\n");
+//     /*
+//      * Encrypt the data in-place.
+//      *
+//      * For simplicity, in this example we wait for the request to complete
+//      * before proceeding, even if the underlying implementation is asynchronous.
+//      *
+//      * To decrypt instead of encrypt, just change crypto_aead_encrypt() to
+//      * crypto_aead_decrypt() by using parameter enc.
+//      *  if enc = 1 , we do encrypt
+//      *  while enc = 0, we do decrypt.
+//      */
+
+//     /* We encrypt one block */
+
+//     ad.sg = kmalloc_array(2,sizeof(struct scatterlist),GFP_KERNEL);// 2 entries
+//     if(!ad.sg){
+//         ret = -ENOMEM;
+//         goto out;
+//     }
+//     sg_buffer_len = assoclen + data_len + authlen;
+//     sg_buffer =kzalloc(sg_buffer_len, GFP_KERNEL);// 92 = 8 byte (AAD -1st entry) + +8 byte iv + 60 bytes data(2nd entry)+16 bytes (2nd entry)
+//     sg_init_table(ad.sg, 2 ); // 2 entries
+//     sg_set_buf(&ad.sg[0], AAD, assoclen);
+//     sg_set_buf(&ad.sg[1],scratchpad,320);// for fall-back cases
+//     aead_request_set_ad(req,assoclen + ivlen);// 12 means that there are 12 octects ( 96 bits) in AAD fields.
+//     aead_request_set_crypt(req, ad.sg, ad.sg, data_len -ivlen, ivdata);// 60 bytes (data for encryption or decryption)  + 8 byte iv
+//     init_completion(&ad.result.completion);
+//     /* for printint */
+//     pr_aaa(KERN_INFO "assoclen + ivlen:%d\n", req->assoclen);
+//     pr_aaa(KERN_INFO "cryptlen:%d\n", req->cryptlen);
+//     pr_aaa(KERN_INFO "lenth of scatterlist : %d \n", ad.sg->length);
+//     pr_aaa(KERN_INFO "lenth of scatterlist 0: %d \n", ad.sg[0].length);
+//     pr_aaa(KERN_INFO "lenth of scatterlist 1: %d \n", ad.sg[1].length);
+//     // pr_aaa(KERN_INFO "length of scatterlist 2: %d \n", ad.sg[2].length);
+//     pr_aaa(KERN_INFO "lenght of scatterlist(src 0): %d\n",req->src[0].length);
+//     pr_aaa(KERN_INFO "length of scatterlist(src 1): %d \n",req->src[1].length);
+//     // pr_aaa(KERN_INFO "length of scatterlist(src 2): %d \n",req->src[2].length);
+//     pr_aaa(KERN_INFO "length of scatterlist(src):%d \n",req->src->length);
+//     pr_aaa(KERN_INFO "length of scatterlist(dst 0): %d \n",req->dst[0].length);
+//     pr_aaa(KERN_INFO "length of scatterlist(dst 1): %d \n",req->dst[1].length);
+//     // pr_aaa(KERN_INFO "length of scatterlist(dst 2): %d \n",req->dst[2].length);
+//     pr_aaa(KERN_INFO "length of scatterlist (dst):%d \n",req->dst->length);
+//     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen + (size_t)authlen ;
+    
+//     pr_aaa(KERN_INFO "length packets: %d \n", len);
+//     pr_aaa(KERN_INFO "packet - BEFORE function test encrypt:\n");
+//     len =sg_pcopy_to_buffer(ad.req->src,2,sg_buffer,len,0);
+//     sg_buffer_copy =sg_buffer;
+//     for(i_sg = 1; i_sg <= (req->assoclen + req->cryptlen + authlen); i_sg ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*sg_buffer_copy));
+//         sg_buffer_copy ++;
+//         if ((i_sg % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+
+//     /* encrypt data ( 1 for encryption)*/
+//     ret = test_rfc4106_encdec(&ad, endec);
+//     if (ret){
+//         pr_aaa("Error encrypting data: %d\n", ret);
+//         goto out;
+//     }      
+//     len = (size_t)ad.req->cryptlen + (size_t)ad.req->assoclen+(size_t)authlen ;
+//     len =sg_pcopy_to_buffer(ad.req->src,2,sg_buffer,len,0);
+//     pr_aaa(KERN_INFO "Packet - AFTER function test encrypt:\n");
+//     sg_buffer_copy = sg_buffer;
+//     for(i_sg = 1; i_sg <= (req->assoclen + req->cryptlen + authlen); i_sg ++)
+//     {
+//         pr_aaa(KERN_INFO "%x \t", (*sg_buffer_copy));
+//         sg_buffer_copy ++;
+//         if ((i_sg % 4) == 0)
+//             pr_aaa(KERN_INFO "\n");
+//     }
+//     pr_aaa(KERN_INFO "Module Testcrypto: Encryption triggered successfully\n");
+// out:
+//     if (aead)
+//         crypto_free_aead(aead);
+//     pr_aaa(KERN_INFO "aead -rfc 4106 after kfree_aaa:\n" );
+//     if (req)
+//         aead_request_free(req);
+//     pr_aaa(KERN_INFO "req -rfc 4106 after kfree_aaa:\n" );
+//     if (ivdata)
+//         kfree_aaa(ivdata);
+//     pr_aaa(KERN_INFO "ivdata -rfc 4106 after kfree_aaa:\n" );
+//     if (AAD)
+//         kfree_aaa(AAD);
+//     pr_aaa(KERN_INFO "AAD -rfc 4106 after kfree_aaa:\n" );
+//     if (scratchpad)
+//         kfree_aaa(scratchpad);
+//     pr_aaa(KERN_INFO "scratchpad -rfc 4106 after kfree_aaa:\n" );
+//     if(sg_buffer)
+//         kfree_aaa(sg_buffer);
+//     pr_aaa(KERN_INFO "sg_buffer -rfc 4106 after kfree_aaa:\n" );
+//     return ret;
+// }
 
 static void test_rfc4106_cb(struct crypto_async_request *req, int error)
 {
@@ -186,6 +970,7 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
     // u8 *done=req->data;
     // count ++;
     
+    //struct aead_request *req = container_of(base, struct aead_request, base); // for test
     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_rfc4106_cb\n");
     if(error == -EINPROGRESS)
     {
@@ -870,16 +1655,24 @@ static int __init test_init(void)
     // setup timer interval to based on TIMEOUT Macro
     mod_timer(&testcrypto_ktimer, jiffies + 60*HZ);
 
+    // for (i = 0; i < req_num; i ++){
+        // if (cipher_choice == 0)
+        //     test_skcipher();
+        // else if (cipher_choice == 1)
+        //     test_aead();
+        // else if (cipher_choice == 2)
+        //     test_rfc4106(test_choice,endec); 
+        // else 
     while(!done_flag)
     {
-        if (cipher_choice == 3)
-        {
-            test_esp_rfc4106(test_choice,endec);
-            // mdelay(300);
-            // pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-            // pr_err("------------------------Number of req-------------------: %d\n",count);
-            count ++;
-        }
+    if (cipher_choice == 3)
+    {
+        test_esp_rfc4106(test_choice,endec);
+                // mdelay(300);
+                // pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+                // pr_err("------------------------Number of req-------------------: %d\n",count);
+        count ++;
+    }
     }
     // mdelay(1000);
     return 0;
