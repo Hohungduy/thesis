@@ -196,7 +196,7 @@ int xmit_task(void *data)
             // ep_addr, &req->sg_table, dma_mapped, timeout_ms);
         req->sg_table.orig_nents = 1;
         req->sg_table.nents = 1;
-        mdelay(10);
+        // mdelay(10);
         res = xdma_xfer_submit(g_xpdev->crdev->xdev, 1, 1, 
             ep_addr, &req->sg_table, FALSE, timeout_ms);
         // pr_err("Sent req_id = %d, res = %d \n", req->id, res);
