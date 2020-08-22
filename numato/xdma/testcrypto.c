@@ -81,7 +81,8 @@ struct aead_def
     u8 done;
 };
 
-u32 count;
+u32 count = 0;
+// u32 count_xfer = 0;
 int done_flag = 0; //stop 
 //--------------timer handler---------------------------------------
 static void handle_timer(struct timer_list *t)
@@ -89,7 +90,7 @@ static void handle_timer(struct timer_list *t)
 	// printk(KERN_INFO "Module mycrypto: HELLO timer\n\n\n");
     done_flag = 1;
     pr_err("Number of req after 60s:%d\n\n", count);
-    
+    // pr_err("Number of req after 60s:%d\n\n", count_xfer);
     // del_timer_sync(&testcrypto_ktimer);
     // mod_timer(&testcrypto_ktimer, jiffies + msecs_to_jiffies(TIMEOUT));
 }
@@ -967,9 +968,9 @@ static void test_rfc4106_cb(struct crypto_async_request *req, int error)
     // char *authentag =ad->authentag;
     // char *ciphertext =ad->ciphertext;
     // char *packet =ad->packet; 
-    // u8 *done=req->data;
     // count ++;
     
+    // u8 *done=req->data;
     //struct aead_request *req = container_of(base, struct aead_request, base); // for test
     pr_aaa(KERN_INFO "Module testcrypto: STARTING test_rfc4106_cb\n");
     if(error == -EINPROGRESS)
@@ -1665,14 +1666,15 @@ static int __init test_init(void)
         // else 
     while(!done_flag)
     {
-    if (cipher_choice == 3)
-    {
-        test_esp_rfc4106(test_choice,endec);
-                // mdelay(300);
-                // pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
-                // pr_err("------------------------Number of req-------------------: %d\n",count);
-        count ++;
-    }
+        if (cipher_choice == 3)
+        {
+            test_esp_rfc4106(test_choice,endec);
+            // mdelay(300);
+            // pr_aaa("--------------------------%d-------------------: %s - PID:%d\n",__LINE__ , __func__ ,  current->pid);
+            // pr_err("------------------------Number of req-------------------: %d\n",count);
+            count ++;
+            // count_xfer ++;
+        }
     }
     // mdelay(1000);
     return 0;
