@@ -8,6 +8,7 @@
 #include "linux/delay.h"
 #include "linux/list.h"
 #include "linux/kernel.h"
+#include "linux/mutex.h"
 
 #include "xdma_mod.h"
 #include "libxdma_api.h"
@@ -206,6 +207,7 @@ struct xdma_crdev {
 
     // struct crypto_agent agent;
     // enum XFER_STATUS xfer_status;
+    struct mutex xfer_mutex;
 };
 
 int crdev_create(struct xdma_pci_dev *xpdev);
