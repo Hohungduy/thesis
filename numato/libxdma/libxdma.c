@@ -52,7 +52,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 extern unsigned int desc_blen_max;
 
 /* Module Parameters */
-static unsigned int poll_mode;
+static unsigned int poll_mode=1;
 module_param(poll_mode, uint, 0644);
 MODULE_PARM_DESC(poll_mode, "Set 1 for hw polling, default is 0 (interrupts)");
 
