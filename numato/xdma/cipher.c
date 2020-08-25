@@ -125,10 +125,10 @@ static int mycrypto_queue_skcipher_req(struct crypto_async_request *base,
 	ctx->assoclen = 0;
 	ctx->cryptlen = req->cryptlen;
 	ctx->authsize = 0;
-	spin_lock_bh(&mydevice->queue_lock);
+	spin_lock(&mydevice->queue_lock);
 	// enqueue request.
 	ret = crypto_enqueue_request(&mydevice->queue, base);
-	spin_unlock_bh(&mydevice->queue_lock);
+	spin_unlock(&mydevice->queue_lock);
 	
 	// dequeue using workqueue
 	queue_work(mydevice->workqueue,
@@ -342,13 +342,14 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	// Get skcipher request from its asysc request.
 	struct crypto_aead *tfm ;
 	struct mycrypto_dev *mydevice;
-	// int ret;
+	int ret;
 
 	// printk(KERN_INFO "Module mycrypto: enqueue request\n");
 	ctx = crypto_tfm_ctx(base->tfm);
 	mydevice = ctx->mydevice;
 
 	aead_req = aead_request_cast(base);
+	pr_err("Cipher.c:enqueue: sg_nents:%x -sg_length:%x - page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(aead_req->src),aead_req->src->length,aead_req->src->page_link,aead_req->src->offset,aead_req->src->dma_address,aead_req->src->dma_length);
 	// pr_aaa("aead_req pointer: %p - Adsress of req_ctx: %p - Value of req_ctx pointer: %p - Offset:%x\n", aead_req ,&(req_ctx), req_ctx, offsetof(struct aead_request, __ctx));
     
     tfm = crypto_aead_reqtfm(aead_req);
@@ -375,24 +376,24 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 			ctx->cryptlen = aead_req->cryptlen;
 			break;
 	}
-	pr_aaa("Module mycrypto-cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
+	pr_err("Cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
 			        	
-	// spin_lock_bh(&mydevice->queue_lock);
+	spin_lock(&mydevice->queue_lock);
 	/* enqueue request. */
-	// ret = crypto_enqueue_request(&mydevice->queue, base);
-	
-	// spin_unlock_bh(&mydevice->queue_lock);
+	ret = crypto_enqueue_request(&mydevice->queue, base);
+	pr_err("asys req:%p\n",base);
+	spin_unlock(&mydevice->queue_lock);
 	
 	/* dequeue using workqueue */
-	// queue_work(mydevice->workqueue,
-	// 	   &mydevice->work_data.work);
+	queue_work(mydevice->workqueue,
+		   &mydevice->work_data.work);
 
-	mydevice->req = base;
+	// mydevice->req = base;// for no crypto-queue
 
 	// dequeue without using workqueue (testing ...)
 	// mycrypto_dequeue_req(mydevice);
-	return mycrypto_dequeue_req(mydevice);
+	return ret;
 }
 /* Using for checking:
    -  whether or not the length of request and block size accommodate the critetia.

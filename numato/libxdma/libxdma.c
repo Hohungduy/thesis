@@ -52,7 +52,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 extern unsigned int desc_blen_max;
 
 /* Module Parameters */
-static unsigned int poll_mode=1;
+static unsigned int poll_mode=0;
 module_param(poll_mode, uint, 0644);
 MODULE_PARM_DESC(poll_mode, "Set 1 for hw polling, default is 0 (interrupts)");
 
@@ -3540,16 +3540,16 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	while (nents) {
 		unsigned long flags;
 		struct xdma_transfer *xfer;
-		pr_err("%s:%d\n", __func__, __LINE__);
-		xdma_request_cb_dump(req);
+		// pr_err("%s:%d\n", __func__, __LINE__);
+		// xdma_request_cb_dump(req);
 		/* build transfer */
 		rv = transfer_init(engine, req, &req->tfer[0]);
 		if (rv < 0) {
 			mutex_unlock(&engine->desc_lock);
 			goto unmap_sgl;
 		}
-		pr_err("%s:%d\n", __func__, __LINE__);
-		xdma_request_cb_dump(req);
+		// pr_err("%s:%d\n", __func__, __LINE__);
+		// xdma_request_cb_dump(req);
 		xfer = &req->tfer[0];
 
 		if (!dma_mapped)
@@ -3561,8 +3561,8 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			xfer->last_in_request = 1;
 			xfer->sgt = sgt;
 		}
-		pr_err("%s:%d\n", __func__, __LINE__);
-		xdma_request_cb_dump(req);
+		// pr_err("%s:%d\n", __func__, __LINE__);
+		// xdma_request_cb_dump(req);
 		dbg_tfr("xfer, %u, ep 0x%llx, done %lu, sg %u/%u.\n", xfer->len,
 			req->ep_addr, done, req->sw_desc_idx, req->sw_desc_cnt);
 
@@ -3576,8 +3576,8 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			pr_err("unable to submit %s, %d.\n", engine->name, rv);
 			goto unmap_sgl;
 		}
-		pr_err("%s:%d\n", __func__, __LINE__);
-		xdma_request_cb_dump(req);
+		// pr_err("%s:%d\n", __func__, __LINE__);
+		// xdma_request_cb_dump(req);
 		/*
 		 * When polling, determine how many descriptors have been queued
 		 * on the engine to determine the writeback value expected

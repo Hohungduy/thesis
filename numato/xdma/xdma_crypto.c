@@ -370,12 +370,12 @@ int callback_task(void *data)
           ( !list_empty(&crdev->cb_queue) ));
         // pr_err("callback_task  \n");
 start:
-        spin_lock_bh(&crdev->cb_lock);
+        spin_lock(&crdev->cb_lock);
         req = list_first_entry(&crdev->cb_queue, 
             struct xfer_req, list);
         list_del(&req->list);
         crdev->req_num--;
-        spin_unlock_bh(&crdev->cb_lock);
+        spin_unlock(&crdev->cb_lock);
 
         // pr_err("callback  \n");
         if (req->crypto_complete)
@@ -411,7 +411,6 @@ start:
         spin_lock(&crdev->agent_lock);
         req = list_first_entry(&crdev->req_queue, 
             struct xfer_req, list);
-            	
         list_del(&req->list);
         spin_unlock(&crdev->agent_lock);
         	
@@ -439,6 +438,7 @@ start:
         reinit_completion(&crdev->encrypt_done);
         // pr_err("%s:%d\n", __func__, __LINE__);
         pr_err("%s:%d %d\n", __func__, __LINE__, ep_addr);
+        pr_err("Xdma_crypto.c:sg_nents:%d -sg_length:%d - page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(req->sg_in),req->sg_in->length,req->sg_in->page_link,req->sg_in->offset,req->sg_in->dma_address,req->sg_in->dma_length);
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
 
@@ -503,6 +503,7 @@ start:
 
         // mutex_lock(&crdev->xfer_mutex);
         pr_err("%s:%d %d\n", __func__, __LINE__, ep_addr);
+        pr_err("Xdma_crypto.c:sg_nents:%d -sg_length:%d- page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(req->sg_out),req->sg_out->length,req->sg_out->page_link,req->sg_out->offset,req->sg_out->dma_address,req->sg_out->dma_length);
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
             
@@ -675,13 +676,12 @@ int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
         return -1;
     }
     	
-    spin_lock_bh(&crdev->agent_lock);
+    spin_lock(&crdev->agent_lock);
     xfer_req->id = crdev->xfer_idex;
     crdev->xfer_idex = crdev->xfer_idex % 1024;
     crdev->req_num++;
     list_add_tail(&xfer_req->list, req_queue);
-    spin_unlock_bh(&crdev->agent_lock);
-    	    
+    spin_unlock(&crdev->agent_lock);
     wake_up(&crdev->crypto_wq);
     return -EINPROGRESS;
 }
@@ -778,9 +778,9 @@ void free_xfer_req(struct xfer_req *req)
     struct xdma_crdev *crdev = get_crdev();
     if (req){
         kfree(req);
-        spin_lock_bh(&crdev->agent_lock);
+        spin_lock(&crdev->agent_lock);
         crdev->req_num--;
-        spin_unlock_bh(&crdev->agent_lock);
+        spin_unlock(&crdev->agent_lock);
     }
     else{
         pr_err("%s:%d: req NULL\n", __func__, __LINE__);

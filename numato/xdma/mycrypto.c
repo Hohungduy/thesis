@@ -142,9 +142,9 @@ static inline void mycrypto_handle_result(struct crypto_async_request *base, int
 	opr_ctx = crypto_tfm_ctx(base->tfm);
 	if (should_complete) 
 	{
-			local_bh_disable();
+			// local_bh_disable();
 			base->complete(base, ret);
-			local_bh_enable();
+			// local_bh_enable();
 	}
 }
 
@@ -162,7 +162,7 @@ struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *my
 // struct xfer_req req_xfer_;
 // u32 tag_buff[16/4];
 
-int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
+void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 {
 	struct crypto_async_request *base = NULL, *backlog = NULL;
 	// struct mycrypto_req_operation *opr_ctx;
@@ -177,28 +177,31 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	u32 *tag_outbound;
 	size_t len;
 
-	base = mydevice->req;
+	// base = mydevice->req; // for no crypto-queue
 	/*Get request from crypto queue*/
 	
-	// spin_lock_bh(&mydevice->queue_lock);
-	// if (!mydevice->req) 
-	// 	{
-	// 		base = mycrypto_dequeue_req_locked(mydevice, &backlog);
-	// 		mydevice->req = base;
-	// 	}
-	// spin_unlock_bh(&mydevice->queue_lock);
+	spin_lock_bh(&mydevice->queue_lock);
+	if (!mydevice->req) 
+		{
+			base = mycrypto_dequeue_req_locked(mydevice, &backlog);
+			pr_err("asys req:%p\n",base);
+			mydevice->req = base;
+		}
+	spin_unlock_bh(&mydevice->queue_lock);
 
 	if (!base){
 		pr_err("no current req\n");
+		return;
 	}
 
-	// if (backlog)
-	// 	backlog->complete(backlog, -EINPROGRESS);
+	if (backlog)
+		backlog->complete(backlog, -EINPROGRESS);
 
 	req_xfer = alloc_xfer_req();
 	if (!req_xfer)
 	{
-		return -ENOMEM;
+		// return -ENOMEM;
+		return;
 	}
 	aead_req = aead_request_cast(base);
 	set_callback(req_xfer, &handle_crypto_xfer_callback);
@@ -277,7 +280,7 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		region_in.crypto_dsc.aad[(region_in.crypto_dsc.info.aadsize /4 - 1) - i] = cpu_to_be32(*(u32*)(buff + i*4 ));
 		// 8/12 LSB bytes is AAD
 	}
-	for (i = region_in.crypto_dsc.info.aadsize / 4 ; i < 4;i ++)
+	for (i = region_in.crypto_dsc.info.aadsize / 4 ; i < 4 ; i ++)
 	{
 		region_in.crypto_dsc.aad[i] = 0x00000000;// 4 or 8 Bytes MSB is 0x
 	}
@@ -292,12 +295,12 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	    set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
 	else 
     	set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
-	
+	pr_err("Mycrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(req_xfer->sg_in),req_xfer->sg_in->length,req_xfer->sg_in->page_link,req_xfer->sg_in->offset,req_xfer->sg_in->dma_address,req_xfer->sg_in->dma_length);
     // Step 3: Submit to card
 	res = xdma_xfer_submit_queue(req_xfer);
 	if (res != -EINPROGRESS)
         pr_err("Unusual result\n");
-	return res;
+	// return res;
 }
 
 static void mycrypto_dequeue_work(struct work_struct *work)
@@ -326,13 +329,25 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	struct aead_request *aead_req ;
 	int ret=0;
 	aead_req = aead_request_cast(base);
+	pr_err("Mycrypto.c (callback): Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
+            aead_req->assoclen, aead_req->cryptlen);
+	pr_err("Mycrypto.c:callback: sg_nents:%d -sg_length:%d- page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(aead_req->dst),aead_req->dst->length,aead_req->dst->page_link,aead_req->dst->offset,aead_req->dst->dma_address,aead_req->dst->dma_length);
 
 	if (!base){ 
 		pr_aaa("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return res;
 	}
 	// pr_err("Complete with res = %d ! This is callback function! \n", res);
-	// pr_info("Module mycrypto: handle callback function from pcie layer \n");
+	if(data->ctx.ctx_op.dir == 0)
+	{
+		pr_info("----------------------------this is decrypt\n");
+	}
+	else
+	{
+		pr_info("----------------------------this is encrypt\n");
+
+	}
+	
 	// pr_err("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",data->ctx.ctx_op.iv,  
     //         *((u32 *)(&data->ctx.ctx_op.iv[4])), *((u32 *)(&data->ctx.ctx_op.iv[0])));
 	
@@ -388,20 +403,20 @@ err_busy:
 
 	// }
 
-	// switch (ret)
-	// {
-	// 	case 0:
-	// 		pr_err("%d:%s:Return value in callback: Done Successfully",__LINE__ , __func__ );
-	// 		break;
-	// 	case -1:
-	// 		pr_err("%d:%s:Return value in callback function: DMA Busy",__LINE__ , __func__ );
-	// 		break;
-	// 	case -74:
-	// 		pr_err("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
-	// 		break;
-	// }
+	switch (ret)
+	{
+		case 0:
+			pr_err("%d:%s:Return value in callback: Done Successfully",__LINE__ , __func__ );
+			break;
+		case -1:
+			pr_err("%d:%s:Return value in callback function: DMA Busy",__LINE__ , __func__ );
+			break;
+		case -74:
+			pr_err("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
+			break;
+	}
 
-	// queue_work(mydevice->workqueue,&mydevice->work_data.work);
+	queue_work(mydevice->workqueue,&mydevice->work_data.work);
 		   	
 
 	if(data->tag)
