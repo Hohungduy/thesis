@@ -295,7 +295,10 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	    set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
 	else 
     	set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
-	pr_err("Mycrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(req_xfer->sg_in),req_xfer->sg_in->length,req_xfer->sg_in->page_link,req_xfer->sg_in->offset,req_xfer->sg_in->dma_address,req_xfer->sg_in->dma_length);
+	pr_err("Mycrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:\
+		%x- offset:%lx-dma_address:%llx\n",sg_nents(req_xfer->sg_in),
+		req_xfer->sg_in->length,req_xfer->sg_in->page_link,
+		req_xfer->sg_in->offset,req_xfer->sg_in->dma_address);
     // Step 3: Submit to card
 	res = xdma_xfer_submit_queue(req_xfer);
 	if (res != -EINPROGRESS)
@@ -331,7 +334,11 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	aead_req = aead_request_cast(base);
 	pr_err("Mycrypto.c (callback): Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
-	pr_err("Mycrypto.c:callback: sg_nents:%d -sg_length:%d- page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(aead_req->dst),aead_req->dst->length,aead_req->dst->page_link,aead_req->dst->offset,aead_req->dst->dma_address,aead_req->dst->dma_length);
+	pr_err("Mycrypto.c:callback: sg_nents:%d -sg_length:%d- \
+		page_link:%x- offset:%lx-dma_address:%llx\n",
+		sg_nents(aead_req->dst),aead_req->dst->length,
+		aead_req->dst->page_link,aead_req->dst->offset,
+		aead_req->dst->dma_address);
 
 	if (!base){ 
 		pr_aaa("Module mycrypto: CAN NOT HANDLE A null POINTER\n");

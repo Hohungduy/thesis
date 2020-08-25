@@ -349,7 +349,11 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	mydevice = ctx->mydevice;
 
 	aead_req = aead_request_cast(base);
-	pr_err("Cipher.c:enqueue: sg_nents:%x -sg_length:%x - page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(aead_req->src),aead_req->src->length,aead_req->src->page_link,aead_req->src->offset,aead_req->src->dma_address,aead_req->src->dma_length);
+	pr_err("Cipher.c:enqueue: sg_nents:%x -sg_length:%x - \
+		page_link:%x- offset:%lx-dma_address:%llx\n",
+		sg_nents(aead_req->src),aead_req->src->length,
+		aead_req->src->page_link,aead_req->src->offset,
+		aead_req->src->dma_address);
 	// pr_aaa("aead_req pointer: %p - Adsress of req_ctx: %p - Value of req_ctx pointer: %p - Offset:%x\n", aead_req ,&(req_ctx), req_ctx, offsetof(struct aead_request, __ctx));
     
     tfm = crypto_aead_reqtfm(aead_req);

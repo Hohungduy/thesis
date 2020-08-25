@@ -396,11 +396,16 @@ int crypto_task(void *data)
     u64 ep_addr;
     void *in_region ;
     void *out_region;
-
+    struct scatterlist *sg;
+    struct page* page;
 
     timeout_ms = 3;
     in_region = get_region_in();
     out_region = get_region_out();
+    sg = (struct scatterlist *)kzalloc(10*sizeof(*sg), 
+        GFP_KERNEL | GFP_DMA);
+    int len, i;
+    
     
     while (true) {
         wait_event_interruptible(crdev->crypto_wq,
@@ -430,19 +435,41 @@ start:
                 break;
         }
 
+        
+
+        len = req->sg_in->length;
+        i = 0;
+        page = sg_page(req->sg_in);
+        while(len > 0){
+            if (len > 128){
+                sg_set_page(&sg[i], page, 128, req->sg_in->offset + i*128);
+                sg[i].page_link |= (0x01UL);
+            } else {
+                sg_set_page(&sg[i], page, len, req->sg_in->offset + i*128);
+            }
+            len -= 128;
+            if (len > 0)
+                sg_unmark_end(&sg[i]);
+            else
+                sg_mark_end(&sg[i]);
+            i++;
+        }
         // submit req from req_queue to engine 
-        sgt.sgl = req->sg_in;
-        sgt.orig_nents = 1;
-        sgt.nents = 1;
-        	
+        sgt.sgl = sg;
+        sgt.orig_nents = i;
+        // sgt.nents = i;
+
+
         reinit_completion(&crdev->encrypt_done);
         // pr_err("%s:%d\n", __func__, __LINE__);
         pr_err("%s:%d %d\n", __func__, __LINE__, ep_addr);
-        pr_err("Xdma_crypto.c:sg_nents:%d -sg_length:%d - page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(req->sg_in),req->sg_in->length,req->sg_in->page_link,req->sg_in->offset,req->sg_in->dma_address,req->sg_in->dma_length);
+        pr_err("Xdma_crypto.c:sg_nents:%d -sg_length:%d - page_link:%x- \
+            offset:%lx-dma_address:%llx\n",sg_nents(req->sg_in),
+            req->sg_in->length,req->sg_in->page_link,req->sg_in->offset,
+            req->sg_in->dma_address);
+
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
-
-        
             	
         if (req->res < 0)
         {
@@ -481,9 +508,9 @@ start:
 	
         // Encrypt Done!
 
-        sgt.sgl = req->sg_out;
-        sgt.orig_nents = 1;
-        sgt.nents = 1;
+        // sgt.sgl = req->sg_out;
+        // sgt.orig_nents = 1;
+        // sgt.nents = 1;
         // pr_err("%s:%d\n", __func__, __LINE__);
         switch (req->crypto_dsc.info.aadsize)
         {
@@ -503,7 +530,33 @@ start:
 
         // mutex_lock(&crdev->xfer_mutex);
         pr_err("%s:%d %d\n", __func__, __LINE__, ep_addr);
-        pr_err("Xdma_crypto.c:sg_nents:%d -sg_length:%d- page_link:%x- offset:%lx-dma_address:%llx-dma_length:%x\n",sg_nents(req->sg_out),req->sg_out->length,req->sg_out->page_link,req->sg_out->offset,req->sg_out->dma_address,req->sg_out->dma_length);
+        pr_err("Xdma_crypto.c:sg_nents:%d -sg_length:%d- page_link:%x- \
+            offset:%lx-dma_address:%llx\n",sg_nents(req->sg_out),
+            req->sg_out->length,req->sg_out->page_link,req->sg_out->offset,
+            req->sg_out->dma_address);
+
+        len = req->sg_out->length;
+        i = 0;
+        page = sg_page(req->sg_out);
+        while(len > 0){
+            if (len > 128){
+                sg_set_page(&sg[i], page, 128, req->sg_out->offset + i*128);
+                sg[i].page_link |= (0x01UL);
+            } else {
+                sg_set_page(&sg[i], page, len, req->sg_out->offset + i*128);
+            }
+            len -= 128;
+            if (len > 0)
+                sg_unmark_end(&sg[i]);
+            else
+                sg_mark_end(&sg[i]);
+            i++;
+        }
+        // submit req from req_queue to engine 
+        sgt.sgl = sg;
+        sgt.orig_nents = i;
+        // sgt.nents = i;
+
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
             

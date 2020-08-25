@@ -9,6 +9,7 @@
 #include "linux/list.h"
 #include "linux/kernel.h"
 #include "linux/mutex.h"
+#include "linux/scatterlist.h"
 
 #include "xdma_mod.h"
 #include "libxdma_api.h"
