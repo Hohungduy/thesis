@@ -407,6 +407,7 @@ int crypto_task(void *data)
             ( !list_empty(&crdev->req_queue) ));
 start:
         // remove first req from backlog
+        mutex_lock(&crdev->xfer_mutex);
         spin_lock(&crdev->agent_lock);
         req = list_first_entry(&crdev->req_queue, 
             struct xfer_req, list);
@@ -423,6 +424,7 @@ start:
                 ep_addr = 0x5C;
                 break;               
             default:
+                ep_addr = 0xf0;
                 pr_err("Wrong aadsize:%d\n", 
                     req->crypto_dsc.info.aadsize);
                 goto err_aadsize;
@@ -436,8 +438,7 @@ start:
         	
         reinit_completion(&crdev->encrypt_done);
         // pr_err("%s:%d\n", __func__, __LINE__);
-        mutex_lock(&crdev->xfer_mutex);
-
+        pr_err("%s:%d %d\n", __func__, __LINE__, ep_addr);
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
 
@@ -469,7 +470,7 @@ start:
         memset32(in_region + offsetof(struct region_in, data_len),
             req->crypto_dsc.info.length, 1);
 
-        mutex_unlock(&crdev->xfer_mutex);
+        // mutex_unlock(&crdev->xfer_mutex);
         	
         // add to tail of processing queue
         spin_lock(&crdev->agent_lock);
@@ -493,11 +494,15 @@ start:
                 ep_addr = 0x10020 - 20;
                 break;               
             default:
+                ep_addr = 0x10000 + 0xf0;
+                pr_err("Wrong aadsize:%d\n", 
+                    req->crypto_dsc.info.aadsize);
                 goto err_aadsize;
                 break;
         }
 
-        mutex_lock(&crdev->xfer_mutex);
+        // mutex_lock(&crdev->xfer_mutex);
+        pr_err("%s:%d %d\n", __func__, __LINE__, ep_addr);
         req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
             XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
             
@@ -509,25 +514,24 @@ start:
         // pr_err("%s:%d\n", __func__, __LINE__);
         memcpy_fromio(req->tag, 
             BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
-        mutex_unlock(&crdev->xfer_mutex);
 
         // pr_err("%s:%d\n", __func__, __LINE__);
         spin_lock(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock(&crdev->cb_lock);
-        // pr_err("%s:%d\n", __func__, __LINE__);
+        mutex_unlock(&crdev->xfer_mutex);
+        pr_err("%s:%d\n", __func__, __LINE__);
         goto go_back_done;
 err_aadsize:
         pr_err("------------------  AAD_SIZE  ---------------\n");
         req->res = -1;
         spin_lock(&crdev->cb_lock);
-        	
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock(&crdev->cb_lock);
         debug_mem_in();
         debug_mem_out();
         pr_err("------------------  AAD_SIZE ---------------\n");
-        goto go_back_done;
+        goto go_back;
 
 
 xmit_failed:
