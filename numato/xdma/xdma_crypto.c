@@ -368,7 +368,7 @@ int callback_task(void *data)
     while (true) {
         wait_event_interruptible(crdev->cb_wq, 
           ( !list_empty(&crdev->cb_queue) ));
-        // pr_err("callback_task  \n");
+        pr_err("callback_task  \n");
 start:
         spin_lock(&crdev->cb_lock);
         req = list_first_entry(&crdev->cb_queue, 
@@ -376,8 +376,7 @@ start:
         list_del(&req->list);
         crdev->req_num--;
         spin_unlock(&crdev->cb_lock);
-
-        // pr_err("callback  \n");
+        pr_err("callback  \n");
         if (req->crypto_complete)
                 res = req->crypto_complete(req, req->res);
         if (!list_empty(&crdev->cb_queue))
@@ -406,7 +405,8 @@ int crypto_task(void *data)
         GFP_KERNEL | GFP_DMA);
     int len, i;
     
-    
+    pr_err("%d:%s\n",__LINE__,__func__);
+
     while (true) {
         wait_event_interruptible(crdev->crypto_wq,
             ( !list_empty(&crdev->req_queue) ));
@@ -418,7 +418,8 @@ start:
             struct xfer_req, list);
         list_del(&req->list);
         spin_unlock(&crdev->agent_lock);
-        	
+        	        pr_err("%d:%s\n",__LINE__,__func__);
+
         switch (req->crypto_dsc.info.aadsize)
         {
             case 8:
@@ -436,24 +437,37 @@ start:
         }
 
         
+        pr_err("%d:%s\n",__LINE__,__func__);
 
         len = req->sg_in->length;
         i = 0;
+        memset(sg, 0, 10*sizeof(*sg));
         page = sg_page(req->sg_in);
         while(len > 0){
+                    pr_err("%d:%s\n",__LINE__,__func__);
+
             if (len > 128){
                 sg_set_page(&sg[i], page, 128, req->sg_in->offset + i*128);
-                sg[i].page_link |= (0x01UL);
+                pr_err("%d:%s\n",__LINE__,__func__);
+
             } else {
                 sg_set_page(&sg[i], page, len, req->sg_in->offset + i*128);
+                pr_err("%d:%s\n",__LINE__,__func__);
+
             }
+            sg[i].page_link &= ~(0x01UL);
+
             len -= 128;
+            pr_err("%d:%s\n",__LINE__,__func__);
             if (len > 0)
                 sg_unmark_end(&sg[i]);
+
             else
                 sg_mark_end(&sg[i]);
             i++;
         }
+        pr_err("%d:%s\n",__LINE__,__func__);
+
         // submit req from req_queue to engine 
         sgt.sgl = sg;
         sgt.orig_nents = i;
@@ -467,13 +481,21 @@ start:
             offset:%lx-dma_address:%llx\n",sg_nents(req->sg_in),
             req->sg_in->length,req->sg_in->page_link,req->sg_in->offset,
             req->sg_in->dma_address);
-
-        req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
-            XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
-            	
-        if (req->res < 0)
+        int j;
+        for (j = 0; j < i; j++)
         {
-            goto xmit_failed;
+            sgt.sgl = &sg[j];
+            sgt.orig_nents = 1;
+
+            req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
+                XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
+            ep_addr += 128;
+            if (req->res < 0)
+            {
+                        pr_err("%d:%s\n",__LINE__,__func__);
+                goto xmit_failed;
+            }
+
         }
 
         // Write crypto info
@@ -498,7 +520,8 @@ start:
             req->crypto_dsc.info.length, 1);
 
         // mutex_unlock(&crdev->xfer_mutex);
-        	
+        	        pr_err("%d:%s\n",__LINE__,__func__);
+
         // add to tail of processing queue
         spin_lock(&crdev->agent_lock);
         trigger_engine(DEFAULT_ENGINE);
@@ -516,9 +539,13 @@ start:
         {
             case 8:
                 ep_addr = 0x10020 - 16;
+                        pr_err("%d:%s\n",__LINE__,__func__);
+
                 break;
             case 12:
                 ep_addr = 0x10020 - 20;
+                        pr_err("%d:%s\n",__LINE__,__func__);
+
                 break;               
             default:
                 ep_addr = 0x10000 + 0xf0;
@@ -537,32 +564,49 @@ start:
 
         len = req->sg_out->length;
         i = 0;
+        memset(sg, 0, 10*sizeof(*sg));
         page = sg_page(req->sg_out);
         while(len > 0){
             if (len > 128){
+                pr_err("%d:%s\n",__LINE__,__func__);
                 sg_set_page(&sg[i], page, 128, req->sg_out->offset + i*128);
-                sg[i].page_link |= (0x01UL);
             } else {
+                pr_err("%d:%s\n",__LINE__,__func__);
+
                 sg_set_page(&sg[i], page, len, req->sg_out->offset + i*128);
             }
+            sg[i].page_link &= ~(0x01UL);
+
             len -= 128;
+            pr_err("%d:%s\n",__LINE__,__func__);
             if (len > 0)
                 sg_unmark_end(&sg[i]);
+
             else
                 sg_mark_end(&sg[i]);
+            pr_err("%d:%s\n",__LINE__,__func__);
+
             i++;
         }
         // submit req from req_queue to engine 
         sgt.sgl = sg;
         sgt.orig_nents = i;
         // sgt.nents = i;
-
-        req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
-            XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
-            
-        if (req->res < 0)
+        pr_err("%d:%s\n",__LINE__,__func__);
+        for (j = 0; j < i; j++)
         {
-            goto rcv_failed;
+            sgt.sgl = &sg[j];
+            sgt.orig_nents = 1;
+
+            req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
+                XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
+            ep_addr += 128;
+            if (req->res < 0)
+            {
+                        pr_err("%d:%s\n",__LINE__,__func__);
+
+                goto rcv_failed;
+            }
         }
         // TAG
         // pr_err("%s:%d\n", __func__, __LINE__);
@@ -575,16 +619,21 @@ start:
         spin_unlock(&crdev->cb_lock);
         mutex_unlock(&crdev->xfer_mutex);
         pr_err("%s:%d\n", __func__, __LINE__);
+                pr_err("%d:%s\n",__LINE__,__func__);
+
         goto go_back_done;
 err_aadsize:
         pr_err("------------------  AAD_SIZE  ---------------\n");
         req->res = -1;
         spin_lock(&crdev->cb_lock);
+        pr_err("%d:%s\n",__LINE__,__func__);
         list_add_tail(&req->list, &crdev->cb_queue);
+        pr_err("%d:%s\n",__LINE__,__func__);
         spin_unlock(&crdev->cb_lock);
         debug_mem_in();
         debug_mem_out();
         pr_err("------------------  AAD_SIZE ---------------\n");
+        pr_err("%d:%s\n",__LINE__,__func__);
         goto go_back;
 
 
@@ -594,6 +643,7 @@ xmit_failed:
         spin_lock(&crdev->cb_lock);
         	
         list_add_tail(&req->list, &crdev->cb_queue);
+        pr_err("%d:%s\n",__LINE__,__func__);
         spin_unlock(&crdev->cb_lock);
         debug_mem_in();
         pr_err("------------------  XMIT FAILED ---------------\n");
@@ -604,8 +654,11 @@ rcv_failed:
         req->res = -1;
         spin_lock(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
+                pr_err("%d:%s\n",__LINE__,__func__);
+
         spin_unlock(&crdev->cb_lock);
         debug_mem_in();
+        pr_err("%s:%d\n", __func__, __LINE__);
         debug_mem_out();
         pr_err("------------------  RCV FAILED ---------------\n");
         goto go_back;
@@ -613,6 +666,7 @@ go_back:
         mutex_unlock(&crdev->xfer_mutex);
 go_back_done:
         wake_up(&crdev->cb_wq);
+        pr_err("%s:%d\n", __func__, __LINE__);
         if (!list_empty(&crdev->req_queue))
             goto start;
     }

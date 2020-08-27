@@ -383,21 +383,22 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	pr_err("Cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
 			        	
-	spin_lock(&mydevice->queue_lock);
-	/* enqueue request. */
-	ret = crypto_enqueue_request(&mydevice->queue, base);
-	pr_err("asys req:%p\n",base);
-	spin_unlock(&mydevice->queue_lock);
+	// spin_lock(&mydevice->queue_lock);
+	// /* enqueue request. */
+	// ret = crypto_enqueue_request(&mydevice->queue, base);
+	// pr_err("asys req:%p\n",base);
+	// spin_unlock(&mydevice->queue_lock);
 	
-	/* dequeue using workqueue */
-	queue_work(mydevice->workqueue,
-		   &mydevice->work_data.work);
+	// /* dequeue using workqueue */
+	// queue_work(mydevice->workqueue,
+	// 	   &mydevice->work_data.work);
 
-	// mydevice->req = base;// for no crypto-queue
+	mydevice->req = base;// for no crypto-queue
 
 	// dequeue without using workqueue (testing ...)
 	// mycrypto_dequeue_req(mydevice);
-	return ret;
+	// return ret;
+	return mycrypto_dequeue_req(mydevice);
 }
 /* Using for checking:
    -  whether or not the length of request and block size accommodate the critetia.

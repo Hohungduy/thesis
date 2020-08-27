@@ -142,9 +142,9 @@ static inline void mycrypto_handle_result(struct crypto_async_request *base, int
 	opr_ctx = crypto_tfm_ctx(base->tfm);
 	if (should_complete) 
 	{
-			// local_bh_disable();
+			local_bh_disable();
 			base->complete(base, ret);
-			// local_bh_enable();
+			local_bh_enable();
 	}
 }
 
@@ -162,7 +162,7 @@ struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *my
 // struct xfer_req req_xfer_;
 // u32 tag_buff[16/4];
 
-void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
+int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 {
 	struct crypto_async_request *base = NULL, *backlog = NULL;
 	// struct mycrypto_req_operation *opr_ctx;
@@ -177,31 +177,31 @@ void mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	u32 *tag_outbound;
 	size_t len;
 
-	// base = mydevice->req; // for no crypto-queue
+	base = mydevice->req; // for no crypto-queue
 	/*Get request from crypto queue*/
 	
-	spin_lock_bh(&mydevice->queue_lock);
-	if (!mydevice->req) 
-		{
-			base = mycrypto_dequeue_req_locked(mydevice, &backlog);
-			pr_err("asys req:%p\n",base);
-			mydevice->req = base;
-		}
-	spin_unlock_bh(&mydevice->queue_lock);
+	// spin_lock_bh(&mydevice->queue_lock);
+	// if (!mydevice->req) 
+	// 	{
+	// 		base = mycrypto_dequeue_req_locked(mydevice, &backlog);
+	// 		pr_err("asys req:%p\n",base);
+	// 		mydevice->req = base;
+	// 	}
+	// spin_unlock_bh(&mydevice->queue_lock);
 
 	if (!base){
 		pr_err("no current req\n");
-		return;
+		// return;
 	}
 
-	if (backlog)
-		backlog->complete(backlog, -EINPROGRESS);
+	// if (backlog)
+	// 	backlog->complete(backlog, -EINPROGRESS);
 
 	req_xfer = alloc_xfer_req();
 	if (!req_xfer)
 	{
-		// return -ENOMEM;
-		return;
+		return -ENOMEM;
+		// return;
 	}
 	aead_req = aead_request_cast(base);
 	set_callback(req_xfer, &handle_crypto_xfer_callback);
@@ -405,7 +405,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	}
 err_busy:
 	// {
-		mydevice->req = NULL; // No dma busy
+		// mydevice->req = NULL; // No dma busy
 		mycrypto_handle_result(base ,ret);
 
 	// }
@@ -423,7 +423,7 @@ err_busy:
 			break;
 	}
 
-	queue_work(mydevice->workqueue,&mydevice->work_data.work);
+	// queue_work(mydevice->workqueue,&mydevice->work_data.work);
 		   	
 
 	if(data->tag)
