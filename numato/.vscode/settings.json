@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "functional": "c"
+        "functional": "c",
+        "string_view": "c",
+        "tuple": "c"
     }
 }
