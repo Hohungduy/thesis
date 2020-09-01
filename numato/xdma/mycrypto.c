@@ -306,11 +306,16 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
     req_xfer->crypto_dsc.iv = region_in.crypto_dsc.iv;
     memcpy(req_xfer->crypto_dsc.aad, region_in.crypto_dsc.aad, AAD_SIZE); 
 	// tag_outbound = tag_buff;
-	tag_outbound = kzalloc(16, GFP_ATOMIC);
+	// ------------- Long add: remove 
+	// tag_outbound = kzalloc(16, GFP_ATOMIC);
 	if (region_in.crypto_dsc.info.length % 16 == 0)
-	    set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
+	    // set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
+		// ------------- Long add:
+		set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ));
 	else 
-    	set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
+		// ------------- Long add:
+    	// set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
+		set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1));
 	pr_err("Mycrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:\
 		%x- offset:%lx-dma_address:%llx\n",sg_nents(req_xfer->sg_in),
 		req_xfer->sg_in->length,req_xfer->sg_in->page_link,
@@ -429,12 +434,14 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
 
 	// Copy authentication tag from buffer (sg_out)
-	memcpy(buf + data->ctx.ctx_op.cryptlen + data->ctx.ctx_op.assoclen, data->tag,ICV_SIZE);
+	// ---------- Long add: use get_tag()
+	// memcpy(buf + data->ctx.ctx_op.cryptlen + data->ctx.ctx_op.assoclen, data->tag,ICV_SIZE);
 	
 	// Compare two authentication tag
 	if(data->ctx.ctx_op.dir == 0)
 	{
-		ret = mycrypto_compare_icv(data->tag,data->crypto_dsc.icv);//1st: tag_out; 2nd: tag_in 
+		// ---------- Long add: use get_tag()
+		// ret = mycrypto_compare_icv(data->tag,data->crypto_dsc.icv);//1st: tag_out; 2nd: tag_in 
 		// ret = 0 (successfull); ret = -EBADMSG (authenction failed)
 	}
 err_busy:
@@ -459,9 +466,9 @@ err_busy:
 
 	// queue_work(mydevice->workqueue,&mydevice->work_data.work);
 		   	
-
-	if(data->tag)
-		kfree(data->tag);
+	// ---------- Long add: remove
+	// if(data->tag)
+	// 	kfree(data->tag);
 	// free_xfer_req(data); // data is xfer_req
 	if(data)
 		kfree(data);
