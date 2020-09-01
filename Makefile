@@ -48,8 +48,8 @@ endef
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	pwd
-	$(CP) -r ./numato-driver/xdma_driver_wait/* $(PKG_BUILD_DIR)/
-	$(CP) -r ./numato-driver/xdma_driver_wait/include/* $(PKG_BUILD_DIR)/xdma
+	$(CP) -r ./numato/* $(PKG_BUILD_DIR)/
+	$(CP) -r ./numato/include/* $(PKG_BUILD_DIR)/xdma
 endef
 
 EXTRA_KCONFIG:= \

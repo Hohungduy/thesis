@@ -1,0 +1,351 @@
+----------------------------------------------
+Test case 1 - Test for PCIe Card
+---------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 + 4 Bytes)
+	INFO 
+	= 0b00000000000010000100100011000000 (binary)
+	= 0x000000000000000000000000000848C0 (hexa)
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	459018148f6cbe722fd04796562dfdb4
+
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
+	key = 
+	00000000000000000000000000000000
+	4c80cdefbb5d10da906ac73c3613a634
+Address:50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	2e443b684956ed7e3b244cfe00000001
+
+Address: 60 -> 6F (4 Bytes 0 + 12 Bytes AAD)
+	aad = 
+	00000000000043218765432100000000 
+
+Address: 70 -> B7 (72 octets)
+	plaintext = 
+	45000048699a000080114db7c0a80102
+	c0a801010a9bf15638d3010000010000
+	00000000045f736970045f7564700373
+	69700963796265726369747902646b00
+	0021000101020201
+
+*Outbound:
+
+Address: 5C -> BB (88 Bytes + 8 Bytes 0 cuoi ciphertext chen vao = 96 byte) 
+	-ADDRESS TAG: AC->BB (16 BYTE CUOI: 459018148f6cbe722fd04796562dfdb4)
+	ciphertext+tag = 
+	fecf537e729d5b07dc30df528dd22b76
+	8d1b98736696a6fd348509fa13ceac34
+	cfa2436f14a3f3cf65925bf1f4a13c5d
+	15b21e1884f5ff6247aeabb786b93bce
+	000000000000000061bc17d768fd9732
+	459018148f6cbe722fd04796562dfdb4
+
+-----------------------------------------------
+Test case 2
+-----------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 + 4 Bytes) 
+	INFO 
+	= 0b00000000000010000100000010000000
+	= 0x00000000000000000000000000084080
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	83b70d3aa8bc6ee4c309e9d85a41ad4a
+
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
+	key = 
+	00000000000000000000000000000000
+	feffe9928665731c6d6a8f9467308308
+
+Address: 50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	cafebabefacedbaddecaf88800000001
+
+Address: 60 -> 6F (8 Bytes 0 + 8 Bytes AAD)
+	aad = 
+	00000000000000000000a5f80000000a
+
+Address: 70 -> AF (64 octets)
+	plaintext = 
+	4500003e698f000080114dccc0a80102
+	c0a801010a980035002a2343b2d00100
+	00010000000000000373697009637962
+	65726369747902646b00000100010001
+	(64 octets)
+
+*Outbound:
+
+Address: 5C -> AB (80 Bytes) 
+	- ADDRESS TAG: 3C->AB (16 BYTE CUOI: 83b70d3aa8bc6ee4c309e9d85a41ad4A)
+	ciphertext+tag = 
+	deb22cd9b07c72c16e3a65beeb8df304
+	a5a5897d33ae530f1ba76d5d114d2a5c
+	3de81827c10e9a4f51330d0eec416642
+	cfbb85a5b47e48a4ec3b9ba95d918bd1
+	83b70d3aa8bc6ee4c309e9d85a41ad4a
+
+-----------------------------------------------
+Test case 3
+-----------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 + 4 Bytes) 
+	INFO 
+	= 0b00000000000010000011010010000010 (BINARY)
+	= 0x00000000000000000000000000083482 (HECXA)
+
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	b335f4eecfdbf831824b4c4915956c96
+Address: 30 -> 4F (32 MSB bytes KEY)
+	key = 
+	abbccddef00112233445566778899aab
+	abbccddef00112233445566778899aab
+
+Address: 50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	11223344010203040506070800000001
+
+Address: 60 -> 6F (8 Bytes 0 + 8 Bytes AAD)
+	aad = 
+	00000000000000004a2cbfe300000002
+Address: 70 -> A3 (52 octets)
+	plaintext = 
+	4500003069a6400080062690c0a80102
+	9389155e0a9e008b2dc57ee000000000
+	7002400020bf0000020405b401010402
+	01020201
+
+*Outbound:
+
+Address: 5C -> 9F (68 Bytes) 
+	- ADDRESS TAG: 90->9F (16 BYTE CUOI:B335f4eecfdbf831824b4c4915956c96) 
+	ciphertext+tag = 
+	ff425c9b724599df7a3bcd510194e00d
+	6a78107f1b0b1cbf06efae9d65a5d763
+	748a637985771d347f0545659f14e99d
+	000000000000000000000000ef842d8e
+	b335f4eecfdbf831824b4c4915956c96
+
+--------------------------------------------------
+Test case 4
+--------------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 +4 Bytes) 
+	INFO 
+	= 0B00000000000010000100000010000000 (BINARY)
+	= 0x00000000000000000000000000084080 (HECXA)
+
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	f821d496eeb096e98ad2b69e4799c71d
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
+	key = 
+	00000000000000000000000000000000
+	00000000000000000000000000000000
+
+Address: 50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	00000000000000000000000000000001
+
+Address: 60 -> 6F (8 Bytes 0 + 8 Bytes AAD)
+	aad = 	
+	00000000000000000000000000000001
+	
+Address: 70 -> AF (64 octets)
+	plaintext = 
+	4500003c99c500008001cb7a40679318
+	010101010800075c0200440061626364
+	65666768696a6b6c6d6e6f7071727374
+	75767761626364656667686901020201
+
+*Outbound:
+
+Address: 5C -> AB (80 Bytes)
+	- ADDRESS TAG: 3C->AB  (16 BYTE CUOI: f821d496eeb096e98ad2b69e4799c71d)
+	ctext+tag = 
+	4688daf2f973a392732909c331d56d60
+	f694abaa414b5e7ff5fdcdfff5e9a284
+	456476492719ffb64de7d9dca1e1d894
+	bc3bd57873ed4d181d19d4d5c8c18af3
+	f821d496eeb096e98ad2b69e4799c71d
+
+--------------------------------------------------
+Test case 5
+--------------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 +4 Bytes) 
+	INFO 
+	= 0B00000000000010000100000011000000 (BINARY)
+	= 0x000000000000000000000000000840C0 (HECXA)
+
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	e0d731cc978ecafaeae88f00e80d6e48
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
+	key = 
+	00000000000000000000000000000000
+	3de09874b388e6491988d0c3607eae1f
+
+Address:50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	57690e434e280000a2fca1a300000001
+
+Address: 60 -> 6F (4 Bytes 0 + 12 Bytes AAD)
+	aad = 	
+	0000000042f67e3f1010101010101010
+	
+Address: 70 -> AF (64 octets)
+	plaintext = 
+	4500003c99c300008001cb7c40679318
+	010101010800085c0200430061626364
+	65666768696a6b6c6d6e6f7071727374
+	75767761626364656667686901020201
+	(64 octets)
+
+*Outbound:
+
+Address: 5C -> AB (80 Bytes)
+	- ADDRESS TAG: 3C->AB  (16 BYTE CUOI:e0d731cc978ecafaeae88f00e80d6e48)
+	ctext+tag = 
+	fba2caa4853cf9f0f22cb10d86dd83b0
+	fec75691cf1a04b00d1138ec9c357917
+	65acbd8701ad79845bf9fe3fba487bc9
+	1755e6662b4c8d0d1f5e22739530320a
+	e0d731cc978ecafaeae88f00e80d6e48
+
+--------------------------------------------------
+Test case 6
+--------------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 +4 Bytes) 
+	INFO 
+	= 0B00000000000010000001110011000000 (BINARY)
+	= 0x00000000000000000000000000081CC0 (HECXA)
+
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	369f071f35e034be95f112e4e7d05d35
+Address: 30 -> 4F (16 LSB bytes KEY + 16 MSB octects 0)
+	key = 
+	00000000000000000000000000000000
+	3de09874b388e6491988d0c3607eae1f
+
+Address:50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	57690e434e280000a2fca1a300000001
+
+Address: 60 -> 6F (4 Bytes 0 + 12 Bytes AAD)
+	aad = 	
+	0000000042f67e3f1010101010101010
+	
+Address: 70 -> 8B (28 octets)
+	plaintext = 
+	4500001c42a200008001441f406793b6
+	e00000020a00f5ff01020201
+	(28 octets)
+
+*Outbound:
+
+Address: 5C -> 8B (44 Bytes + 4 BYTES CHEN 0 VO CIPHERTEXT =48 BYTES)
+	- ADDRESS TAG: 7C->8B (16 BYTE CUOI:369f071f35e034be95f112e4e7d05d35)
+	ciphertext+tag = 
+	fba2ca845e5df9f0f22c3e6e86dd831e
+	000000001fc65792cd1af9130e1379ed
+	369f071f35e034be95f112e4e7d05d35
+
+--------------------------------------------------
+Test case 7
+--------------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 +4 Bytes) 
+	INFO 
+	= 0B00000000000010000010100010000001 (BINARY)
+	= 0x00000000000000000000000000082881 (HECXA)
+
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	95457b9652037f5318027b5b4cd7a636
+Address: 30 -> 4F (32 bytes KEY )
+	key = 
+	feffe9928665731c6d6a8f9467308308
+	feffe9928665731c0000000000000000
+
+Address: 50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	cafebabefacedbaddecaf88800000001
+
+Address: 60 -> 6F (8 Bytes 0 + 8 Bytes AAD)
+	aad = 	
+	00000000000000000000a5f80000000a
+	
+Address: 70 -> 97 (40 octets)
+	plaintext = 
+	45000028a4ad4000400678800a01038f
+	0a010612802306b8cb712602dd6bb03e
+	501016d075680001
+	
+*Outbound:
+
+Address: 5C -> B3 (56 Bytes + 6 bytes 0 chen vo cuoi ciphertext)
+	- ADDRESS TAG: A4-> B3 (16 BYTE CUOI:95457b9652037f5318027b5b4cd7a636)
+	ctext+tag = 
+	a5b1f8066029aea40e598b8122de0242
+	0938b3ab33f828e687b8858b5bfbdbd0
+	0000000000000000315b27452144cc77
+	95457b9652037f5318027b5b4cd7a636
+
+--------------------------------------------------
+Test case 8
+--------------------------------------------------
+*InBound: 
+
+Address: 10 -> 1F (12 Bytes 0 + 4 Bytes) 
+	INFO 
+	= 0B00000000000010000010100010000000 (BINARY)
+	= 0x00000000000000000000000000082880 (HECXA)
+
+Address: 20 -> 2F (16 Bytes)
+	Authentication Tag = 
+	651f57e65f354f75ff17015769623436
+Address: 30 -> 4F (16 lSB bytes KEY + 16 mSB octects 0)
+	key = 
+	00000000000000000000000000000000
+	abbccddef00112233445566778899aab
+
+Address: 50 -> 5F (12 Bytes Nonce(Salt+IV)+0x00000001)
+	nonce = 
+	decaf888cafedebaceface7400000001
+
+Address: 60 -> 6F (4 Bytes 0 + 12 Bytes AAD)
+	aad = 	
+	00000000000001000000000000000001
+	
+Address: 70 -> BF (80 octets)
+	plaintext = 
+	4500004933ba00007f119106c3fb1d10
+	c2b1d326c02831ce0035dd7b800302d5
+	00004e20001e8c18d75b81dc91baa047
+	6b91b924b280389d92c963bac046ec95
+	9b6266c04722b14923010101
+
+*Outbound:
+
+Address: 5C -> BB (92 Bytes + 4 BYTES 0 chen vo cuoi ciphertext)
+	- ADDRESS TAG: AC-> BB (16 BYTE CUOI:651f57e65f354f75ff17015769623436)
+	ciphertext+tag = 
+	18a6fd42f72cbf4ab2a2ea901f73d814
+	e3e7f243d95412e1c349c1d2fbec168f
+	9190feebaf2cb01984e65863965d7472
+	b79da345e0e780191f0d2f0e0f496c22
+	000000006f2127b27db35724e7845d68
+	651f57e65f354f75ff17015769623436
+	

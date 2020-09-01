@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="/home/crypto/thesis/thesis/numato/xdma/.Xil/Vivado-5215-crypto/hw_1/wave/hw_ila_data_1/hw_ila_data_1.wdb" id="1">
+         <top_modules>
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="6031fs"></ZoomEndTime>
+      <Cursor1Time time="0fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="308"></NameColumnWidth>
+      <ValueColumnWidth column_width="256"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="20" />
+   <wvobject type="array" fp_name="pcie_sub_i/RAM_doutb">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/RAM_doutb[127:0]</obj_property>
+      <obj_property name="ObjectShortName">RAM_doutb[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/controller_0_data_out">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/controller_0_data_out[127:0]</obj_property>
+      <obj_property name="ObjectShortName">controller_0_data_out[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/controller_0_addr_out">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/controller_0_addr_out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">controller_0_addr_out[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/Net">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/Net[31:0]</obj_property>
+      <obj_property name="ObjectShortName">Net[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/controller_0_wr_en_ram">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/controller_0_wr_en_ram[15:0]</obj_property>
+      <obj_property name="ObjectShortName">controller_0_wr_en_ram[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="pcie_sub_i/controller_0_done_encrypt">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/controller_0_done_encrypt</obj_property>
+      <obj_property name="ObjectShortName">controller_0_done_encrypt</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="pcie_sub_i/axi_gpio_0_gpio2_io_o">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/axi_gpio_0_gpio2_io_o</obj_property>
+      <obj_property name="ObjectShortName">axi_gpio_0_gpio2_io_o</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_info_data">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_info_data[127:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_info_data[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="pcie_sub_i/CRYPTO_CONTROLER_rd_data_flag">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_rd_data_flag</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_rd_data_flag</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_b_in">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_b_in[15:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_b_in[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_z_out">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_z_out[127:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_z_out[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_z_in">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_z_in[127:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_z_in[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_v_in">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_v_in[127:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_v_in[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_EKY_0">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_EKY_0[127:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_EKY_0[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_gfm_input1">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_gfm_input1[127:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_gfm_input1[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_state">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_state[3:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_state[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_state_core">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_state_core[9:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_state_core[9:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_leng_ct">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_leng_ct[10:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_leng_ct[10:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_leng_msg">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_leng_msg[10:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_leng_msg[10:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="pcie_sub_i/CRYPTO_CONTROLER_leng_key">
+      <obj_property name="DisplayName">FullPathName</obj_property>
+      <obj_property name="ElementShortName">pcie_sub_i/CRYPTO_CONTROLER_leng_key[1:0]</obj_property>
+      <obj_property name="ObjectShortName">CRYPTO_CONTROLER_leng_key[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="LABELRADIX">true</obj_property>
+      <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
+   </wvobject>
+</wave_config>
