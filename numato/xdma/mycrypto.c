@@ -176,7 +176,8 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	__le32 key_tmp[8];
 	u32 *tag_outbound;
 	size_t len;
-
+	int src_nents;
+	int case_nents=0;
 	base = mydevice->req; // for no crypto-queue
 	/*Get request from crypto queue*/
 	
@@ -198,21 +199,36 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	// 	backlog->complete(backlog, -EINPROGRESS);
 
 	req_xfer = alloc_xfer_req();
+
 	if (!req_xfer)
 	{
 		return -ENOMEM;
 		// return;
 	}
+
 	aead_req = aead_request_cast(base);
+	src_nents = sg_nents(aead_req->src);
 	set_callback(req_xfer, &handle_crypto_xfer_callback);
 	set_xfer_mycryptocontext(base, req_xfer);
 
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
+	set_sg_in(req_xfer, aead_req->src);	
+	set_sg_out(req_xfer, aead_req->src);
+	if(src_nents == 1)
+	{
+		buff = sg_virt(aead_req->src);
+		case_nents = 1;
+		// sg_init_one(&req_xfer->sg, buff , aead_req->src->length);
 
-	buff = sg_virt(aead_req->src);
-	sg_init_one(&req_xfer->sg, buff , aead_req->src->length);
-	set_sg_in(req_xfer, &req_xfer->sg);
-	set_sg_out(req_xfer, &req_xfer->sg);
+	}
+	else if (src_nents > 1)
+	{
+		buff = kzalloc(len, GFP_KERNEL);
+		len = sg_pcopy_to_buffer(aead_req->src,src_nents,buff,len,0);
+		case_nents = 2;
+	}
+
+
 	for (i = 0; i <=2; i++)
 	{
 		region_in.crypto_dsc.info.free_space[i]=0x00000000;//16 Byte MSB 0
@@ -290,7 +306,7 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
     req_xfer->crypto_dsc.iv = region_in.crypto_dsc.iv;
     memcpy(req_xfer->crypto_dsc.aad, region_in.crypto_dsc.aad, AAD_SIZE); 
 	// tag_outbound = tag_buff;
-	tag_outbound = kzalloc(16, GFP_ATOMIC | GFP_KERNEL);
+	tag_outbound = kzalloc(16, GFP_ATOMIC);
 	if (region_in.crypto_dsc.info.length % 16 == 0)
 	    set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
 	else 
@@ -301,9 +317,11 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		req_xfer->sg_in->offset,req_xfer->sg_in->dma_address);
     // Step 3: Submit to card
 	res = xdma_xfer_submit_queue(req_xfer);
+	if (case_nents == 2)
+		kfree(buff);
 	if (res != -EINPROGRESS)
         pr_err("Unusual result\n");
-	// return res;
+	return res;
 }
 
 static void mycrypto_dequeue_work(struct work_struct *work)
@@ -331,7 +349,12 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	struct mycrypto_dev *mydevice = mydevice_glo;
 	struct aead_request *aead_req ;
 	int ret=0;
+	int src_nents;
+	int case_nents=0;
+
 	aead_req = aead_request_cast(base);
+	src_nents = sg_nents(aead_req->src);
+	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
 	pr_err("Mycrypto.c (callback): Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
 	pr_err("Mycrypto.c:callback: sg_nents:%d -sg_length:%d- \
@@ -364,7 +387,18 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		ret = res;
 		goto err_busy;
 	}
-    buf = sg_virt (sg);
+
+	if(src_nents == 1)
+	{
+		buf = sg_virt (sg);
+		case_nents = 1;
+	}
+	else if(src_nents > 1)
+	{
+		buf =kzalloc(len, GFP_KERNEL);
+		len = sg_pcopy_to_buffer(aead_req->src,src_nents,buf,len,0);
+		case_nents = 2;
+	}
 
 	// Set buffer for AAD to insert to the first 8/12 Bytes in sg_out
 	buf_aad = (u8 *)(&data->crypto_dsc.aad);
@@ -431,6 +465,8 @@ err_busy:
 	// free_xfer_req(data); // data is xfer_req
 	if(data)
 		kfree(data);
+	if(case_nents == 2)
+		kfree(buf);
 	return res;
 }
 

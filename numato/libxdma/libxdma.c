@@ -1555,6 +1555,7 @@ static irqreturn_t xdma_isr(int irq, void *dev_id)
 	struct xdma_dev *xdev;
 	struct interrupt_regs *irq_regs;
 
+	pr_err("IRQ\n\n\n");
 	dbg_irq("(irq=%d, dev 0x%p) <<<< ISR.\n", irq, dev_id);
 	if (!dev_id) {
 		pr_err("Invalid dev_id on irq line %d\n", irq);
@@ -3490,12 +3491,15 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	}
 
 	if (!dma_mapped) {
+		pr_err("%s:%d\n", __func__, __LINE__);
 		nents = pci_map_sg(xdev->pdev, sg, sgt->orig_nents, dir);
 		if (!nents) {
 			pr_err("map sgl failed, sgt 0x%p.\n", sgt);
 			return -EIO;
 		}
 		sgt->nents = nents;
+		pr_err("%s:%d %d\n", __func__, __LINE__, nents);
+
 	} else {
 		if (!sgt->nents) {
 			pr_err("sg table has invalid number of entries 0x%p.\n",
@@ -3705,10 +3709,25 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	mutex_unlock(&engine->desc_lock);
 
 unmap_sgl:
+	write_register(0, &engine->regs->control,
+			(unsigned long)(&engine->regs->control) -
+				(unsigned long)(&engine->regs));
+	write_register(0, &engine->sgdma_regs->first_desc_lo,
+			(unsigned long)(&engine->sgdma_regs->first_desc_lo) -
+				(unsigned long)(&engine->sgdma_regs));
+	write_register(0, &engine->sgdma_regs->first_desc_hi,
+			(unsigned long)(&engine->sgdma_regs->first_desc_hi) -
+				(unsigned long)(&engine->sgdma_regs));
+	write_register(0, &engine->sgdma_regs->first_desc_adjacent,
+			(unsigned long)(&engine->sgdma_regs->first_desc_adjacent) -
+				(unsigned long)(&engine->sgdma_regs));
 	if (!dma_mapped && sgt->nents) {
+		pr_err("%s:%d\n", __func__, __LINE__);
+		
 		pci_unmap_sg(xdev->pdev, sgt->sgl, sgt->orig_nents, dir);
 		sgt->nents = 0;
 	}
+		pr_err("%s:%d %d %d\n", __func__, __LINE__, dma_mapped, sgt->nents);
 
 	if (req)
 		xdma_request_free(req);

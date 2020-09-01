@@ -410,20 +410,22 @@ static int mycrypto_aead_req_init(struct aead_request *aead_req)
 	// struct crypto_aead *tfm = crypto_aead_reqtfm(aead_req);
 	// unsigned int blksize = crypto_aead_blocksize(tfm);
 	int ret = 0;
+	int src_nents;
+	int dst_nents;
 
 	// pr_aaa("aead_req pointer: %p - Adsress of aead_req->_ctx: %p - Value of req_ctx pointer: %p - Offset:%x\n", aead_req ,&(aead_req->__ctx), req_ctx, offsetof(struct aead_request, __ctx));
 	// if (!IS_ALIGNED(aead_req->cryptlen, blksize))
 	// 	return -EINVAL;
-	// // req_ctx->src_nents = sg_nents(aead_req->src);
-	// if (req_ctx->src_nents < 0) {
-	// 	printk(KERN_INFO "Invalid number of src SG\n");
-	// 	return req_ctx->src_nents;
-	// }
-	// // req_ctx->dst_nents = sg_nents(aead_req->dst);
-	// if (req_ctx->dst_nents < 0) {
-	// 	printk(KERN_INFO "Invalid number of dst SG\n");
-	// 	return req_ctx->dst_nents;
-	// }
+	src_nents = sg_nents(aead_req->src);
+	if (src_nents != 1) {
+		printk(KERN_INFO "Invalid number of src SG\n");
+		return -ENOSPC;
+	}
+	dst_nents = sg_nents(aead_req->dst);
+	if (dst_nents != 1) {
+		printk(KERN_INFO "Invalid number of dst SG\n");
+		return -ENOSPC;
+	}
 	return ret;
 
 }
@@ -438,7 +440,11 @@ static int my_crypto_aead_gcm_encrypt(struct aead_request *aead_req)
             	
 	ret = mycrypto_aead_req_init(aead_req);
     if (ret)
-		printk(KERN_INFO "ERROR SRC/DEST NUMBER OF ENTRY\n");
+    {
+    	printk(KERN_INFO "ERROR SRC/DEST NUMBER OF ENTRY\n");
+    	// return -ENOSPC;
+    }
+		
 		//----------------------------------------------------
 	// processing the queue of this request
 	return mycrypto_queue_aead_req(&aead_req->base,

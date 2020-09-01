@@ -376,6 +376,7 @@ start:
         list_del(&req->list);
         crdev->req_num--;
         spin_unlock(&crdev->cb_lock);
+        // sg_mark_end(req->sg_in);
         pr_err("callback  \n");
         if (req->crypto_complete)
                 res = req->crypto_complete(req, req->res);
@@ -398,12 +399,12 @@ int crypto_task(void *data)
     struct scatterlist *sg;
     struct page* page;
 
-    timeout_ms = 3;
+    timeout_ms = 10000;
     in_region = get_region_in();
     out_region = get_region_out();
-    sg = (struct scatterlist *)kzalloc(10*sizeof(*sg), 
-        GFP_KERNEL | GFP_DMA);
-    int len, i;
+    // sg = (struct scatterlist *)kzalloc(10*sizeof(*sg), 
+    //     GFP_KERNEL | GFP_DMA);
+    // int len, i;
     
     pr_err("%d:%s\n",__LINE__,__func__);
 
@@ -420,57 +421,57 @@ start:
         spin_unlock(&crdev->agent_lock);
         	        pr_err("%d:%s\n",__LINE__,__func__);
 
-        switch (req->crypto_dsc.info.aadsize)
-        {
-            case 8:
-                ep_addr = 0x60;
-                break;
-            case 12:
-                ep_addr = 0x5C;
-                break;               
-            default:
-                ep_addr = 0xf0;
-                pr_err("Wrong aadsize:%d\n", 
-                    req->crypto_dsc.info.aadsize);
-                goto err_aadsize;
-                break;
-        }
+        // switch (req->crypto_dsc.info.aadsize)
+        // {
+        //     case 8:
+        //         ep_addr = 0x60;
+        //         break;
+        //     case 12:
+        //         ep_addr = 0x5C;
+        //         break;               
+        //     default:
+        //         ep_addr = 0xf0;
+        //         pr_err("Wrong aadsize:%d\n", 
+        //             req->crypto_dsc.info.aadsize);
+        //         goto err_aadsize;
+        //         break;
+        // }
 
         
         pr_err("%d:%s\n",__LINE__,__func__);
 
-        len = req->sg_in->length;
-        i = 0;
-        memset(sg, 0, 10*sizeof(*sg));
-        page = sg_page(req->sg_in);
-        while(len > 0){
-                    pr_err("%d:%s\n",__LINE__,__func__);
+        // len = req->sg_in->length;
+        // i = 0;
+        // memset(sg, 0, 10*sizeof(*sg));
+        // page = sg_page(req->sg_in);
+        // while(len > 0){
+                    // pr_err("%d:%s\n",__LINE__,__func__);
+// 
+            // if (len > 128){
+                // sg_set_page(&sg[i], page, 128, req->sg_in->offset + i*128);
+                // pr_err("%d:%s\n",__LINE__,__func__);
 
-            if (len > 128){
-                sg_set_page(&sg[i], page, 128, req->sg_in->offset + i*128);
-                pr_err("%d:%s\n",__LINE__,__func__);
+            // } else {
+                // sg_set_page(&sg[i], page, len, req->sg_in->offset + i*128);
+                // pr_err("%d:%s\n",__LINE__,__func__);
 
-            } else {
-                sg_set_page(&sg[i], page, len, req->sg_in->offset + i*128);
-                pr_err("%d:%s\n",__LINE__,__func__);
+            // }
+            // sg[i].page_link &= ~(0x01UL);
 
-            }
-            sg[i].page_link &= ~(0x01UL);
+            // len -= 128;
+            // pr_err("%d:%s\n",__LINE__,__func__);
+            // if (len > 0)
+                // sg_unmark_end(&sg[i]);
 
-            len -= 128;
-            pr_err("%d:%s\n",__LINE__,__func__);
-            if (len > 0)
-                sg_unmark_end(&sg[i]);
-
-            else
-                sg_mark_end(&sg[i]);
-            i++;
-        }
-        pr_err("%d:%s\n",__LINE__,__func__);
+            // else
+                // sg_mark_end(&sg[i]);
+            // i++;
+        // }
+        // pr_err("%d:%s\n",__LINE__,__func__);
 
         // submit req from req_queue to engine 
-        sgt.sgl = sg;
-        sgt.orig_nents = i;
+        // sgt.sgl = sg;
+        // sgt.orig_nents = i;
         // sgt.nents = i;
 
 
@@ -481,22 +482,22 @@ start:
             offset:%lx-dma_address:%llx\n",sg_nents(req->sg_in),
             req->sg_in->length,req->sg_in->page_link,req->sg_in->offset,
             req->sg_in->dma_address);
-        int j;
-        for (j = 0; j < i; j++)
-        {
-            sgt.sgl = &sg[j];
-            sgt.orig_nents = 1;
+        // int j;
+        // for (j = 0; j < i; j++)
+        // {
+            sgt.sgl = req->sg_in;//&sg[j];
+            sgt.orig_nents = sg_nents(req->sg_in);
 
             req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
-                XFER_WRITE, ep_addr, &sgt, FALSE, timeout_ms);
-            ep_addr += 128;
+                XFER_WRITE, 0x60, &sgt, FALSE, timeout_ms);
+            // ep_addr += 128;
             if (req->res < 0)
             {
                         pr_err("%d:%s\n",__LINE__,__func__);
                 goto xmit_failed;
             }
 
-        }
+        // }
 
         // Write crypto info
         // memcpy_toio(in_region + offsetof(struct region_in, crypto_dsc),
@@ -520,7 +521,7 @@ start:
             req->crypto_dsc.info.length, 1);
 
         // mutex_unlock(&crdev->xfer_mutex);
-        	        pr_err("%d:%s\n",__LINE__,__func__);
+        pr_err("%d:%s\n",__LINE__,__func__);
 
         // add to tail of processing queue
         spin_lock(&crdev->agent_lock);
@@ -535,25 +536,25 @@ start:
         // sgt.orig_nents = 1;
         // sgt.nents = 1;
         // pr_err("%s:%d\n", __func__, __LINE__);
-        switch (req->crypto_dsc.info.aadsize)
-        {
-            case 8:
-                ep_addr = 0x10020 - 16;
-                        pr_err("%d:%s\n",__LINE__,__func__);
+        // switch (req->crypto_dsc.info.aadsize)
+        // {
+        //     case 8:
+        //         ep_addr = 0x10020 - 16;
+        //                 pr_err("%d:%s\n",__LINE__,__func__);
 
-                break;
-            case 12:
-                ep_addr = 0x10020 - 20;
-                        pr_err("%d:%s\n",__LINE__,__func__);
+        //         break;
+        //     case 12:
+        //         ep_addr = 0x10020 - 20;
+        //                 pr_err("%d:%s\n",__LINE__,__func__);
 
-                break;               
-            default:
-                ep_addr = 0x10000 + 0xf0;
-                pr_err("Wrong aadsize:%d\n", 
-                    req->crypto_dsc.info.aadsize);
-                goto err_aadsize;
-                break;
-        }
+        //         break;               
+        //     default:
+        //         ep_addr = 0x10000 + 0xf0;
+        //         pr_err("Wrong aadsize:%d\n", 
+        //             req->crypto_dsc.info.aadsize);
+        //         goto err_aadsize;
+        //         break;
+        // }
 
         // mutex_lock(&crdev->xfer_mutex);
         pr_err("%s:%d %d\n", __func__, __LINE__, ep_addr);
@@ -562,52 +563,52 @@ start:
             req->sg_out->length,req->sg_out->page_link,req->sg_out->offset,
             req->sg_out->dma_address);
 
-        len = req->sg_out->length;
-        i = 0;
-        memset(sg, 0, 10*sizeof(*sg));
-        page = sg_page(req->sg_out);
-        while(len > 0){
-            if (len > 128){
-                pr_err("%d:%s\n",__LINE__,__func__);
-                sg_set_page(&sg[i], page, 128, req->sg_out->offset + i*128);
-            } else {
-                pr_err("%d:%s\n",__LINE__,__func__);
+        // len = req->sg_out->length;
+        // i = 0;
+        // memset(sg, 0, 10*sizeof(*sg));
+        // page = sg_page(req->sg_out);
+        // while(len > 0){
+        //     if (len > 128){
+        //         pr_err("%d:%s\n",__LINE__,__func__);
+        //         sg_set_page(&sg[i], page, 128, req->sg_out->offset + i*128);
+        //     } else {
+        //         pr_err("%d:%s\n",__LINE__,__func__);
 
-                sg_set_page(&sg[i], page, len, req->sg_out->offset + i*128);
-            }
-            sg[i].page_link &= ~(0x01UL);
+        //         sg_set_page(&sg[i], page, len, req->sg_out->offset + i*128);
+        //     }
+        //     sg[i].page_link &= ~(0x01UL);
 
-            len -= 128;
-            pr_err("%d:%s\n",__LINE__,__func__);
-            if (len > 0)
-                sg_unmark_end(&sg[i]);
+        //     len -= 128;
+        //     pr_err("%d:%s\n",__LINE__,__func__);
+        //     if (len > 0)
+        //         sg_unmark_end(&sg[i]);
 
-            else
-                sg_mark_end(&sg[i]);
-            pr_err("%d:%s\n",__LINE__,__func__);
+        //     else
+        //         sg_mark_end(&sg[i]);
+        //     pr_err("%d:%s\n",__LINE__,__func__);
 
-            i++;
-        }
+        //     i++;
+        // }
         // submit req from req_queue to engine 
-        sgt.sgl = sg;
-        sgt.orig_nents = i;
+        // sgt.sgl = sg;
+        // sgt.orig_nents = i;
         // sgt.nents = i;
         pr_err("%d:%s\n",__LINE__,__func__);
-        for (j = 0; j < i; j++)
-        {
-            sgt.sgl = &sg[j];
-            sgt.orig_nents = 1;
+        // for (j = 0; j < i; j++)
+        // {
+            sgt.sgl = req->sg_out;//&sg[j];
+            sgt.orig_nents = sg_nents(req->sg_out);
 
             req->res = xdma_xfer_submit(crdev->xdev, DEFAULT_CHANNEL_IDX, 
-                XFER_READ, ep_addr, &sgt, FALSE, timeout_ms);
-            ep_addr += 128;
+                XFER_READ, 0x10010, &sgt, FALSE, timeout_ms);
+            // ep_addr += 128;
             if (req->res < 0)
             {
                         pr_err("%d:%s\n",__LINE__,__func__);
 
                 goto rcv_failed;
             }
-        }
+        // }
         // TAG
         // pr_err("%s:%d\n", __func__, __LINE__);
         memcpy_fromio(req->tag, 
@@ -798,7 +799,7 @@ EXPORT_SYMBOL_GPL(xdma_xfer_submit_queue);
 struct xfer_req *alloc_xfer_req(void)
 {
     struct xfer_req *xfer;
-    xfer = (struct xfer_req *)kzalloc(sizeof(struct xfer_req), GFP_KERNEL);
+    xfer = (struct xfer_req *)kzalloc(sizeof(struct xfer_req), GFP_ATOMIC);
     if (!xfer)
         return 0;
     return xfer;
