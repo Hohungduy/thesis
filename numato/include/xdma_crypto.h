@@ -49,7 +49,6 @@
 #define TAG_MAX_SIZE (16)
 struct xdma_pci_dev;
 
-/** BUFFER */
 #include "common.h"
 
 enum xfer_result_t {
@@ -74,8 +73,6 @@ struct xfer_req{
 // Dont touch
     u8 tag_buff[TAG_MAX_SIZE];
     enum xfer_result_t res;
-    int region_idx;
-    u64 data_ep_addr;
     struct list_head list;
 };
 

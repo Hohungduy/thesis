@@ -92,11 +92,11 @@ start:
         write_crypto_info(in_region, req);
 
         // add to tail of processing queue
-
         spin_lock(&crdev->agent_lock);
         trigger_engine(DEFAULT_ENGINE);
         spin_unlock(&crdev->agent_lock);
 
+        // Wait 
         wait_for_completion(&crdev->encrypt_done);
 	
         // Encrypt Done!
@@ -109,7 +109,7 @@ start:
 
         result = get_tag_from_card(req);
         if (result < 0)
-            goto xmit_failed;
+            goto rcv_failed;
 
         spin_lock(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
@@ -280,6 +280,18 @@ struct xfer_req *alloc_xfer_req(void)
 }
 EXPORT_SYMBOL_GPL(alloc_xfer_req);
 
+void free_xfer_req(struct xfer_req *req)
+{
+    struct xdma_crdev *crdev = get_crdev();
+    if (req){
+        kfree(req);
+    }
+    else{
+        pr_err("%s:%d: req NULL\n", __func__, __LINE__);
+    }
+}
+EXPORT_SYMBOL_GPL(free_xfer_req);
+
 int set_tag(struct xfer_req *req, int length, int offset)
 {
     if (!req)
@@ -362,17 +374,6 @@ enum xfer_result_t get_result(struct xfer_req *req)
 }
 EXPORT_SYMBOL_GPL(get_result);
 
-void free_xfer_req(struct xfer_req *req)
-{
-    struct xdma_crdev *crdev = get_crdev();
-    if (req){
-        kfree(req);
-    }
-    else{
-        pr_err("%s:%d: req NULL\n", __func__, __LINE__);
-    }
-}
-EXPORT_SYMBOL_GPL(free_xfer_req);
 
 void debug_mem_in(void )
 {
