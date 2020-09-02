@@ -4,18 +4,18 @@ struct mem_base mem_base;
 
 void trigger_engine(int engine_idx)
 {
-    u32 trigger_val = ioread32(&mem_base.engine.status->trigger);
+    u32 trigger_val = ioread32(&mem_base.engine[engine_idx].status->trigger);
 
-    iowrite32(trigger_val ^ 0x00000001, &mem_base.engine.status->trigger);
+    iowrite32(trigger_val ^ 0x00000001, &mem_base.engine[engine_idx].status->trigger);
 }
 
-void *get_region_in(void)
+void *get_region_in(int engine_idx)
 {
-    return mem_base.engine.in;
+    return mem_base.engine[engine_idx].in;
 }
-void *get_region_out(void)
+void *get_region_out(int engine_idx)
 {
-    return mem_base.engine.out;
+    return mem_base.engine[engine_idx].out;
 }
 
 int set_mem_base(struct mem_base base)
@@ -26,12 +26,11 @@ int set_mem_base(struct mem_base base)
 
 int clear_usr_irq(int irq_no)
 {
-
     u32 irq_state;
     if (irq_no)
         return -1;
-    irq_state = ioread32(&mem_base.engine.irq->deassert);
-    iowrite32(irq_state ^ 1, &mem_base.engine.irq->deassert);
+    irq_state = ioread32(&mem_base.engine[irq_no].irq->deassert);
+    iowrite32(irq_state ^ 1, &mem_base.engine[irq_no].irq->deassert);
     return 0;
 }
 

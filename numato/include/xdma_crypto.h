@@ -29,11 +29,29 @@
 #define FALSE (0)
 #endif
 
-#define COMM_REGION_OFFSET (0x11000)
-#define IN_REGION_OFFSET   (0x00000)
-#define OUT_REGION_OFFSET  (0x10000)
-#define STATUS_REGION_OFFSET (0x20000)
-#define IRQ_REIGON_OFFSET  (0x40000)
+#define COMM_REGION_0_OFFSET (0x11000)
+#define IN_REGION_0_OFFSET   (0x00000)
+#define OUT_REGION_0_OFFSET  (0x10000)
+#define STATUS_REGION_0_OFFSET (0x20000)
+#define IRQ_REIGON_0_OFFSET  (0x40000)
+
+#define COMM_REGION_1_OFFSET (0x11000)
+#define IN_REGION_1_OFFSET   (0x00000)
+#define OUT_REGION_1_OFFSET  (0x10000)
+#define STATUS_REGION_1_OFFSET (0x20000)
+#define IRQ_REIGON_1_OFFSET  (0x40000)
+
+#define COMM_REGION_2_OFFSET (0x11000)
+#define IN_REGION_2_OFFSET   (0x00000)
+#define OUT_REGION_2_OFFSET  (0x10000)
+#define STATUS_REGION_2_OFFSET (0x20000)
+#define IRQ_REIGON_2_OFFSET  (0x40000)
+
+#define COMM_REGION_3_OFFSET (0x11000)
+#define IN_REGION_3_OFFSET   (0x00000)
+#define OUT_REGION_3_OFFSET  (0x10000)
+#define STATUS_REGION_3_OFFSET (0x20000)
+#define IRQ_REIGON_3_OFFSET  (0x40000)
 
 #define H2C_TARGET (0)
 #define STATUS_OFFSET (0x40)
@@ -74,6 +92,7 @@ struct xfer_req{
     u8 tag_buff[TAG_MAX_SIZE];
     enum xfer_result_t res;
     struct list_head list;
+    int channel;
 };
 
 /** LED */
@@ -90,29 +109,30 @@ struct blinky {
     enum led_state led;
 };
 
+struct engine_data {
+    int engine_idex;
+    struct list_head req_queue;
+    spinlock_t req_lock;
+    struct list_head cb_queue;
+    spinlock_t cb_lock;
+    struct completion encrypt_done;
+    struct task_struct *crypto_task;
+    struct task_struct *callback_task;
+};
+
 struct xdma_crdev {
     struct xdma_pci_dev* xpdev;
     struct xdma_dev *xdev;
     struct blinky blinky;
 
-    atomic_t channel_idx;
-    // u32 xfer_idex;
+    atomic_t req_num;
     spinlock_t agent_lock;
 
-
-    struct list_head req_queue;
-    spinlock_t req_lock;
-    struct list_head cb_queue;
-    spinlock_t cb_lock;
-
-    atomic_t req_num;
+    struct engine_data engine[MAX_ENGINE];
 
     struct wait_queue_head crypto_wq;
     struct wait_queue_head cb_wq;
-    struct completion encrypt_done;
 
-    struct task_struct *crypto_task;
-    struct task_struct *callback_task;
 };
 
 
@@ -132,10 +152,10 @@ int get_tag(struct xfer_req *req, void *buf);
 
 int xdma_xfer_submit_queue(struct xfer_req *xfer_req);
 void free_xfer_req(struct xfer_req *req);
-void debug_mem_in(void);
-void debug_mem_out(void);
+void debug_mem_in(int engine_idx);
+void debug_mem_out(int engine_idx);
 inline struct crypto_dsc_in *get_dsc_in(struct xfer_req *req);
 void write_crypto_info(void *mem_in_base, struct xfer_req *req);
-int get_tag_from_card(struct xfer_req *req);
+int get_tag_from_card(struct xfer_req *req, int engine_idx);
 
 #endif

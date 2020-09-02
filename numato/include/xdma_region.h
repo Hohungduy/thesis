@@ -29,6 +29,7 @@
 #define LED_BLUE_MASK (0x1)
 #define LED_RED_MASK  (0x1)
 
+#define MAX_ENGINE (4)
 
 struct common_base {
     u32 h2c_buff_size;
@@ -115,15 +116,15 @@ struct crypto_engine {
 };
 
 struct mem_base {
-    struct crypto_engine engine;
+    struct crypto_engine engine[MAX_ENGINE];
     void *red_led;
     void *blue_led;
 };
 
 void trigger_engine(int engine_idx);
 int clear_usr_irq(int irq_no);
-void *get_region_in(void);
-void *get_region_out(void);
+void *get_region_in(int engine_idx);
+void *get_region_out(int engine_idx);
 int set_mem_base(struct mem_base base);
 int set_led_base(void *base);
 void toggle_red_led(void);
