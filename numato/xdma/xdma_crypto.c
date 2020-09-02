@@ -282,7 +282,7 @@ EXPORT_SYMBOL_GPL(alloc_xfer_req);
 
 void free_xfer_req(struct xfer_req *req)
 {
-    struct xdma_crdev *crdev = get_crdev();
+    // struct xdma_crdev *crdev = get_crdev();
     if (req){
         kfree(req);
     }
@@ -353,7 +353,7 @@ int set_callback(struct xfer_req *req, int (*cb)(struct xfer_req *req, int res))
 EXPORT_SYMBOL_GPL(set_callback);
 
 
-int set_ctx(struct xfer_req *req, struct mycrypto_context ctx)
+int set_ctx(struct xfer_req *req, struct bkcrypto_context ctx)
 {
     if (!req){
         pr_err("%s:%d: req NULL\n", __func__, __LINE__);

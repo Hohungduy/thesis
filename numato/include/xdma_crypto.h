@@ -62,7 +62,7 @@ struct xfer_req{
 // from user
 
     int (*crypto_complete)(struct xfer_req *data, int res);
-    struct mycrypto_context ctx;
+    struct bkcrypto_context ctx;
     struct crypto_async_request *base;
     struct scatterlist *sg_in;
     struct scatterlist *sg_out;
@@ -124,7 +124,7 @@ struct xfer_req *alloc_xfer_req(void);
 int set_sg_in(struct xfer_req *req, struct scatterlist *sg);
 int set_sg_out(struct xfer_req *req, struct scatterlist *sg);
 int set_callback(struct xfer_req *req, int (*cb)(struct xfer_req *req, int res));
-int set_ctx(struct xfer_req *req, struct mycrypto_context ctx);
+int set_ctx(struct xfer_req *req, struct bkcrypto_context ctx);
 enum xfer_result_t get_result(struct xfer_req *req);
 
 int set_tag(struct xfer_req *req, int length, int offset);

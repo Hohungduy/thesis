@@ -101,7 +101,7 @@ u32 i, j;
 int res;
 struct xfer_req *req[MAX_REQ];
 u32 *buff[MAX_REQ];
-struct mycrypto_context ctx;
+struct bkcrypto_context ctx;
 
 
 static int __init test_init(void)
@@ -110,7 +110,7 @@ static int __init test_init(void)
     int res;
     struct xfer_req *req[MAX_REQ];
     u32 *buff[MAX_REQ];
-    struct mycrypto_context ctx;
+    struct bkcrypto_context ctx;
 
     if (xfer)
     {

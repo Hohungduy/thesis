@@ -1,4 +1,4 @@
-config MYCRYPTO
+config BKCRYPTO
 	tristate "emxample"
 	help
 		This is a exmaple, for develop kernel module

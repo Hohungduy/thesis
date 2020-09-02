@@ -27,7 +27,6 @@
 #include <linux/kthread.h>
 #include <linux/mbus.h>
 #include <linux/workqueue.h>
-#include <linux/timer.h>
 /* get system time */
 #include <linux/jiffies.h> 
 #include <linux/timekeeping.h>
@@ -37,40 +36,31 @@
 #include <crypto/aead.h>
 #include <crypto/internal/aead.h>
 #include <crypto/sha.h>
-#include "mycrypto.h"
+#include "bkcrypto.h"
 #include "xdma_region.h"
 #include "xdma_crypto.h"
 #include "crypto_testcases.h"
 #include "common.h"
 #include "xdma_crypto.h"
 
-//#include "cipher.h"
+// #define BKCRYPTO_DEBUG
+
+/* Limit of the crypto queue before reaching the backlog */
+#define BKCRYPTO_DEFAULT_MAX_QLEN 128
 
 
-#define AAAA
-//#define not_free
-
-#ifdef AAAA
-#define pr_aaa(...)
-#else 
-#define pr_aaa pr_err
-#endif
-
+// global variable for device
+struct bkcrypto_dev *mydevice_glo;
 struct inbound region_in;
 struct outbound region_out;
 spinlock_t submit_lock;
-int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
-void set_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer);
+
+int bkcrypto_check_errors(struct bkcrypto_dev *mydevice, struct bkcrypto_context *ctx);
+void set_xfer_bkcryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer);
 static int handle_crypto_xfer_callback(struct xfer_req *data, int res);
-/* Limit of the crypto queue before reaching the backlog */
-#define MYCRYPTO_DEFAULT_MAX_QLEN 128
-// global variable for device
-struct mycrypto_dev *mydevice_glo;
-//struct timer_list mycrypto_ktimer;
-// static int my_crypto_add_algs(struct mycrypto_dev *mydevice)
 
 
-int mycrypto_compare_icv(u32 *tag_out, u32 *tag_in)
+int bkcrypto_compare_icv(u32 *tag_out, u32 *tag_in)
 {
 	int ret;
 	int success = 0;// 4 : success ; <4: Fail
@@ -79,9 +69,11 @@ int mycrypto_compare_icv(u32 *tag_out, u32 *tag_in)
 	{
 		if(tag_out[i] == tag_in[i])
 			success ++;
-		// pr_err("Chunk:%d tag_in: %8.0x tag_out:%8.0x\n",i, tag_in[i],tag_out[i]);
-		// pr_err("tag in:%x - Chunk:%d",tag_in[i],i);
-		// pr_err("success value in loop:%d\n", success);
+#ifdef BKCRYPTO_DEBUG
+		pr_err("Chunk:%d tag_in: %8.0x tag_out:%8.0x\n",i, tag_in[i],tag_out[i]);
+		pr_err("tag in:%x - Chunk:%d",tag_in[i],i);
+		pr_err("success value in loop:%d\n", success);
+#endif
 	}
 	if (success < 4)
 	{
@@ -116,28 +108,23 @@ void print_sg_content(struct scatterlist *sg)
     }
 }
 
-static struct mycrypto_alg_template *mycrypto_algs[] = {
-	&mycrypto_alg_authenc_hmac_sha256_cbc_aes,
-	&mycrypto_alg_authenc_hmac_sha256_ctr_aes,
-	&mycrypto_alg_gcm_aes,
-	&mycrypto_alg_rfc4106_gcm_aes,
-	&mycrypto_alg_cbc_aes
+static struct bkcrypto_alg_template *bkcrypto_algs[] = {
+	&bkcrypto_alg_gcm_aes,
+	&bkcrypto_alg_rfc4106_gcm_aes
 };
 
-void set_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer)
+void set_xfer_bkcryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer)
 {
 	struct aead_request *req; 
-	struct mycrypto_cipher_op ctx ;
+	struct bkcrypto_cipher_op ctx ;
 	req= aead_request_cast(base);
-	ctx = *(struct mycrypto_cipher_op *)crypto_tfm_ctx(req->base.tfm);
+	ctx = *(struct bkcrypto_cipher_op *)crypto_tfm_ctx(req->base.tfm);
 	req_xfer->ctx.ctx_op = ctx;
-	req_xfer->base = base;
-	// pr_info("%d : set_xfer_mycryptocontext",__LINE__);
-	
+	req_xfer->base = base;	
 }
-static inline void mycrypto_handle_result(struct crypto_async_request *base, int ret)
+static inline void bkcrypto_handle_result(struct crypto_async_request *base, int ret)
 {
-	struct mycrypto_req_operation *opr_ctx;
+	struct bkcrypto_req_operation *opr_ctx;
 	bool should_complete=true;
 	opr_ctx = crypto_tfm_ctx(base->tfm);
 	if (should_complete) 
@@ -148,7 +135,7 @@ static inline void mycrypto_handle_result(struct crypto_async_request *base, int
 	}
 }
 
-struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *mydevice,
+struct crypto_async_request *bkcrypto_dequeue_req_locked(struct bkcrypto_dev *mydevice,
 			   struct crypto_async_request **backlog)
 {
 	struct crypto_async_request *base;//asyn_req
@@ -159,14 +146,9 @@ struct crypto_async_request *mycrypto_dequeue_req_locked(struct mycrypto_dev *my
 	return base;
 }
 
-// struct xfer_req req_xfer_;
-// u32 tag_buff[16/4];
-
-int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
+int bkcrypto_dequeue_req(struct bkcrypto_dev *mydevice)
 {
-	struct crypto_async_request *base = NULL, *backlog = NULL;
-	// struct mycrypto_req_operation *opr_ctx;
-	// struct xfer_req *req_xfer = &req_xfer_;
+	struct crypto_async_request *base = NULL;
 	struct xfer_req *req_xfer;
 	struct aead_request *aead_req ;
 	u8 *buff;
@@ -174,46 +156,34 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	u32 i;
 	__le32 *key;
 	__le32 key_tmp[8];
-	u32 *tag_outbound;
 	size_t len;
 	int src_nents;
 	int case_nents=0;
-	base = mydevice->req; // for no crypto-queue
-	/*Get request from crypto queue*/
 	
-	// spin_lock_bh(&mydevice->queue_lock);
-	// if (!mydevice->req) 
-	// 	{
-	// 		base = mycrypto_dequeue_req_locked(mydevice, &backlog);
-	// 		pr_err("asys req:%p\n",base);
-	// 		mydevice->req = base;
-	// 	}
-	// spin_unlock_bh(&mydevice->queue_lock);
+	base = mydevice->req; // for no crypto-queue
 
 	if (!base){
 		pr_err("no current req\n");
-		// return;
+		return -EBUSY;
 	}
-
-	// if (backlog)
-	// 	backlog->complete(backlog, -EINPROGRESS);
-
+	/* Allocate xfer_req */
 	req_xfer = alloc_xfer_req();
 
 	if (!req_xfer)
 	{
 		return -ENOMEM;
-		// return;
 	}
 
+	/* Step 1: Initaiate fields of xfer_req*/
 	aead_req = aead_request_cast(base);
 	src_nents = sg_nents(aead_req->src);
 	set_callback(req_xfer, &handle_crypto_xfer_callback);
-	set_xfer_mycryptocontext(base, req_xfer);
+	set_xfer_bkcryptocontext(base, req_xfer);
 
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
 	set_sg_in(req_xfer, aead_req->src);	
 	set_sg_out(req_xfer, aead_req->src);
+	
 	if(src_nents == 1)
 	{
 		buff = sg_virt(aead_req->src);
@@ -227,8 +197,12 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 		len = sg_pcopy_to_buffer(aead_req->src,src_nents,buff,len,0);
 		case_nents = 2;
 	}
-
-
+	else if (src_nents < 1)
+	{
+		return -EINVAL;
+	}
+	/* Step 2: Setting transfer description*/
+	// INFO
 	for (i = 0; i <=2; i++)
 	{
 		region_in.crypto_dsc.info.free_space[i]=0x00000000;//16 Byte MSB 0
@@ -237,7 +211,6 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	region_in.crypto_dsc.info.direction = req_xfer->ctx.ctx_op.dir; //1 bit direction
 	region_in.crypto_dsc.info.length = req_xfer->ctx.ctx_op.cryptlen; //11 bit data len (maximum of data> 1500 byte)
 	region_in.crypto_dsc.info.aadsize = req_xfer->ctx.ctx_op.assoclen - 8;// substract iv len
-	
 	switch(req_xfer->ctx.ctx_op.keylen)
 	{
 		case 16: 
@@ -251,8 +224,10 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 			break;
 	}
 
-	//ICV-AUTHENTAG
+	// ICV-AUTHENTAG
 	memcpy(region_in.crypto_dsc.icv , buff + req_xfer->ctx.ctx_op.cryptlen + req_xfer->ctx.ctx_op.assoclen , ICV_SIZE);
+	
+	// KEY
 	switch (req_xfer->ctx.ctx_op.keylen)
 	{
 		case 16:
@@ -300,27 +275,26 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	{
 		region_in.crypto_dsc.aad[i] = 0x00000000;// 4 or 8 Bytes MSB is 0x
 	}
+
+	// Setting transfer description
     req_xfer->crypto_dsc.info = region_in.crypto_dsc.info;
     memcpy(req_xfer->crypto_dsc.icv, region_in.crypto_dsc.icv, ICV_SIZE); 
     memcpy(req_xfer->crypto_dsc.key, region_in.crypto_dsc.key, KEY_SIZE); 
     req_xfer->crypto_dsc.iv = region_in.crypto_dsc.iv;
     memcpy(req_xfer->crypto_dsc.aad, region_in.crypto_dsc.aad, AAD_SIZE); 
-	// tag_outbound = tag_buff;
-	// ------------- Long add: remove 
-	// tag_outbound = kzalloc(16, GFP_ATOMIC);
+	
+
 	if (region_in.crypto_dsc.info.length % 16 == 0)
-	    // set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
-		// ------------- Long add:
 		set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ));
 	else 
-		// ------------- Long add:
-    	// set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
 		set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1));
-	pr_err("Mycrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:\
+#ifdef BKCRYPTO_DEBUG	
+	pr_err("bkcrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:\
 		%x- offset:%lx-dma_address:%llx\n",sg_nents(req_xfer->sg_in),
 		req_xfer->sg_in->length,req_xfer->sg_in->page_link,
 		req_xfer->sg_in->offset,req_xfer->sg_in->dma_address);
-    // Step 3: Submit to card
+#endif
+    /* Step 3: Submit to device-specific layer of driver  */
 	res = xdma_xfer_submit_queue(req_xfer);
 	if (case_nents == 2)
 		kfree(buff);
@@ -329,29 +303,26 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	return res;
 }
 
-static void mycrypto_dequeue_work(struct work_struct *work)
+static void bkcrypto_dequeue_work(struct work_struct *work)
 {
-	struct mycrypto_work_data *data =
-			container_of(work, struct mycrypto_work_data, work);
-	// pr_aaa("%d:%s - Data pointer:%p; mydevice pointer:%p",__LINE__,__func__,data,data->mydevice);
-	mycrypto_dequeue_req(data->mydevice);
+	struct bkcrypto_work_data *data =
+			container_of(work, struct bkcrypto_work_data, work);
+	bkcrypto_dequeue_req(data->mydevice);
 }
 
-//----------------------------------------------------------------
-/* Handle xfer callback request
-*/
+/* Handle xfer callback request*/
 static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 {    
-	char *buf;
+	char *buf = NULL;
 	char *buf_aad = NULL;
 	char *buf_iv = NULL;
+	u32 *buf_tagout = NULL;
 	char tmp;// tmp for exchange
     int i = 0;
 	size_t len;
-	// Step 4: Get data in callback
+	// Step 4: Get data in callback function
 	struct scatterlist *sg = data->sg_out;
 	struct crypto_async_request *base = (struct crypto_async_request *) data->base;
-	struct mycrypto_dev *mydevice = mydevice_glo;
 	struct aead_request *aead_req ;
 	int ret=0;
 	int src_nents;
@@ -360,19 +331,16 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	aead_req = aead_request_cast(base);
 	src_nents = sg_nents(aead_req->src);
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
-	pr_err("Mycrypto.c (callback): Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
+
+#ifdef BKCRYPTO_DEBUG
+	pr_err("Complete with res = %d ! This is callback function! \n", res);
+	pr_err("bkcrypto.c (callback): Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
-	pr_err("Mycrypto.c:callback: sg_nents:%d -sg_length:%d- \
+	pr_err("bkcrypto.c:callback: sg_nents:%d -sg_length:%d- \
 		page_link:%x- offset:%lx-dma_address:%llx\n",
 		sg_nents(aead_req->dst),aead_req->dst->length,
 		aead_req->dst->page_link,aead_req->dst->offset,
 		aead_req->dst->dma_address);
-
-	if (!base){ 
-		pr_aaa("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
-		return res;
-	}
-	// pr_err("Complete with res = %d ! This is callback function! \n", res);
 	if(data->ctx.ctx_op.dir == 0)
 	{
 		pr_info("----------------------------this is decrypt\n");
@@ -380,13 +348,14 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	else
 	{
 		pr_info("----------------------------this is encrypt\n");
-
+	}
+#endif
+	
+	if (!base){ 
+		pr_err("Module bkcrypto: CAN NOT HANDLE A null POINTER\n");
+		return res;
 	}
 	
-	// pr_err("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",data->ctx.ctx_op.iv,  
-    //         *((u32 *)(&data->ctx.ctx_op.iv[4])), *((u32 *)(&data->ctx.ctx_op.iv[0])));
-	
-	// Step 5: Do your things - Here we print the data out
     if (res == -1)
 	{
 		ret = res;
@@ -404,6 +373,8 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		len = sg_pcopy_to_buffer(aead_req->src,src_nents,buf,len,0);
 		case_nents = 2;
 	}
+	else if(src_nents < 1)
+		pr_err("error: number of entry in sg list");
 
 	// Set buffer for AAD to insert to the first 8/12 Bytes in sg_out
 	buf_aad = (u8 *)(&data->crypto_dsc.aad);
@@ -414,10 +385,8 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_aad[i] = buf_aad[data->crypto_dsc.info.aadsize -1 - i];
 		buf_aad[data->crypto_dsc.info.aadsize -1 - i] = tmp;
 	}
-
 	// Set buffer for iv to insert to the following 8 Bytes in sg_out
 	buf_iv = (u8 *)(&data->crypto_dsc.iv.iv);
-	
 	//Inver tbyte order of iv Buffer
 	for(i = 0; i < 4; i++)
 	{
@@ -425,32 +394,24 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		buf_iv[i] = buf_iv[7-i];
 		buf_iv[7-i] = tmp;
 	}
-
 	// Copy two buffer into buffer of sg list
 	memcpy(buf,buf_aad,data->crypto_dsc.info.aadsize);
 	memcpy(buf + data->crypto_dsc.info.aadsize,buf_iv,8);
 
-	//Print sg content
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
 
 	// Copy authentication tag from buffer (sg_out)
-	// ---------- Long add: use get_tag()
-	// memcpy(buf + data->ctx.ctx_op.cryptlen + data->ctx.ctx_op.assoclen, data->tag,ICV_SIZE);
-	
+	ret = get_tag(data , buf_tagout);
+	if(ret)
+		goto err_busy;
 	// Compare two authentication tag
 	if(data->ctx.ctx_op.dir == 0)
 	{
-		// ---------- Long add: use get_tag()
-		// ret = mycrypto_compare_icv(data->tag,data->crypto_dsc.icv);//1st: tag_out; 2nd: tag_in 
+		ret = bkcrypto_compare_icv(buf_tagout,data->crypto_dsc.icv);//1st: tag_out; 2nd: tag_in 
 		// ret = 0 (successfull); ret = -EBADMSG (authenction failed)
 	}
 err_busy:
-	// {
-		// mydevice->req = NULL; // No dma busy
-		mycrypto_handle_result(base ,ret);
-
-	// }
-
+		bkcrypto_handle_result(base ,ret);
 	switch (ret)
 	{
 		case 0:
@@ -464,12 +425,6 @@ err_busy:
 			break;
 	}
 
-	// queue_work(mydevice->workqueue,&mydevice->work_data.work);
-		   	
-	// ---------- Long add: remove
-	// if(data->tag)
-	// 	kfree(data->tag);
-	// free_xfer_req(data); // data is xfer_req
 	if(data)
 		kfree(data);
 	if(case_nents == 2)
@@ -477,75 +432,52 @@ err_busy:
 	return res;
 }
 
-//--------------timer handler---------------------------------------
-static void handle_timer(struct timer_list *t)
-{
-	struct mycrypto_dev *mydevice =from_timer(mydevice,t,mycrypto_ktimer);
-	struct crypto_async_request *req;
-	int ret = 0;
-	req = mydevice->req;
-	printk(KERN_INFO "Module mycrypto: HELLO timer\n");
-	
-	if (!mydevice){
-		printk(KERN_ERR "Module mycrypto: CAN NOT HANDLE A null POINTER\n");
-		return;
-	}
-	
-	mycrypto_handle_result(req,ret);
-	queue_work(mydevice->workqueue,
-		   &mydevice->work_data.work);
-}
-
-// static void mycrypto_configure(struct mycrypto_dev *mydevice)
-// {
-// 	mydevice->config.engines = 2;
-// }
 
 /* Adding or Registering algorithm instace of AEAD /SK cipher crypto*/
-static int mycrypto_add_algs(struct mycrypto_dev *mydevice)
+static int bkcrypto_add_algs(struct bkcrypto_dev *mydevice)
 {
 	int i,j,ret = 0;
-	for (i = 0; i < ARRAY_SIZE(mycrypto_algs); i++){
-		mycrypto_algs[i]->mydevice = mydevice_glo; 
-		// assign struct pointer in mycrypto_algs to global varibles ( mydevice_glo)
-		if (mycrypto_algs[i]->type == MYCRYPTO_ALG_TYPE_SKCIPHER)
-			ret = crypto_register_skcipher(&mycrypto_algs[i]->alg.skcipher);
-		else if (mycrypto_algs[i]->type == MYCRYPTO_ALG_TYPE_AEAD)
-			ret = crypto_register_aead(&mycrypto_algs[i]->alg.aead);
+	for (i = 0; i < ARRAY_SIZE(bkcrypto_algs); i++){
+		bkcrypto_algs[i]->mydevice = mydevice_glo; 
+		// assign struct pointer in bkcrypto_algs to global varibles ( mydevice_glo)
+		if (bkcrypto_algs[i]->type == BKCRYPTO_ALG_TYPE_SKCIPHER)
+			ret = crypto_register_skcipher(&bkcrypto_algs[i]->alg.skcipher);
+		else if (bkcrypto_algs[i]->type == BKCRYPTO_ALG_TYPE_AEAD)
+			ret = crypto_register_aead(&bkcrypto_algs[i]->alg.aead);
 		else
-			ret = crypto_register_ahash(&mycrypto_algs[i]->alg.ahash);
+			ret = crypto_register_ahash(&bkcrypto_algs[i]->alg.ahash);
  	}
 	if(ret)
 		goto fail;
 	return 0;
 fail:
  	for (j = 0; j < i; j++) {
-		if (mycrypto_algs[j]->type == MYCRYPTO_ALG_TYPE_SKCIPHER)
-			crypto_unregister_skcipher(&mycrypto_algs[j]->alg.skcipher);
-		else if (mycrypto_algs[j]->type == MYCRYPTO_ALG_TYPE_AEAD)
-			crypto_unregister_aead(&mycrypto_algs[j]->alg.aead);
+		if (bkcrypto_algs[j]->type == BKCRYPTO_ALG_TYPE_SKCIPHER)
+			crypto_unregister_skcipher(&bkcrypto_algs[j]->alg.skcipher);
+		else if (bkcrypto_algs[j]->type == BKCRYPTO_ALG_TYPE_AEAD)
+			crypto_unregister_aead(&bkcrypto_algs[j]->alg.aead);
 		else
-			crypto_unregister_ahash(&mycrypto_algs[j]->alg.ahash);
+			crypto_unregister_ahash(&bkcrypto_algs[j]->alg.ahash);
 	}
 	return ret;
 }
 
-static void mycrypto_remove_algs(struct mycrypto_dev *mydevice)
+static void bkcrypto_remove_algs(struct bkcrypto_dev *mydevice)
 {
 	int i;
-	for (i = 0; i < ARRAY_SIZE(mycrypto_algs); i++) {
-		if (mycrypto_algs[i]->type == MYCRYPTO_ALG_TYPE_SKCIPHER)
-			crypto_unregister_skcipher(&mycrypto_algs[i]->alg.skcipher);
-		else if (mycrypto_algs[i]->type == MYCRYPTO_ALG_TYPE_AEAD)
-			crypto_unregister_aead(&mycrypto_algs[i]->alg.aead);
+	for (i = 0; i < ARRAY_SIZE(bkcrypto_algs); i++) {
+		if (bkcrypto_algs[i]->type == bkcrypto_ALG_TYPE_SKCIPHER)
+			crypto_unregister_skcipher(&bkcrypto_algs[i]->alg.skcipher);
+		else if (bkcrypto_algs[i]->type == bkcrypto_ALG_TYPE_AEAD)
+			crypto_unregister_aead(&bkcrypto_algs[i]->alg.aead);
 		else
-			crypto_unregister_ahash(&mycrypto_algs[i]->alg.ahash);
+			crypto_unregister_ahash(&bkcrypto_algs[i]->alg.ahash);
 	}
 	printk(KERN_INFO "unregister 3 types of algorithms \n");
 }
 
-static int mycrypto_probe(void){
-	struct mycrypto_dev *mydevice;
+static int bkcrypto_probe(void){
+	struct bkcrypto_dev *mydevice;
 	int ret;
 	// If globle variable for this device is allocated, we just return it immediately
 	if (mydevice_glo) {
@@ -553,24 +485,13 @@ static int mycrypto_probe(void){
 		return -EEXIST;
 	}
 	// Kernel allocate dymanic memory for new struct crypto device
-	mydevice = kzalloc(sizeof(struct mycrypto_dev), GFP_KERNEL);
+	mydevice = kzalloc(sizeof(struct bkcrypto_dev), GFP_KERNEL);
 	// Checking after allocate
 	if(!mydevice)
 	{
-		printk(KERN_INFO "Module mycrypto: failed to allocate data structure for device driver\n");
+		printk(KERN_INFO "Module bkcrypto: failed to allocate data structure for device driver\n");
 		return -ENOMEM;
 	}
-	// Allocate dynamic memory for linear buffer ( for testing).
-	// mydevice->buffer = kzalloc(BUFFER_SIZE, GFP_KERNEL);
-	// Configure parameters for this crypto device.
-	// mycrypto_configure(mydevice);
-	// mydevice->engine = kcalloc(mydevice->config.engines,sizeof(*mydevice->engine),GFP_KERNEL);
-	// if (!mydevice->engine) {
-	// 	printk(KERN_INFO "Module mycrypto: failed to allocate data structure for engine\n");
-	// 	ret = -ENOMEM;
-	// 	return ret;
-	// }
-
 	// Configure each engines
 	/*
 	- initiate the queue of result request (kcalloc to alloc dynamic memory for array)
@@ -587,32 +508,28 @@ static int mycrypto_probe(void){
 	*/
 
 	// initiate queue for this device
-	crypto_init_queue(&mydevice->queue, MYCRYPTO_DEFAULT_MAX_QLEN);
+	crypto_init_queue(&mydevice->queue, BKCRYPTO_DEFAULT_MAX_QLEN);
 	// initiate lock
 	spin_lock_init(&mydevice->queue_lock);
 	spin_lock_init(&submit_lock);
 	INIT_LIST_HEAD(&mydevice->complete_queue);
-	// create workqueue and tasklet
-	//tasklet_init(&mydevice->tasklet, mycrypto_tasklet_callback, (unsigned long)mydevice);
+
 	mydevice_glo = mydevice;
 	mydevice->work_data.mydevice = mydevice;
-	INIT_WORK(&mydevice->work_data.work, mycrypto_dequeue_work);
+	INIT_WORK(&mydevice->work_data.work, bkcrypto_dequeue_work);
 	mydevice->workqueue = create_singlethread_workqueue("my_single_thread_workqueue");
 	if (!mydevice->workqueue) {
 			ret = -ENOMEM;
 			goto err_reg_clk;
 	}
 	// register the neccesary algorithms for handle requests.
-	ret = mycrypto_add_algs(mydevice);
+	ret = bkcrypto_add_algs(mydevice);
 
 	if (ret){
 	printk(KERN_INFO "Failed to register algorithms\n");
 	}
 	printk("device successfully registered \n");
-	// Set up timer and callback handler (using for testing).
-	timer_setup(&mydevice->mycrypto_ktimer,handle_timer,0);
 
-	//mod_timer(&mydevice->mycrypto_ktimer, jiffies + 2*HZ);
 	return 0;
 err_reg_clk:
 	printk(KERN_INFO "ERROR REG_CLK AND WORKQUEUE");
@@ -623,9 +540,9 @@ static int __init FPGAcrypt_init(void)
 {
 	
  	// Register probe
-	printk(KERN_INFO "Hello, World! - Module Mycrypto \n");
+	printk(KERN_INFO "Hello, World! - Module bkcrypto \n");
  	//probe with simulation
-	mycrypto_probe();
+	bkcrypto_probe();
 
  return 0;
 }
@@ -633,10 +550,8 @@ static int __init FPGAcrypt_init(void)
 //entry point when driver was remove
 static void __exit FPGAcrypt_exit(void) 
 {
-	mycrypto_remove_algs(mydevice_glo);
+	bkcrypto_remove_algs(mydevice_glo);
     destroy_workqueue(mydevice_glo->workqueue);
-	//-----------delete timer------------------
-	del_timer_sync(&mydevice_glo->mycrypto_ktimer);
 	kfree(mydevice_glo);
 	printk(KERN_INFO "Delete workqueue and unregister algorithms\n");
 	printk(KERN_INFO "Goodbye, World!\n");

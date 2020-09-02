@@ -10,7 +10,7 @@
 #include <crypto/sha.h>
 #include <crypto/authenc.h>
 #include <crypto/ghash.h>
-#include "mycrypto.h"
+#include "bkcrypto.h"
 /* driver logic flags */
 #define AES_MODE_CBC 0
 #define AES_MODE_GCM 1
@@ -18,13 +18,13 @@
 #define AES_MODE_AUTHENC_HMAC_CTR 3
 #define AUTHENC_MODE_GHASH 4
 
-#define MYCRYPTO_DIR_DECRYPT 0
-#define MYCRYPTO_DIR_ENCRYPT 1
-int mycrypto_skcipher_handle_request(struct crypto_async_request *base);
-int mycrypto_skcipher_handle_result(struct crypto_async_request *base,bool *should_complete);
+#define BKCRYPTO_DIR_DECRYPT 0
+#define BKCRYPTO_DIR_ENCRYPT 1
+int bkcrypto_skcipher_handle_request(struct crypto_async_request *base);
+int bkcrypto_skcipher_handle_result(struct crypto_async_request *base,bool *should_complete);
 
-int mycrypto_aead_handle_request(struct crypto_async_request *base);
-int mycrypto_aead_handle_result(struct crypto_async_request *base,bool *should_complete);
+int bkcrypto_aead_handle_request(struct crypto_async_request *base);
+int bkcrypto_aead_handle_result(struct crypto_async_request *base,bool *should_complete);
 /* transformation object context
 * it is stored in tfm ->__crt_ctx
 * and tfm = req->base.tfm 
@@ -34,17 +34,17 @@ int mycrypto_aead_handle_result(struct crypto_async_request *base,bool *should_c
 //base: filled in cra_init
 //mydevice: filled in cra_init
 //src/dst:
-//dir: filled mycrypto_queue_req
+//dir: filled bkcrypto_queue_req
 //flags:
-//mode: filled in mycrypto_queue_req
-//len : filled in mycrypto_queue_req
+//mode: filled in bkcrypto_queue_req
+//len : filled in bkcrypto_queue_req
 //key: filled in setkey
 //keylen: filled in setkey
-//iv filled in mycrypto_queue_req
+//iv filled in bkcrypto_queue_req
 
-struct mycrypto_cipher_op{
-	struct mycrypto_req_operation base;
-	struct mycrypto_dev *mydevice;
+struct bkcrypto_cipher_op{
+	struct bkcrypto_req_operation base;
+	struct bkcrypto_dev *mydevice;
 	void *src;// src data -before operation
 	void *dst;// dest data -after operation
 	u32 dir; // direction
@@ -72,16 +72,16 @@ struct mycrypto_cipher_op{
 };
 
 /*
- *  struct mycrypto_cipher_req -- cipher request ctx 
+ *  struct bkcrypto_cipher_req -- cipher request ctx 
  *  which is stored in req ->_ctx
  * 	@dir: The direction of processing ( encrypt or decrypt)
  * 	@src_nents:	number of entries in the src sg list
  * 	@dst_nents:	number of entries in the dest sg list
 */
-// dir: filled in mycrypto_queue_req
-// src_nents + dst_nents: filled in mycrypto_skcipher_req_init
+// dir: filled in bkcrypto_queue_req
+// src_nents + dst_nents: filled in bkcrypto_skcipher_req_init
 
-struct mycrypto_cipher_req{
+struct bkcrypto_cipher_req{
 	u32 dir; // direction ( encrypt or decrypt)
 	int src_nents;
 	int dst_nents;
