@@ -6,7 +6,7 @@
 #define TESTCASE_1_ICV_SIZE (4*4)
 
 
-struct region_in testcase_1_in = {
+struct inbound testcase_1_in = {
     .crypto_dsc = {
         .info = {
             // 0c091000
@@ -39,7 +39,7 @@ struct region_in testcase_1_in = {
         0x01020201, 0x00210001 
         }
 };
-struct region_out testcase_1_out = {
+struct outbound testcase_1_out = {
     .data = {
         0xfecf537e, 0x729d5b07, 0xdc30df52, 0x8dd22b76, 
         0x8d1b9873, 0x6696a6fd, 0x348509fa, 0x13ceac34, 
@@ -50,7 +50,7 @@ struct region_out testcase_1_out = {
         }
 };
 
-struct region_in testcase_2_in = {
+struct inbound testcase_2_in = {
     .crypto_dsc = {
         .info = {
             .free_space[0] = 0x00000000, 
@@ -81,7 +81,7 @@ struct region_in testcase_2_in = {
         0x00010001, 0x6b000001, 0x74790264, 0x65726369,   
         }
 };
-struct region_out testcase_2_out = {
+struct outbound testcase_2_out = {
     .data = {
         0xeb8df304, 0x6e3a65be, 0xb07c72c1, 0xdeb22cd9,   
         0x114d2a5c, 0x1ba76d5d, 0x33ae530f, 0xa5a5897d,   
@@ -91,7 +91,7 @@ struct region_out testcase_2_out = {
         }
 };
 
-struct region_in testcase_3_in = {
+struct inbound testcase_3_in = {
     .crypto_dsc = {
         .info = {
             .free_space[0] = 0x00000000, 
@@ -121,7 +121,7 @@ struct region_in testcase_3_in = {
         0x01020201
         }
 };
-struct region_out testcase_3_out = {
+struct outbound testcase_3_out = {
     .data = {
         0x0194e00d, 0x7a3bcd51, 0x724599df, 0xff425c9b,   
         0x65a5d763, 0x06efae9d, 0x1b0b1cbf, 0x6a78107f,   
@@ -131,7 +131,7 @@ struct region_out testcase_3_out = {
         }
 };
 
-struct region_in testcase_4_in = {
+struct inbound testcase_4_in = {
     .crypto_dsc = {
         .info = {
             .free_space[0] = 0x00000000, 
@@ -161,7 +161,7 @@ struct region_in testcase_4_in = {
         0x01020201, 0x66676869, 0x62636465, 0x75767761   
         }
 };
-struct region_out testcase_4_out = {
+struct outbound testcase_4_out = {
     .data = {
         0x31d56d60, 0x732909c3, 0xf973a392, 0x4688daf2,   
         0xf5e9a284, 0xf5fdcdff, 0x414b5e7f, 0xf694abaa,   
@@ -171,7 +171,7 @@ struct region_out testcase_4_out = {
         }
 };
 
-struct region_in testcase_5_in = {
+struct inbound testcase_5_in = {
     .crypto_dsc = {
         .info = {
             .free_space[0] = 0x00000000, 
@@ -202,7 +202,7 @@ struct region_in testcase_5_in = {
         0x01020201, 0x66676869, 0x62636465, 0x75767761   
         }
 };
-struct region_out testcase_5_out = {
+struct outbound testcase_5_out = {
     .data = {
         0x86dd83b0, 0xf22cb10d, 0x853cf9f0, 0xfba2caa4,   
         0x9c357917, 0x0d1138ec, 0xcf1a04b0, 0xfec75691,   
@@ -212,7 +212,7 @@ struct region_out testcase_5_out = {
         }
 };
 
-struct region_in testcase_6_in = {
+struct inbound testcase_6_in = {
     .crypto_dsc = {
         .info = {
             .free_space[0] = 0x00000000, 
@@ -241,7 +241,7 @@ struct region_in testcase_6_in = {
         0x01020201, 0x0a00f5ff, 0xe0000002  
         }
 };
-struct region_out testcase_6_out = {
+struct outbound testcase_6_out = {
     .data = {
         0x86dd831e, 0xf22c3e6e, 0x5e5df9f0, 0xfba2ca84,   
         0x00000000, 0x0e1379ed, 0xcd1af913, 0x1fc65792,   
@@ -249,7 +249,7 @@ struct region_out testcase_6_out = {
         }
 };
 
-struct region_in testcase_7_in = {
+struct inbound testcase_7_in = {
     .crypto_dsc = {
         .info = {
             .free_space[0] = 0x00000000, 
@@ -278,7 +278,7 @@ struct region_in testcase_7_in = {
         0x75680001, 0x501016d0 
         }
 };
-struct region_out testcase_7_out = {
+struct outbound testcase_7_out = {
     .data = {
         0x22de0242, 0x0e598b81, 0x6029aea4, 0xa5b1f806,   
         0x5bfbdbd0, 0x87b8858b, 0x33f828e6, 0x0938b3ab,   
@@ -287,7 +287,7 @@ struct region_out testcase_7_out = {
         }
 };
 
-struct region_in testcase_8_in = {
+struct inbound testcase_8_in = {
     .crypto_dsc = {
         .info = {
             .free_space[0] = 0x00000000, 
@@ -318,7 +318,7 @@ struct region_in testcase_8_in = {
         0x23010101, 0x4722b149, 0x9b6266c0  
         }
 };
-struct region_out testcase_8_out = {
+struct outbound testcase_8_out = {
     .data = {
         0x1f73d814, 0xb2a2ea90, 0xf72cbf4a, 0x18a6fd42,   
         0xfbec168f, 0xc349c1d2, 0xd95412e1, 0xe3e7f243,   

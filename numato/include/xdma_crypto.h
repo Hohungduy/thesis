@@ -70,8 +70,9 @@ struct xfer_req{
     struct crypto_dsc_in crypto_dsc;
     int tag_offset;
     int tag_length;
-    u8 tag_buff[TAG_MAX_SIZE];
+    
 // Dont touch
+    u8 tag_buff[TAG_MAX_SIZE];
     enum xfer_result_t res;
     int region_idx;
     u64 data_ep_addr;
@@ -92,26 +93,12 @@ struct blinky {
     enum led_state led;
 };
 
-struct event {
-    struct list_head lh;
-    bool stop;
-    bool print;
-    bool rcv_thread[CORE_NUM];
-    bool deliver_thread;
-};
-
-struct task_data {
-    int idx;
-    struct xmit_handler *xmit;
-    struct rcv_handler *rcv;
-};
-
 struct xdma_crdev {
     struct xdma_pci_dev* xpdev;
     struct xdma_dev *xdev;
     struct blinky blinky;
 
-    int channel_idx;
+    atomic_t channel_idx;
     // u32 xfer_idex;
     spinlock_t agent_lock;
 
@@ -121,7 +108,7 @@ struct xdma_crdev {
     struct list_head cb_queue;
     spinlock_t cb_lock;
 
-    int req_num;
+    atomic_t req_num;
 
     struct wait_queue_head crypto_wq;
     struct wait_queue_head cb_wq;
@@ -148,6 +135,10 @@ int get_tag(struct xfer_req *req, void *buf);
 
 int xdma_xfer_submit_queue(struct xfer_req *xfer_req);
 void free_xfer_req(struct xfer_req *req);
-
+void debug_mem_in(void);
+void debug_mem_out(void);
+inline struct crypto_dsc_in *get_dsc_in(struct xfer_req *req);
+void write_crypto_info(void *mem_in_base, struct xfer_req *req);
+int get_tag_from_card(struct xfer_req *req);
 
 #endif

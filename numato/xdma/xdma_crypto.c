@@ -3,12 +3,6 @@
 struct xdma_pci_dev *g_xpdev;
 
 #define BAR_0_ADDR (g_xpdev->xdev->bar[0])
-
-
-
-void debug_mem_in(void);
-void debug_mem_out(void);
-
 #define get_crdev() (g_xpdev->crdev)
 
 void blinky(struct timer_list *timer)
@@ -48,7 +42,7 @@ start:
         spin_unlock(&crdev->cb_lock);
         
         spin_lock(&crdev->agent_lock);
-        crdev->req_num--;
+        atomic_dec(&crdev->req_num);
         spin_unlock(&crdev->agent_lock);
 
         if (req->crypto_complete)
@@ -66,15 +60,12 @@ int crypto_task(void *data)
     struct xfer_req *req;
     struct sg_table sgt;
     int timeout_ms;
-    u64 ep_addr;
     void *in_region ;
     void *out_region;
-    struct scatterlist *sg;
-    struct page* page;
     int result;
 
     timeout_ms = 10000;
-    in_region = get_region_in();
+    in_region  = get_region_in();
     out_region = get_region_out();
 
     while (true) {
@@ -98,8 +89,8 @@ start:
             goto xmit_failed;
 
         // Write crypto info
-        memcpy_toio(in_region + offsetof(struct region_in, crypto_dsc),
-            &req->crypto_dsc, sizeof(struct crypto_dsc_in) );
+        write_crypto_info(in_region, req);
+
         // add to tail of processing queue
 
         spin_lock(&crdev->agent_lock);
@@ -116,8 +107,9 @@ start:
         if (result < 0)
             goto rcv_failed;
 
-        memcpy_fromio(req->tag_buff, 
-            BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
+        result = get_tag_from_card(req);
+        if (result < 0)
+            goto xmit_failed;
 
         spin_lock(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
@@ -125,36 +117,26 @@ start:
 
         req->res = DONE;
         goto go_back;
-err_aadsize:
-        pr_err("------------------  AAD_SIZE  ---------------\n");
-        req->res = -INVALID_ADDSIZE;
-        spin_lock(&crdev->cb_lock);
-        list_add_tail(&req->list, &crdev->cb_queue);
-        spin_unlock(&crdev->cb_lock);
-        debug_mem_in();
-        debug_mem_out();
-        pr_err("------------------  AAD_SIZE ---------------\n");
-        goto go_back;
 
 xmit_failed:
         pr_err("------------------  XMIT FAILED ---------------\n");
-        req->res = -BUSY_XMIT;
         spin_lock(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock(&crdev->cb_lock);
         debug_mem_in();
         pr_err("------------------  XMIT FAILED ---------------\n");
+        req->res = -BUSY_XMIT;
         goto go_back;
 
 rcv_failed:
         pr_err("------------------  RCV FAILED ---------------\n");
-        req->res = -BUSY_RCV;
         spin_lock(&crdev->cb_lock);
         list_add_tail(&req->list, &crdev->cb_queue);
         spin_unlock(&crdev->cb_lock);
         debug_mem_in();
         debug_mem_out();
         pr_err("------------------  RCV FAILED ---------------\n");
+        req->res = -BUSY_RCV;
         goto go_back;
         
 go_back:
@@ -177,7 +159,7 @@ irqreturn_t xfer_rcv(int irq_no, void *dev)
 int crdev_create(struct xdma_pci_dev *xpdev)
 {
     struct xdma_crdev* crdev;
-    struct crypto_engine engine;
+    struct mem_base mem_base;
 
     // mutex_init(&xmit_mutex);
     crdev = (struct xdma_crdev *)kzalloc(sizeof(*crdev), GFP_KERNEL);
@@ -192,13 +174,14 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     crdev->xdev = xpdev->xdev;
 
     // Config region base
-    engine.comm   = BAR_0_ADDR + COMM_REGION_OFFSET;
-    engine.in     = BAR_0_ADDR + IN_REGION_OFFSET;
-    engine.out    = BAR_0_ADDR + OUT_REGION_OFFSET;
-    engine.status = BAR_0_ADDR + STATUS_REGION_OFFSET;
-    engine.irq    = BAR_0_ADDR + IRQ_REIGON_OFFSET;
-    set_engine_base(engine, 0);
-    set_led_base(BAR_0_ADDR);
+    mem_base.engine.comm   = BAR_0_ADDR + COMM_REGION_OFFSET;
+    mem_base.engine.in     = BAR_0_ADDR + IN_REGION_OFFSET;
+    mem_base.engine.out    = BAR_0_ADDR + OUT_REGION_OFFSET;
+    mem_base.engine.status = BAR_0_ADDR + STATUS_REGION_OFFSET;
+    mem_base.engine.irq    = BAR_0_ADDR + IRQ_REIGON_OFFSET;
+    mem_base.red_led       = BAR_0_ADDR + LED_RED_OFFSET;
+    mem_base.blue_led      = BAR_0_ADDR + LED_BLUE_OFFSET;
+    set_mem_base(mem_base);
     // Timer
     crdev->blinky.interval_s = 1;
     timer_setup(&crdev->blinky.timer, blinky, 0);
@@ -206,9 +189,10 @@ int crdev_create(struct xdma_pci_dev *xpdev)
     
     xdma_user_isr_register(xpdev->xdev, 0x01, xfer_rcv, crdev);
 
-    crdev->channel_idx = DEFAULT_CHANNEL_IDX;
+    atomic_set(&crdev->channel_idx, DEFAULT_CHANNEL_IDX);
     // crdev->xfer_idex = 0;
     spin_lock_init(&crdev->agent_lock);
+    atomic_set(&crdev->req_num, 0);
     spin_lock_init(&crdev->cb_lock);
     spin_lock_init(&crdev->req_lock);
     
@@ -269,7 +253,7 @@ int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
     struct xdma_crdev *crdev = get_crdev();
     struct list_head *req_queue = &crdev->req_queue;
 
-    if (crdev->req_num > MAX_REQ_NUM){
+    if (atomic_read(&crdev->req_num) > MAX_REQ_NUM){
         pr_err("CRYPTO REACHES MAX_SIZE\n");
         return -1;
     }
@@ -278,9 +262,7 @@ int xdma_xfer_submit_queue(struct xfer_req * xfer_req)
     list_add_tail(&xfer_req->list, req_queue);
     spin_unlock(&crdev->req_lock);
 
-    spin_lock(&crdev->agent_lock);
-    crdev->req_num++;
-    spin_unlock(&crdev->agent_lock);
+    atomic_inc(&crdev->req_num);
 
     wake_up(&crdev->crypto_wq);
     return -EINPROGRESS;
@@ -385,9 +367,6 @@ void free_xfer_req(struct xfer_req *req)
     struct xdma_crdev *crdev = get_crdev();
     if (req){
         kfree(req);
-        spin_lock(&crdev->agent_lock);
-        crdev->req_num--;
-        spin_unlock(&crdev->agent_lock);
     }
     else{
         pr_err("%s:%d: req NULL\n", __func__, __LINE__);
@@ -419,4 +398,24 @@ void debug_mem_out(void )
             p, *(p + 7), *(p + 6), *(p + 5), *(p + 4), 
             *(p + 3), *(p + 2),*(p + 1), *p); 
     }
+}
+
+inline struct crypto_dsc_in *get_dsc_in(struct xfer_req *req)
+{
+    return &req->crypto_dsc;
+}
+
+void write_crypto_info(void *mem_in_base, struct xfer_req *req)
+{
+    memcpy_toio(mem_in_base + offsetof(struct inbound, crypto_dsc),
+        get_dsc_in(req), sizeof(struct crypto_dsc_in));
+}
+
+int get_tag_from_card(struct xfer_req *req)
+{
+    if (!req)
+        return -1;
+    memcpy_fromio(req->tag_buff,
+        get_region_out() + req->tag_offset, req->tag_length);
+    return 0;
 }

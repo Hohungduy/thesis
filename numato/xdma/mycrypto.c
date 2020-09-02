@@ -56,8 +56,8 @@
 #define pr_aaa pr_err
 #endif
 
-struct region_in region_in;
-struct region_out region_out;
+struct inbound region_in;
+struct outbound region_out;
 spinlock_t submit_lock;
 int mycrypto_check_errors(struct mycrypto_dev *mydevice, struct mycrypto_context *ctx);
 void set_xfer_mycryptocontext(struct crypto_async_request *base, struct xfer_req *req_xfer);
