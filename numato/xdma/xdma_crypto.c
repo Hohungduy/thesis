@@ -5,7 +5,7 @@ struct xdma_pci_dev *g_xpdev;
 #define BAR_0_ADDR (g_xpdev->xdev->bar[0])
 
 
-
+void trigger_rcv_deliver_task(void);
 void debug_mem_in(void);
 void debug_mem_out(void);
 
@@ -231,8 +231,10 @@ int xmit_task(void *data)
 
         spin_lock_irqsave(&agent->agent_lock, flags);
         list_add_tail(&req->list, processing);
-        trigger_engine(engine_idx);
+        // trigger_engine(engine_idx);
+        
         spin_unlock_irqrestore(&agent->agent_lock, flags);
+        trigger_rcv_deliver_task();
         
     }
     do_exit(0);
