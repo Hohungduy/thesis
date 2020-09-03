@@ -79,9 +79,9 @@ int mycrypto_compare_icv(u32 *tag_out, u32 *tag_in)
 	{
 		if(tag_out[i] == tag_in[i])
 			success ++;
-		// pr_err("Chunk:%d tag_in: %8.0x tag_out:%8.0x\n",i, tag_in[i],tag_out[i]);
-		// pr_err("tag in:%x - Chunk:%d",tag_in[i],i);
-		// pr_err("success value in loop:%d\n", success);
+		// pr_aaa("Chunk:%d tag_in: %8.0x tag_out:%8.0x\n",i, tag_in[i],tag_out[i]);
+		// pr_aaa("tag in:%x - Chunk:%d",tag_in[i],i);
+		// pr_aaa("success value in loop:%d\n", success);
 	}
 	if (success < 4)
 	{
@@ -100,17 +100,17 @@ void print_sg_content(struct scatterlist *sg)
     char *buf;
 
 	if (!sg){
-		pr_err("Print sg failed, sg NULL \n");
+		pr_aaa("Print sg failed, sg NULL \n");
 		return;
 	}
 
     length = sg->length;
     buf = sg_virt (sg);
-	   pr_err("print sg buffer with length %d\n", length);
+	   pr_aaa("print sg buffer with length %d\n", length);
 
     for (i = 0; i < length; i += 16)
     {
-        pr_err("Print virual sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
+        pr_aaa("Print virual sg: address = %3.3x , data = %8.0x %8.0x %8.0x %8.0x \n", i ,
             *((u32 *)(&buf[i + 12])), *((u32 *)(&buf[i + 8])), 
             *((u32 *)(&buf[i + 4])), *((u32 *)(&buf[i])));
     }
@@ -185,13 +185,13 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	// if (!mydevice->req) 
 	// 	{
 	// 		base = mycrypto_dequeue_req_locked(mydevice, &backlog);
-	// 		pr_err("asys req:%p\n",base);
+	// 		pr_aaa("asys req:%p\n",base);
 	// 		mydevice->req = base;
 	// 	}
 	// spin_unlock_bh(&mydevice->queue_lock);
 
 	if (!base){
-		pr_err("no current req\n");
+		pr_aaa("no current req\n");
 		// return;
 	}
 
@@ -311,7 +311,7 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	    set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 ), tag_outbound);
 	else 
     	set_tag(req_xfer, 16, 0x20 + 0x10 * (region_in.crypto_dsc.info.length/16 + 1), tag_outbound); 
-	pr_err("Mycrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:\
+	pr_aaa("Mycrypto.c:dequeue: sg_nents:%d -sg_length:%d- page_link:\
 		%x- offset:%lx-dma_address:%llx\n",sg_nents(req_xfer->sg_in),
 		req_xfer->sg_in->length,req_xfer->sg_in->page_link,
 		req_xfer->sg_in->offset,req_xfer->sg_in->dma_address);
@@ -320,7 +320,7 @@ int mycrypto_dequeue_req(struct mycrypto_dev *mydevice)
 	if (case_nents == 2)
 		kfree(buff);
 	if (res != -EINPROGRESS)
-        pr_err("Unusual result\n");
+        pr_aaa("Unusual result\n");
 	return res;
 }
 
@@ -355,9 +355,9 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 	aead_req = aead_request_cast(base);
 	src_nents = sg_nents(aead_req->src);
 	len = (size_t)(aead_req->cryptlen + aead_req->assoclen + 16);
-	pr_err("Mycrypto.c (callback): Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
+	pr_aaa("Mycrypto.c (callback): Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
-	pr_err("Mycrypto.c:callback: sg_nents:%d -sg_length:%d- \
+	pr_aaa("Mycrypto.c:callback: sg_nents:%d -sg_length:%d- \
 		page_link:%x- offset:%lx-dma_address:%llx\n",
 		sg_nents(aead_req->dst),aead_req->dst->length,
 		aead_req->dst->page_link,aead_req->dst->offset,
@@ -367,7 +367,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		pr_aaa("Module mycrypto: CAN NOT HANDLE A null POINTER\n");
 		return res;
 	}
-	// pr_err("Complete with res = %d ! This is callback function! \n", res);
+	// pr_aaa("Complete with res = %d ! This is callback function! \n", res);
 	if(data->ctx.ctx_op.dir == 0)
 	{
 		pr_info("----------------------------this is decrypt\n");
@@ -378,7 +378,7 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 
 	}
 	
-	// pr_err("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",data->ctx.ctx_op.iv,  
+	// pr_aaa("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",data->ctx.ctx_op.iv,  
     //         *((u32 *)(&data->ctx.ctx_op.iv[4])), *((u32 *)(&data->ctx.ctx_op.iv[0])));
 	
 	// Step 5: Do your things - Here we print the data out
@@ -447,13 +447,13 @@ err_busy:
 	switch (ret)
 	{
 		case 0:
-			pr_err("%d:%s:Return value in callback: Done Successfully",__LINE__ , __func__ );
+			pr_aaa("%d:%s:Return value in callback: Done Successfully",__LINE__ , __func__ );
 			break;
 		case -1:
-			pr_err("%d:%s:Return value in callback function: DMA Busy",__LINE__ , __func__ );
+			pr_aaa("%d:%s:Return value in callback function: DMA Busy",__LINE__ , __func__ );
 			break;
 		case -74:
-			pr_err("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
+			pr_aaa("%d:%s:Return value in callback function:Authenc failed",__LINE__ , __func__ );
 			break;
 	}
 

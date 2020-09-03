@@ -349,7 +349,7 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 	mydevice = ctx->mydevice;
 
 	aead_req = aead_request_cast(base);
-	pr_err("Cipher.c:enqueue: sg_nents:%x -sg_length:%x - \
+	pr_aaa("Cipher.c:enqueue: sg_nents:%x -sg_length:%x - \
 		page_link:%x- offset:%lx-dma_address:%llx\n",
 		sg_nents(aead_req->src),aead_req->src->length,
 		aead_req->src->page_link,aead_req->src->offset,
@@ -380,13 +380,13 @@ static int mycrypto_queue_aead_req(struct crypto_async_request *base,
 			ctx->cryptlen = aead_req->cryptlen;
 			break;
 	}
-	pr_err("Cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
+	pr_aaa("Cipher.c: Address of req:%p - assoclen+Cryptlen =  %d %d \n",aead_req,  
             aead_req->assoclen, aead_req->cryptlen);
 			        	
 	// spin_lock(&mydevice->queue_lock);
 	// /* enqueue request. */
 	// ret = crypto_enqueue_request(&mydevice->queue, base);
-	// pr_err("asys req:%p\n",base);
+	// pr_aaa("asys req:%p\n",base);
 	// spin_unlock(&mydevice->queue_lock);
 	
 	// /* dequeue using workqueue */
@@ -517,7 +517,7 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 	//ctx->keylen = (aes.key_length-16)/4;
 	// for (i = 0; i < 20 ; i+=4)
     // {
-    //     pr_err("file cipher.c:key = %3.3x , data =  %x %x %x %x \n", i ,
+    //     pr_aaa("file cipher.c:key = %3.3x , data =  %x %x %x %x \n", i ,
 	// 		(key[i + 3]),(key[i + 2]), 
     //         (key[i + 1]),(key[i]));
     // }
@@ -527,7 +527,7 @@ static int my_crypto_aead_gcm_setkey(struct crypto_aead *cipher, const u8 *key,u
 		ctx->key[i] = cpu_to_be32(aes.key_enc[i]);//Test
 	// for (i = 0; i < 8 ; i+=4)
     // {
-    //     pr_err("file cipher.c:ctx->key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
+    //     pr_aaa("file cipher.c:ctx->key = %3.3x , data =  %8.0x %8.0x %8.0x %8.0x \n", i ,
 	// 		(ctx->key[i + 3]),(ctx->key[i + 2]), 
     //         (ctx->key[i + 1]),(ctx->key[i]));
     // }
