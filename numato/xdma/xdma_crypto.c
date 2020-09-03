@@ -119,18 +119,19 @@ int xmit_deliver_task(void *data)
             list_del(&req->list);
             spin_unlock_irqrestore(&xmit->deliver_list_lock, flags);
             req->in_region = (struct region_in *)get_region_addr(engine_idx);                
-            switch (req->crypto_dsc.info.aadsize)
-            {
-            case 8:
-                req->data_ep_addr=0x60;
-                break;
-            case 12:
-                req->data_ep_addr=0x5C;
-                break;               
-            default:
-                // pr_err("Wrong aadsize:%d\n",req->crypto_dsc.info.aadsize);
-                break;
-            }
+            // switch (req->crypto_dsc.info.aadsize)
+            // {
+            // case 8:
+            //     req->data_ep_addr=0x60;
+            //     break;
+            // case 12:
+            //     req->data_ep_addr=0x5C;
+            //     break;               
+            // default:
+            //     // pr_err("Wrong aadsize:%d\n",req->crypto_dsc.info.aadsize);
+            //     break;
+            // }
+            req->data_ep_addr=0x60;
             spin_lock_irqsave(&xmit->xmit_queue_lock[min_channel], flags);
             list_add(&req->list, &xmit->xmit_queue[min_channel]);
             spin_unlock_irqrestore(&xmit->xmit_queue_lock[min_channel], flags);
@@ -323,15 +324,18 @@ int rcv_task(void *data)
         list_del(&req->list);
         spin_unlock_irqrestore(&rcv->rcv_queue_lock[channel_idx], flags);
 
-        if(req->crypto_dsc.info.aadsize == 8)
-            	outbound_data_addr = 0x10020 - 16;
-        else if(req->crypto_dsc.info.aadsize == 12)
-                outbound_data_addr = 0x10020 - 20;
-        else 
-        {
-            outbound_data_addr = 0x10020 - 16;
-            // pr_err("%s:%d: Wrong aadsize %d\n", __func__, __LINE__, req->crypto_dsc.info.aadsize);
-        }
+
+        outbound_data_addr = 0x10010;
+
+        // if(req->crypto_dsc.info.aadsize == 8)
+        //     	outbound_data_addr = 0x10020 - 16;
+        // else if(req->crypto_dsc.info.aadsize == 12)
+        //         outbound_data_addr = 0x10020 - 20;
+        // else 
+        // {
+        //     outbound_data_addr = 0x10020 - 16;
+        //     // pr_err("%s:%d: Wrong aadsize %d\n", __func__, __LINE__, req->crypto_dsc.info.aadsize);
+        // }
 
         memcpy_fromio(req->tag, BAR_0_ADDR + 0x10000 + req->tag_offset, req->tag_length);
         req->sg_table.sgl = &req->sg_rcv;
