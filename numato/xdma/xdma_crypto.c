@@ -370,6 +370,8 @@ int callback_task(void *data)
           ( !list_empty(&crdev->cb_queue) ),10);
         // pr_err("callback_task  \n");
 start:
+        if (list_empty(&crdev->cb_queue))
+            continue;
         spin_lock(&crdev->cb_lock);
         req = list_first_entry(&crdev->cb_queue, 
             struct xfer_req, list);
@@ -413,6 +415,8 @@ int crypto_task(void *data)
             ( !list_empty(&crdev->req_queue) ), 10);
 start:
         // remove first req from backlog
+        if (list_empty(&crdev->req_queue))
+            continue;
         mutex_lock(&crdev->xfer_mutex);
         spin_lock(&crdev->agent_lock);
         req = list_first_entry(&crdev->req_queue, 
