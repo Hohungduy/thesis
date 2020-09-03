@@ -22,8 +22,8 @@ ifneq ($(KERNELRELEASE),)
 		cdev_ctrl.o cdev_events.o cdev_sgdma.o cdev_xvc.o \
 		cdev_bypass.o xdma_mod.o xdma_thread.o xdma_crypto.o \
 		xdma_region.o 
-	bkcrypto-objs := cipher.o bkcrypto.o
-	obj-m := $(TARGET_MODULE).o testcrypto.o bkcrypto.o 
+	crypto-objs := cipher.o bkcrypto.o
+	obj-m := $(TARGET_MODULE).o testcrypto.o crypto.o 
 
 else
 	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build
