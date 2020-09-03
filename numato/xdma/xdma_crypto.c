@@ -366,8 +366,8 @@ int callback_task(void *data)
     struct xfer_req *req;
     int res;
     while (true) {
-        wait_event_interruptible(crdev->cb_wq, 
-          ( !list_empty(&crdev->cb_queue) ));
+        wait_event_interruptible_timeout(crdev->cb_wq, 
+          ( !list_empty(&crdev->cb_queue) ),10);
         // pr_err("callback_task  \n");
 start:
         spin_lock(&crdev->cb_lock);
@@ -409,8 +409,8 @@ int crypto_task(void *data)
     pr_err("%d:%s\n",__LINE__,__func__);
 
     while (true) {
-        wait_event_interruptible(crdev->crypto_wq,
-            ( !list_empty(&crdev->req_queue) ));
+        wait_event_interruptible_timeout(crdev->crypto_wq,
+            ( !list_empty(&crdev->req_queue) ), 10);
 start:
         // remove first req from backlog
         mutex_lock(&crdev->xfer_mutex);
