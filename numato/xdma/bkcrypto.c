@@ -466,9 +466,9 @@ static void bkcrypto_remove_algs(struct bkcrypto_dev *mydevice)
 {
 	int i;
 	for (i = 0; i < ARRAY_SIZE(bkcrypto_algs); i++) {
-		if (bkcrypto_algs[i]->type == bkcrypto_ALG_TYPE_SKCIPHER)
+		if (bkcrypto_algs[i]->type == BKCRYPTO_ALG_TYPE_SKCIPHER)
 			crypto_unregister_skcipher(&bkcrypto_algs[i]->alg.skcipher);
-		else if (bkcrypto_algs[i]->type == bkcrypto_ALG_TYPE_AEAD)
+		else if (bkcrypto_algs[i]->type == BKCRYPTO_ALG_TYPE_AEAD)
 			crypto_unregister_aead(&bkcrypto_algs[i]->alg.aead);
 		else
 			crypto_unregister_ahash(&bkcrypto_algs[i]->alg.ahash);
