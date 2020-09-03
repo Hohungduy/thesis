@@ -5,6 +5,14 @@ struct xdma_pci_dev *g_xpdev;
 #define BAR_0_ADDR (g_xpdev->xdev->bar[0])
 #define get_crdev() (g_xpdev->crdev)
 
+
+#ifdef DEBUG_LINE
+#define debug_line() pr_err("%s:%d\n", __func__, __LINE__)
+#else
+#define debug_line() 
+#endif
+
+
 void blinky(struct timer_list *timer)
 {
     struct blinky *blinky;
