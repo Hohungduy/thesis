@@ -368,7 +368,7 @@ int callback_task(void *data)
     while (true) {
         wait_event_interruptible(crdev->cb_wq, 
           ( !list_empty(&crdev->cb_queue) ));
-        pr_err("callback_task  \n");
+        // pr_err("callback_task  \n");
 start:
         spin_lock(&crdev->cb_lock);
         req = list_first_entry(&crdev->cb_queue, 

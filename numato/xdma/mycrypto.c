@@ -368,15 +368,15 @@ static int handle_crypto_xfer_callback(struct xfer_req *data, int res)
 		return res;
 	}
 	// pr_aaa("Complete with res = %d ! This is callback function! \n", res);
-	if(data->ctx.ctx_op.dir == 0)
-	{
-		pr_info("----------------------------this is decrypt\n");
-	}
-	else
-	{
-		pr_info("----------------------------this is encrypt\n");
+	// if(data->ctx.ctx_op.dir == 0)
+	// {
+	// 	pr_info("----------------------------this is decrypt\n");
+	// }
+	// else
+	// {
+	// 	pr_info("----------------------------this is encrypt\n");
 
-	}
+	// }
 	
 	// pr_aaa("Module mycrypto: Address of req_xfer->ctx.ctx_op.iv:%p - data =  %8.0x %8.0x \n",data->ctx.ctx_op.iv,  
     //         *((u32 *)(&data->ctx.ctx_op.iv[4])), *((u32 *)(&data->ctx.ctx_op.iv[0])));
